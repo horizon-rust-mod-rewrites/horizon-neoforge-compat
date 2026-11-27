@@ -1,0 +1,3 @@
+Commit: 16d6ce33ea333efc1c5be968a20508472bc3aca7
+Run: 46081103967
+This job does not test a NeoForge server join or semantic content application.

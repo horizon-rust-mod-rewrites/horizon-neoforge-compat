@@ -6,6 +6,30 @@ Read AGENTS.md and linked handoffs, then this file. Keep every commit attributed
 
     AI-Assisted-By: QX AI assistant
 
+## Current CI inspection and retained evidence (2026-11-27 23:29 UTC)
+
+Verified PR #1 remains open/draft and remote HEAD is
+`70ba5a4737d2fcb669738ee49dac5dcdb330939f` before editing. Current-SHA run:
+https://github.com/horizon-rust-mod-rewrites/horizon-neoforge-compat/actions/runs/46082288102
+Its **companion-preflight succeeded**, executing 35 Python tests, six fixtures,
+and 17 isolated actual Rust contracts: **9 companion + 8 endpoint**. Thus the
+five new companion boundary tests have now actually executed in isolation.
+Retained test-step log: `integration/hosted-46082288102-companion-preflight.txt`.
+Full integration for this SHA is still IN PROGRESS, NOT validated. The new
+selection floors and lock-audit changes still await this full-driver execution.
+
+Prior run 46081103967 completed SUCCESS at tested SHA
+`16d6ce33ea333efc1c5be968a20508472bc3aca7`. Downloaded artifact digest verified:
+`a33a47f0f4d123c71c23fe5fdf0e763e643596d60d740e0c08cce7d13dcea2cc`.
+Retained `integration/hosted-46081103967-{full-check,full-driver,scope}.txt`.
+Actual selected full-engine counts remain **4 companion, 9 early configuration,
+1 TCP framing, 81 network filter passed / 3 ignored**. This older result does
+NOT prove the nine-companion suite or newer driver changes in the current SHA.
+Runs 46082076294, 46082027794 and 46081949222 are CANCELLED, not passing.
+No genuine current CI failure found; no speculative fix or cancelled-run success
+claim. Both finish gates remain; STILL CANNOT JOIN. Substantive next integration
+work is being investigated separately; no host flag inventory has been invented.
+
 ## Lock-audit ambiguity hardening / handoff checkpoint
 
 The full-driver lock audit now rejects duplicate package identities in either
