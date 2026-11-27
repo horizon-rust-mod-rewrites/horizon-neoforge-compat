@@ -100,6 +100,15 @@ def check_lock(before, after):
         raise RuntimeError('unexpected added lock entries (expected dependency-free local core only)')
 
 
+def verify_test_summary(output, test_filter, minimum_passed):
+    """Fail closed on empty or unexpectedly shrunken selected regression suites."""
+    counts = re.findall(r'test result: ok\. (\d+) passed; (\d+) failed; (\d+) ignored;', output)
+    if (not counts or any(int(failed) for _, failed, _ in counts)
+            or sum(int(passed) for passed, _, _ in counts) < minimum_passed):
+        raise RuntimeError('test filter selected fewer passing tests than required '
+                           f'({minimum_passed}); not validation: {test_filter}')
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('source', type=Path, nargs='?',
@@ -161,7 +170,7 @@ def main():
     cargo = ['cargo']
     target = ['--target', args.target] if args.target else []
 
-    def execute(arguments):
+    def execute(arguments, minimum_passed=1):
         command = cargo + arguments[:1] + target + arguments[1:]
         print('+ ' + ' '.join(command), flush=True)
         logfile = scratch / 'full-check.log'
@@ -175,10 +184,7 @@ def main():
             with logfile.open() as log:
                 log.seek(start)
                 output = log.read()
-            counts = re.findall(r'test result: ok\. (\d+) passed;', output)
-            if not counts or sum(map(int, counts)) == 0:
-                raise RuntimeError('test filter selected no passing tests; not validation: '
-                                   + arguments[-1])
+            verify_test_summary(output, arguments[-1], minimum_passed)
 
     # Establish the exact upstream locked graph with the patch before adding glue.
     execute(['check', '--locked', '-p', 'horizon-client-lib', '--no-default-features'])
@@ -188,14 +194,14 @@ def main():
     # Offline resolution prevents opportunistic updates; then audit every entry.
     execute(['check', '--offline', '-p', 'horizon-client-lib', '--no-default-features'])
     check_lock(before, tomllib.loads((scratch / 'Cargo.lock').read_text()))
-    for package, test_filter in [
-        ('horizon-client-lib', 'neoforge_compat_bridge::tests::'),
-        ('horizon-client-lib', 'early_configuration'),
-        ('horizon-protocol', 'neoforge_configuration_framing_tests'),
-        ('horizon-client-lib', 'net::tests::'),
+    for package, test_filter, minimum_passed in [
+        ('horizon-client-lib', 'neoforge_compat_bridge::tests::', 9),
+        ('horizon-client-lib', 'early_configuration', 9),
+        ('horizon-protocol', 'neoforge_configuration_framing_tests', 1),
+        ('horizon-client-lib', 'net::tests::', 81),
     ]:
         execute(['test', '--locked', '--offline', '-p', package, '--no-default-features',
-                 '--lib', test_filter])
+                 '--lib', test_filter], minimum_passed)
     verify(source)
     print('PASS: full patched client + actual companion typecheck, engine/TCP/vanilla-Horizon tests. '
           'NOT a NeoForge server join or semantic content validation.')

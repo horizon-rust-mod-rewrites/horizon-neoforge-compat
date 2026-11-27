@@ -6,6 +6,18 @@ Read AGENTS.md and linked handoffs, then this file. Keep every commit attributed
 
     AI-Assisted-By: QX AI assistant
 
+## Regression selection floor checkpoint
+
+Full driver now rejects unexpectedly shrunken passing suites, not just zero-test
+filters: minimum companion 9 (including five new boundary tests), early endpoint
+9, protocol framing 1, network filter 81. Ignored tests never count as passes.
+These are selection floors, NOT new executed Rust results. Five new Python
+summary-parser tests exercise empty/shrunken/failed/ignored summaries and compare
+historical retained transcript counts. Local 33 Python tests and six fixtures
+pass. New Rust tests/full-driver changes still need hosted execution; no new
+join capability or host attestation was enabled. Preserve full CI evidence and
+record its actual outcome rather than inferring success from prior SHA.
+
 ## Companion inventory-boundary regression checkpoint
 
 Added five actual companion contract tests: unavailable host inventory offers

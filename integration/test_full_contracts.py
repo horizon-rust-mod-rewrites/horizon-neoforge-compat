@@ -116,5 +116,31 @@ class WiringTests(unittest.TestCase):
             self.assertEqual(manifest.read_text(), original)
 
 
+class TestSummaryTests(unittest.TestCase):
+    def test_exact_minimum_passes(self):
+        check_full.verify_test_summary('test result: ok. 9 passed; 0 failed; 0 ignored;', 'companion', 9)
+
+    def test_ignored_tests_do_not_count_as_passes(self):
+        with self.assertRaises(RuntimeError):
+            check_full.verify_test_summary('test result: ok. 4 passed; 0 failed; 5 ignored;', 'companion', 9)
+
+    def test_empty_or_shrunken_or_failed_suite_refuses(self):
+        for text in ['', 'test result: ok. 0 passed; 0 failed; 0 ignored;',
+                     'test result: ok. 8 passed; 0 failed; 0 ignored;',
+                     'test result: ok. 9 passed; 1 failed; 0 ignored;',
+                     'test result: FAILED. 9 passed; 1 failed; 0 ignored;']:
+            with self.subTest(text=text), self.assertRaises(RuntimeError):
+                check_full.verify_test_summary(text, 'companion', 9)
+
+    def test_pinned_network_suite_with_known_ignored_tests_passes(self):
+        check_full.verify_test_summary('test result: ok. 81 passed; 0 failed; 3 ignored;', 'net', 81)
+
+    def test_retained_hosted_transcript_satisfies_historical_minima(self):
+        output = (check_full.HERE / 'hosted-success-full-check.txt').read_text()
+        self.assertIn('test result: ok. 4 passed;', output)
+        for minimum in [9, 1, 81]:
+            self.assertIn(f'test result: ok. {minimum} passed;', output)
+
+
 if __name__ == '__main__':
     unittest.main(verbosity=2)
