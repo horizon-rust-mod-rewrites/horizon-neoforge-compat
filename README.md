@@ -1,3 +1,14 @@
+# Latest checkpoint: opt-in feature-flag task
+
+See `NEXT_AGENT.md` first for credit-conscious continuation priorities.
+Bounded feature-flag equality now has explicit opt-in Loader routing, negotiated
+data/ack pair authority and terminal mismatch/ordering cleanup. No default host
+inventory, flag-controlled game semantics or Horizon companion wiring is invented.
+**153 main/driver tests pass debug/release**, strict Clippy and isolated companion
+regressions pass. See `docs/FEATURE_FLAGS.md` and its validation transcript.
+Still cannot join; full-engine build, real content mapping and other tasks remain.
+
+---
 # Continuation evidence (2026-11-27)
 
 Continues existing draft PR #1 from verified remote head

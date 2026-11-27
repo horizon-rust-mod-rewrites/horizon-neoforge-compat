@@ -105,3 +105,37 @@ impl FeatureFlagTask {
         self.state = State::Closed;
     }
 }
+
+/// Real wire validators for Loader's private task-backed offers. Semantic
+/// comparison runs in FeatureFlagTask after negotiated ingress validation.
+pub(crate) fn registrations() -> Result<Vec<crate::negotiation::Registration>> {
+    use crate::{
+        codec::{Phase, MAX_BODY},
+        negotiation::{Direction, Registration},
+    };
+    fn validate_data(body: &[u8]) -> Result<()> {
+        FeatureFlagData::decode(body).map(|_| ())
+    }
+    Ok(vec![
+        Registration {
+            phase: Phase::Configuration,
+            id: Id::parse(DATA_CHANNEL)?,
+            version: "1".into(),
+            direction: Direction::Clientbound,
+            optional: true,
+            max_body: MAX_BODY,
+            receive: Some(validate_data),
+            validate_send: None,
+        },
+        Registration {
+            phase: Phase::Configuration,
+            id: Id::parse(ACK_CHANNEL)?,
+            version: "1".into(),
+            direction: Direction::Serverbound,
+            optional: true,
+            max_body: 0,
+            receive: None,
+            validate_send: Some(validate_ack),
+        },
+    ])
+}

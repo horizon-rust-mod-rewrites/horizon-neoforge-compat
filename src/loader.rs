@@ -4,6 +4,7 @@
 use crate::{
     check_baseline,
     codec::{self, CommonRegister, CommonVersion, Id, Phase},
+    feature_flags::{self, FeatureFlagTask},
     modded::{self, Flow, ModdedQuery, ModdedSetup, QueryComponent},
     negotiation::{Direction, Negotiation, Offer, Registration, Selection, State},
     session::Outbound,
@@ -20,6 +21,7 @@ pub struct Loader {
     offers: Vec<Offer>,
     failed: bool,
     setup_failure: Option<SetupFailure>,
+    feature_flags: Option<FeatureFlagTask>,
     common_version: bool,
     common_registered: bool,
     peer_common: BTreeSet<Id>,
@@ -40,6 +42,7 @@ impl Loader {
             offers: Vec::new(),
             failed: false,
             setup_failure: None,
+            feature_flags: None,
             common_version: false,
             common_registered: false,
             peer_common: BTreeSet::new(),
@@ -47,6 +50,32 @@ impl Loader {
             messages: 0,
             bytes: 0,
         })
+    }
+    /// Explicit host-attested complete inventory of ACTUALLY implemented modded
+    /// flags, not names learned from the server. An empty inventory is not a
+    /// default or inference. Existing `new` stays unchanged and advertises none.
+    /// No Horizon host inventory or flag-controlled game semantics are supplied.
+    pub fn new_with_feature_flags(
+        minecraft: &str,
+        protocol: i32,
+        loader: &str,
+        mut registrations: Vec<Registration>,
+        local_modded_flags: BTreeSet<Id>,
+    ) -> Result<Self> {
+        let task = FeatureFlagTask::new(local_modded_flags)?;
+        registrations.extend(feature_flags::registrations()?);
+        let mut endpoint = Self::new(minecraft, protocol, loader, registrations)?;
+        endpoint.feature_flags = Some(task);
+        Ok(endpoint)
+    }
+    /// Task-local evidence only, never permission to enter play. Terminal
+    /// errors/disconnects revoke this observation along with channel grants.
+    pub fn feature_flags_checked(&self) -> bool {
+        !self.failed
+            && self
+                .feature_flags
+                .as_ref()
+                .is_some_and(|task| task.state() == feature_flags::State::Checked)
     }
     pub fn state(&self) -> State {
         if self.failed {
@@ -84,6 +113,9 @@ impl Loader {
             self.failed = false;
         } else {
             self.negotiation.fail();
+            if let Some(task) = &mut self.feature_flags {
+                task.fail();
+            }
             self.offers.clear();
             self.peer_common.clear();
             self.peer_dinnerbone.clear();
@@ -151,6 +183,21 @@ impl Loader {
                     }
                 }
                 self.negotiation.on_setup(selected)?;
+                // Optional absent task is allowed, but an active task requires
+                // both incoming data and outgoing acknowledgment authority.
+                if self.feature_flags.is_some() {
+                    let selected = |name: &str| -> Result<bool> {
+                        Ok(self
+                            .negotiation
+                            .accepted()
+                            .contains(&(Phase::Configuration, Id::parse(name)?)))
+                    };
+                    if selected(feature_flags::DATA_CHANNEL)?
+                        != selected(feature_flags::ACK_CHANNEL)?
+                    {
+                        return Err(Error::Missing("feature flag data/ack channel pair".into()));
+                    }
+                }
                 // Declaration does not confer channel authority. Advertise only
                 // builtins actually handled here, plus accepted incoming config.
                 let mut listening = BTreeSet::new();
@@ -184,6 +231,17 @@ impl Loader {
             modded::FAILURE_CHANNEL => {
                 self.setup_failure = Some(SetupFailure::decode(bytes)?);
                 Err(Error::SetupFailed)
+            }
+            feature_flags::DATA_CHANNEL if self.feature_flags.is_some() => {
+                self.negotiation.receive_configuration(&channel, bytes)?;
+                let body = self
+                    .feature_flags
+                    .as_mut()
+                    .expect("guarded task")
+                    .receive(bytes)?;
+                let ack = Id::parse(feature_flags::ACK_CHANNEL)?;
+                self.negotiation.validate_configuration_send(&ack, &body)?;
+                reply(ack, body)
             }
             "minecraft:register" => {
                 let incoming = codec::decode_dinnerbone(bytes)?;
@@ -265,6 +323,9 @@ impl Loader {
     pub fn close(&mut self) {
         self.failed = true;
         self.setup_failure = None;
+        if let Some(mut task) = self.feature_flags.take() {
+            task.close();
+        }
         self.negotiation.close();
         self.offers.clear();
         self.peer_common.clear();
