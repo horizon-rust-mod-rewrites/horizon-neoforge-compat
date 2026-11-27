@@ -1,3 +1,26 @@
+# Hosted validation status — supersedes historical records below
+
+The full patched Horizon client library **and actual companion passed Cargo
+TYPECHECKING** on the complete pinned source in hosted run
+[46065611717](https://github.com/horizon-rust-mod-rewrites/horizon-neoforge-compat/actions/runs/46065611717).
+This is not linked test-binary compilation or runtime evidence. The first full
+engine test build was refused because locked Wasmtime/Cranelift dev dependencies
+require Rust 1.97, above the workspace's declared 1.95 minimum. CI now uses exact
+1.97.0; do not alter the upstream lock graph or ignore its compiler requirements.
+
+That first GNU run also passed 153 core tests in EACH debug/release, strict Clippy,
+format/docs, synthetic fixtures, source/patch checks and isolated companion
+regressions. Retained logs: `../integration/hosted-first-*.txt`.
+Engine/TCP/default runtime results of the 1.97 run are still pending verification.
+The client STILL CANNOT JOIN. Both finish gates remain. Actual host inventory,
+semantic content application and remaining required tasks are not implemented.
+See `../NEXT_AGENT.md` and `horizon-host-inventory-audit.md` before
+continuing; peer/world enabled flags are not evidence of implemented local flags.
+The owner explicitly requested public repository visibility for hosted CI.
+All contradictory counts/"never compiled"/private wording BELOW are historical,
+not the latest claim. No main changes, merges, force pushes or individual mods.
+
+---
 # Horizon integration continuation — 2026-11-27
 
 ## Outcome

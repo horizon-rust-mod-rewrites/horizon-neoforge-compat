@@ -6,6 +6,15 @@ Read AGENTS.md and linked handoffs, then this file. Keep every commit attributed
 
     AI-Assisted-By: QX AI assistant
 
+## Documentation synchronization checkpoint
+
+Main read-order docs now start with executed hosted evidence, distinguishing
+full library typechecking from linked tests/runtime, and explicitly demoting
+contradictory historical counts/private status. No Rust, patch, workflow or
+behavior changes. Verified documentation links and `git diff --check` locally.
+The 1.97 run https://github.com/horizon-rust-mod-rewrites/horizon-neoforge-compat/actions/runs/46079113415
+is not complete at the last observed job status; no success is inferred.
+
 ## First executed full-host build: typecheck PASSED, tests toolchain-blocked
 
 Actual run: https://github.com/horizon-rust-mod-rewrites/horizon-neoforge-compat/actions/runs/46065611717
