@@ -8,7 +8,8 @@ files = ['crates/horizon-client/src/net.rs',
          'crates/horizon-client/src/net/early_configuration.rs',
          'crates/horizon-client/src/net/early_configuration_tests.rs',
          'crates/horizon-client/src/net/early_configuration_net_tests.rs',
-         'crates/horizon-protocol/src/adapter/session.rs']
+         'crates/horizon-protocol/src/adapter/session.rs',
+         'crates/horizon-protocol/src/connection.rs']
 parts = []
 for name in files:
     old = (base / name).read_text() if (base / name).exists() else ''
@@ -19,4 +20,4 @@ for name in files:
     parts.extend(difflib.unified_diff(old.splitlines(True), new.splitlines(True),
                                     fromfile='a/'+name if old else '/dev/null',
                                     tofile='b/'+name))
-Path(__file__).with_name('horizon-early-configuration.patch').write_text(''.join(parts))
+Path(__file__).with_name('horizon-early-configuration.patch').write_text(''.join(parts).replace('\n \n', '\n\n'))

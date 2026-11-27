@@ -36,3 +36,26 @@ ordering, per-part/aggregate budgets, clock reversal, timeout, terminal cleanup
 and fresh epochs. These are synthetic transport-unit tests, not Java differential
 split comparisons, actual Horizon socket decoding or a server join. No outbound
 splitter, compression/encryption/framing or recursive-dispatch host is supplied.
+
+## Concrete protocol-767 decoder seam (Rust execution pending)
+
+The Horizon patch now adds `ConnReader::decode_reassembled_configuration` in the
+ACTUAL pinned protocol dependency. It takes a complete unframed original packet,
+shares packet-ID extraction with the live ordinary/compressed socket path, checks
+both adapter phases and exact version, and adapts the original wire ID once.
+This is a concrete transport integration boundary, not a substitute codec or
+an enabled split handler. Default offers and Loader split refusal are unchanged.
+
+Its deliberately narrow allowlist is opaque custom payloads, keepalive, ping and
+known packs. Unknown, finish, registry/tag/content packets and recursively split
+custom payloads are refused before adaptation. An error shuts down the underlying
+transport, clears buffered bytes and makes subsequent recv/buffered/seam calls
+fail, including queued adapter output. No content-semantic support is inferred.
+
+Five new full-engine companion tests connect the real core reassembler, actual
+Horizon reader/adapter/codecs and actual Loader endpoint, including nonidentity
+known-pack IDs and terminal failures. Two protocol tests cover finish phase/ack
+safety and content rejection. These tests are INCLUDED for hosted execution,
+**not locally compiled or passed**. The standalone companion check deliberately
+excludes the five actual-engine tests rather than substituting Horizon stubs.
+See `horizon-split-seam.md` for checks and remaining integration requirements.

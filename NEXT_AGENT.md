@@ -6,6 +6,36 @@ Read AGENTS.md and linked handoffs, then this file. Keep every commit attributed
 
     AI-Assisted-By: QX AI assistant
 
+## Concrete split decoder seam checkpoint
+
+Substantive six-file Horizon patch now adds a concrete protocol-reader boundary
+for reconstructed protocol-767 configuration originals. It shares actual packet
+ID extraction with ordinary socket reads, requires both configuration phases,
+allows only opaque payload/keepalive/ping/known-packs, adapts once, and rejects
+finish, recursive split, unknown and content packets before adapter mutation.
+Any seam error closes/detaches transport and poisons subsequent reads. No split
+ingress, negotiated authority, timer/queue dispatch or outbound splitter is wired;
+no new channel is offered. Feature opt-in remains disabled; no host inventory
+was invented. Both core and engine finish refusals remain. STILL CANNOT JOIN.
+See `docs/horizon-split-seam.md` for exact scope and actual-source audit.
+
+Added 5 full-engine companion tests + 2 protocol tests, using actual dependencies.
+New Rust tests have NOT compiled/executed locally. Full-driver passing floors now
+14 companion / 3 protocol framing / 9 early configuration / 81 network-filter.
+The isolated checker explicitly excludes engine-dependent cases, retaining the
+9 companion + 8 endpoint contracts without replacement/mock protocol APIs.
+Locally executed: 35 Python tests, six fixtures, syntax/whitespace checks, narrow
+exact-source hash checks and patch apply/duplicate/reverse/restoration/regeneration.
+No large source/toolchain/dependency downloads; respect disk reservations.
+
+Last inspected run 46082288102 (tested SHA 70ba5a4737d2fcb669738ee49dac5dcdb330939f)
+has successful preflight, core, provenance/isolated, and dependency-fetch steps;
+full engine step remains IN PROGRESS. New split code requires its OWN SHA's run;
+do not infer its success from that older run. Verify latest remote HEAD and find
+newest run by SHA. Retain completed actual evidence and fix genuine CI failures
+first. SHA256SUMS had nine stale pre-existing entries; reconciled current tracked
+file digests as checksum maintenance, not as source/runtime validation.
+
 ## Current CI inspection and retained evidence (2026-11-27 23:29 UTC)
 
 Verified PR #1 remains open/draft and remote HEAD is

@@ -48,7 +48,7 @@ pub mod net { pub mod early_configuration { include!(concat!(env!("BRIDGE_TEST_R
         (root / 'endpoint_include.rs').write_text('\n'.join(line for line in lines if not line.startswith('//!'))+'\n')
         (root / 'test.rs').write_text(source)
         env['BRIDGE_TEST_ROOT'] = str(root)
-        command = ['rustc','--edition','2021','--test',root/'test.rs','--target',args.target,'--extern','horizon_neoforge_compat='+str(target/args.target/'debug/libhorizon_neoforge_compat.rlib'),'-o',root/'test']
+        command = ['rustc','--edition','2021','--test','--cfg','compat_isolated',root/'test.rs','--target',args.target,'--extern','horizon_neoforge_compat='+str(target/args.target/'debug/libhorizon_neoforge_compat.rlib'),'-o',root/'test']
         linker = os.environ.get('CARGO_TARGET_'+args.target.upper().replace('-','_')+'_LINKER')
         if linker: command += ['-C','linker='+linker]
         subprocess.run(list(map(str,command)), check=True, env=env)

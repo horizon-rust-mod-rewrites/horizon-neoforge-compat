@@ -1026,3 +1026,212 @@ diff --git a/crates/horizon-protocol/src/adapter/session.rs b/crates/horizon-pro
 +        assert_eq!(server.recv().unwrap(), (7, vec![0]));
 +    }
 +}
+diff --git a/crates/horizon-protocol/src/connection.rs b/crates/horizon-protocol/src/connection.rs
+--- a/crates/horizon-protocol/src/connection.rs
++++ b/crates/horizon-protocol/src/connection.rs
+@@ -17,6 +17,14 @@
+     time::{Duration, Instant},
+ };
+
++/// Shared packet-id boundary for socket bodies and reconstructed originals.
++/// Does not frame, decompress, translate, or dispatch the packet.
++fn packet_id(body: &[u8]) -> Result<(i32, usize)> {
++    let mut reader = Reader::new(body);
++    let id = reader.varint()?;
++    Ok((id, reader.position()))
++}
++
+ mod memory;
+ pub use memory::Pipe;
+
+@@ -100,6 +108,8 @@
+ }
+
+ pub struct ConnReader {
++    /// A rejected reconstructed packet permanently invalidates this reader.
++    reassembly_failed: bool,
+     memory: bool,
+     stream: Stream,
+     /// Bytes read: `buffer[start..end]` are not consumed yet, and reads go
+@@ -282,6 +292,7 @@
+         let memory = matches!(stream, Stream::Memory(_));
+         Ok(Self {
+             reader: ConnReader {
++                reassembly_failed: false,
+                 memory,
+                 stream,
+                 buffer: Vec::new(),
+@@ -403,8 +414,88 @@
+         self.memory
+     }
+
++    /// Decode ONE complete reconstructed NeoForge configuration packet. The input
++    /// is the original unframed packet (VarInt wire id + payload), NOT a socket
++    /// frame, custom-payload body, or already adapted packet. Never feed its
++    /// result back through recv/the adapter. No socket bytes are consumed here.
++    ///
++    /// This concrete decoder seam does NOT enable/advertise split transport. Its
++    /// future caller must own negotiated authority, bounded reassembly/deadlines,
++    /// serialization with socket reads, and awaited dispatch before further input.
++    /// Only exact protocol 767 configuration is supported. State-changing finish,
++    /// unknown/content packets and recursively split payloads fail BEFORE adaptation.
++    /// The narrow allowlist is opaque custom payloads, keepalive, ping and known
++    /// packs. This is NOT a path for vanilla translation of modded registries.
++    /// Every failure closes the transport and terminally invalidates this reader.
++    pub fn decode_reassembled_configuration(&mut self, body: Vec<u8>) -> Result<(i32, Vec<u8>)> {
++        let result = self.decode_reassembled_configuration_inner(body);
++        if result.is_err() {
++            self.reassembly_failed = true;
++            self.stream.shutdown();
++            self.stream = Stream::Detached;
++            self.buffer.clear();
++            self.start = 0;
++            self.end = 0;
++        }
++        result
++    }
++
++    fn decode_reassembled_configuration_inner(&self, body: Vec<u8>) -> Result<(i32, Vec<u8>)> {
++        use crate::{State, adapter::ServerVersion, packets::configuration as cfg};
++        if self.reassembly_failed || self.older_client.is_some() {
++            return Err(Error::new("invalid reconstructed configuration epoch"));
++        }
++        let session = self
++            .adapter
++            .as_ref()
++            .ok_or_else(|| Error::new("reconstructed packet requires protocol 767 adapter"))?;
++        if session.version != ServerVersion::V1_21_1
++            || session.reading() != State::Configuration
++            || session.writing() != State::Configuration
++        {
++            return Err(Error::new(
++                "reconstructed packet outside protocol 767 configuration",
++            ));
++        }
++        if body.is_empty() || body.len() > 8 * 1_048_576 {
++            return Err(Error::new("reconstructed configuration packet size"));
++        }
++        let (id, at) = packet_id(&body)?;
++        let pinned = session
++            .version
++            .clientbound_id(State::Configuration, id)
++            .ok_or_else(|| Error::new("unknown reconstructed configuration packet"))?;
++        use crate::ids::configuration::clientbound as cb;
++        if !matches!(
++            pinned,
++            cb::CUSTOM_PAYLOAD | cb::KEEP_ALIVE | cb::PING | cb::SELECT_KNOWN_PACKS
++        ) {
++            return Err(Error::new("unsupported reconstructed configuration packet"));
++        }
++        // Real dependency codec and wire-id table, not a second guessed codec.
++        // Inspect BEFORE Session::clientbound can change its read phase.
++        match cfg::Clientbound::decode(pinned, &body[at..])? {
++            cfg::Clientbound::CustomPayload(p) if p.channel == "neoforge:split" => {
++                return Err(Error::new("recursive reconstructed split packet"));
++            }
++            cfg::Clientbound::CustomPayload(_)
++            | cfg::Clientbound::KeepAlive(_)
++            | cfg::Clientbound::Ping(_)
++            | cfg::Clientbound::SelectKnownPacks(_) => {}
++            // In particular: no vanilla numeric/content translation of modded
++            // registries/tags, no phase transition, and no unknown passthrough.
++            _ => return Err(Error::new("unsupported reconstructed configuration packet")),
++        }
++        session
++            .clientbound(id, body[at..].to_vec())?
++            .ok_or_else(|| Error::new("reconstructed configuration packet was dropped"))
++    }
++
+     /// Block until a whole packet arrives: (id, payload).
+     pub fn recv(&mut self) -> Result<(i32, Vec<u8>)> {
++        if self.reassembly_failed {
++            return Err(Error::new("invalid reconstructed configuration epoch"));
++        }
+         if let Some(packet) = self.adapter.as_ref().and_then(|a| a.next_incoming()) {
+             return Ok(packet);
+         }
+@@ -443,6 +534,9 @@
+     /// more: for a detached reader, after [`Self::read_from`]. Only an older
+     /// client's renumbering applies (a server's connection has no other).
+     pub fn buffered(&mut self) -> Result<Option<(i32, Vec<u8>)>> {
++        if self.reassembly_failed {
++            return Err(Error::new("invalid reconstructed configuration epoch"));
++        }
+         if let Some(packet) = self
+             .older_client
+             .as_ref()
+@@ -514,14 +608,11 @@
+                 if body.is_empty() {
+                     return Ok(None);
+                 }
+-                let mut r = Reader::new(body);
+-                let id = r.varint()?;
+-                Ok(Some((id, body[r.position()..].to_vec())))
++                let (id, at) = packet_id(body)?;
++                Ok(Some((id, body[at..].to_vec())))
+             }
+             frame::Body::Inflated(mut body) => {
+-                let mut r = Reader::new(&body);
+-                let id = r.varint()?;
+-                let at = r.position();
++                let (id, at) = packet_id(&body)?;
+                 body.drain(..at);
+                 Ok(Some((id, body)))
+             }
+@@ -1315,3 +1406,56 @@
+         assert!(Connection::from_stream(stream).is_ok());
+     }
+ }
++
++#[cfg(test)]
++mod neoforge_configuration_framing_tests {
++    use super::*;
++    use crate::{
++        State,
++        adapter::ServerVersion,
++        packets::{Empty, configuration as cfg, handshake, login},
++    };
++
++    fn configured() -> (Connection, Connection) {
++        let (a, b) = Pipe::pair();
++        let mut client = Connection::local(a);
++        let mut peer = Connection::local(b);
++        client.adapt(ServerVersion::V1_21_1);
++        client.send(&handshake::Serverbound::Intention(handshake::Intention {
++            protocol: crate::PROTOCOL_VERSION,
++            host: "localhost".into(), port: 25565, intent: handshake::LOGIN,
++        }).encode()).unwrap();
++        peer.recv().unwrap();
++        peer.send(&[2]).unwrap();
++        client.recv().unwrap();
++        client.send(&login::Serverbound::LoginAcknowledged(Empty).encode()).unwrap();
++        peer.recv().unwrap();
++        (client, peer)
++    }
++
++    #[test]
++    fn reassembled_finish_refuses_before_phase_change_and_without_ack() {
++        let (mut client, mut peer) = configured();
++        peer.reader.set_read_timeout(Some(Duration::from_millis(50))).unwrap();
++        let session = client.reader.adapter.as_ref().unwrap().clone();
++        assert!(client.reader.decode_reassembled_configuration(vec![3]).is_err());
++        assert_eq!(session.reading(), State::Configuration);
++        assert_eq!(session.writing(), State::Configuration);
++        assert!(peer.recv().is_err(), "no finish ack fabricated");
++        assert!(client.reader.recv().is_err());
++    }
++
++    #[test]
++    fn reassembled_content_never_enters_vanilla_numeric_translation() {
++        let (mut client, _peer) = configured();
++        // Wire registry_data is 7 in protocol 767 as in the pinned codec.
++        let body = cfg::Clientbound::RegistryData(cfg::RegistryData {
++            registry: "example:unimplemented".into(), entries: vec![],
++        }).encode();
++        assert_eq!(body[0], 7);
++        let session = client.reader.adapter.as_ref().unwrap().clone();
++        assert!(client.reader.decode_reassembled_configuration(body).is_err());
++        assert_eq!(session.reading(), State::Configuration);
++        assert!(session.next_incoming().is_none());
++    }
++}
