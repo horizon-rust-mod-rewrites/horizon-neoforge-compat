@@ -6,6 +6,16 @@ Read AGENTS.md and linked handoffs, then this file. Keep every commit attributed
 
     AI-Assisted-By: QX AI assistant
 
+## Fast actual-companion CI prerequisite
+
+Added a ten-minute standard hosted prerequisite that runs actual isolated
+companion/endpoint Rust contracts plus Python/fixtures BEFORE the costly full
+Horizon job. Uses the same pinned checkout action and Rust 1.97.0; no source
+bundle, native packages, secrets, paid runners or game server needed. The full
+engine run remains mandatory and now depends on this fast gate. This is not a
+replacement for full engine tests. Local actionlint and all 33 Python tests/six
+fixtures pass; Rust execution remains pending hosted CI for these commits.
+
 ## Regression selection floor checkpoint
 
 Full driver now rejects unexpectedly shrunken passing suites, not just zero-test

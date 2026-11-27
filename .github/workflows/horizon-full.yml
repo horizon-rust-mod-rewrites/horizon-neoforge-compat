@@ -22,7 +22,33 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  companion-preflight:
+    # Catch actual companion contract failures before downloading/building Horizon.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      CARGO_TERM_COLOR: never
+      CARGO_INCREMENTAL: '0'
+      CARGO_BUILD_JOBS: '2'
+      CARGO_PROFILE_DEV_DEBUG: '0'
+    steps:
+      - name: Check out without persistent credentials
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Install exact minimal compiler
+        run: |
+          rustup toolchain install 1.97.0 --profile minimal
+          rustup default 1.97.0
+      - name: Validate driver and actual isolated companion contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m unittest discover -s integration -p 'test_*.py' -v
+          python3 fixtures/generate.py --check
+          python3 integration/check_bridge.py --target x86_64-unknown-linux-gnu
   full-integration:
+    needs: companion-preflight
     # Standard public-repository runner only; no paid larger/self-hosted runners.
     runs-on: ubuntu-24.04
     timeout-minutes: 90
