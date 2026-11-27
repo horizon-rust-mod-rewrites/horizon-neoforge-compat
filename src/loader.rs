@@ -7,6 +7,7 @@ use crate::{
     modded::{self, Flow, ModdedQuery, ModdedSetup, QueryComponent},
     negotiation::{Direction, Negotiation, Offer, Registration, Selection, State},
     session::Outbound,
+    setup_failure::SetupFailure,
     Error, Result,
 };
 use std::collections::{BTreeMap, BTreeSet};
@@ -18,6 +19,7 @@ pub struct Loader {
     negotiation: Negotiation,
     offers: Vec<Offer>,
     failed: bool,
+    setup_failure: Option<SetupFailure>,
     common_version: bool,
     common_registered: bool,
     peer_common: BTreeSet<Id>,
@@ -37,6 +39,7 @@ impl Loader {
             negotiation: Negotiation::new(registrations)?,
             offers: Vec::new(),
             failed: false,
+            setup_failure: None,
             common_version: false,
             common_registered: false,
             peer_common: BTreeSet::new(),
@@ -51,6 +54,13 @@ impl Loader {
         } else {
             self.negotiation.state()
         }
+    }
+    /// Untrusted, lossless NBT diagnostics from a completely decoded terminal
+    /// setup failure. Not rendered or semantically validated Components. Retained
+    /// after failure for inspection; close/new epoch discards them. Malformed
+    /// payloads expose no partial data. This never confers channel authority.
+    pub fn setup_failure(&self) -> Option<&SetupFailure> {
+        self.setup_failure.as_ref()
     }
     pub fn accepted(&self) -> &BTreeSet<(Phase, Id)> {
         self.negotiation.accepted()
@@ -172,8 +182,8 @@ impl Loader {
                 )
             }
             modded::FAILURE_CHANNEL => {
-                modded::reject_setup_failure(bytes)?;
-                unreachable!("setup failure is terminal")
+                self.setup_failure = Some(SetupFailure::decode(bytes)?);
+                Err(Error::SetupFailed)
             }
             "minecraft:register" => {
                 let incoming = codec::decode_dinnerbone(bytes)?;
@@ -254,6 +264,7 @@ impl Loader {
     }
     pub fn close(&mut self) {
         self.failed = true;
+        self.setup_failure = None;
         self.negotiation.close();
         self.offers.clear();
         self.peer_common.clear();

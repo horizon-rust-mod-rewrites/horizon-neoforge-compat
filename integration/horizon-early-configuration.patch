@@ -208,7 +208,7 @@ diff --git a/crates/horizon-client/src/net.rs b/crates/horizon-client/src/net.rs
          && let Some(control) = negotiation.initial()
      {
          send_control(control, &mut build_sent)?;
-@@ -1802,10 +1894,35 @@
+@@ -1802,10 +1894,33 @@
          let (id, payload) = reader
              .recv()
              .map_err(|e| Reason::plain(connection_lost(e, lang)))?;
@@ -234,9 +234,7 @@ diff --git a/crates/horizon-client/src/net.rs b/crates/horizon-client/src/net.rs
 +                    .as_mut()
 +                    .expect("guarded endpoint")
 +                    .receive(&p.channel, &p.data)
-+                    .map_err(|error| {
-+                        Reason::plain(format!("configuration/{}: {error:?}", p.channel))
-+                    })?;
++                    .map_err(|error| Reason::plain(error.at_payload(&p.channel)))?;
 +                for response in replies {
 +                    reply(cfg::Serverbound::CustomPayload(cfg::CustomPayload {
 +                        channel: response.channel,
@@ -247,7 +245,7 @@ diff --git a/crates/horizon-client/src/net.rs b/crates/horizon-client/src/net.rs
              cfg::Clientbound::CustomPayload(p) if p.channel == crate::build_mismatch::CHANNEL => {
                  server_build = crate::build_mismatch::decode(&p.data);
              }
-@@ -1953,6 +2070,18 @@
+@@ -1953,6 +2068,18 @@
              }
              cfg::Clientbound::Disconnect(d) => return Err(Reason::tag(&d.reason, lang)),
              cfg::Clientbound::FinishConfiguration(_) => {
@@ -266,7 +264,7 @@ diff --git a/crates/horizon-client/src/net.rs b/crates/horizon-client/src/net.rs
                  // A Horizon server that never sent on horizon:payloads predates the
                  // negotiation: play on with nothing negotiated, as on a vanilla server.
                  // Only on the first configuration: a server that goes silent when it
-@@ -1995,6 +2124,11 @@
+@@ -1995,6 +2122,11 @@
                      })
                      .map_err(Reason::plain)?;
                  return Ok(registries);
@@ -282,7 +280,7 @@ diff --git a/crates/horizon-client/src/net/early_configuration.rs b/crates/horiz
 new file mode 100644
 --- /dev/null
 +++ b/crates/horizon-client/src/net/early_configuration.rs
-@@ -0,0 +1,181 @@
+@@ -0,0 +1,196 @@
 +// SPDX-License-Identifier: LGPL-3.0-or-later
 +//! Engine-owned, explicitly selected configuration endpoint. No global registration,
 +//! Horizon negotiation, play delivery, or implicit permission from channel lists.
@@ -296,6 +294,18 @@ new file mode 100644
 +/// Stable diagnostic code; the engine adds phase/channel context when displaying it.
 +#[derive(Clone, Debug, PartialEq, Eq)]
 +pub struct Failure(pub &'static str);
++impl Failure {
++    /// The protocol identifier decoder accepts much longer identifiers than this
++    /// endpoint. Never reflect an invalid/overlong peer channel in diagnostics.
++    pub(crate) fn at_payload(&self, channel: &str) -> String {
++        let channel = if valid_id(channel) {
++            channel
++        } else {
++            "<invalid-channel>"
++        };
++        format!("configuration/{channel}: {self:?}")
++    }
++}
 +pub type Result<T> = std::result::Result<T, Failure>;
 +
 +pub struct Reply {
@@ -410,9 +420,12 @@ new file mode 100644
 +        if self.failed {
 +            return Err(Failure("failed_epoch"));
 +        }
++        // Poison BEFORE crossing the external bridge boundary. If a caller
++        // catches an unwinding callback panic, it must not reuse this epoch.
++        self.failed = true;
 +        let result = self.receive_inner(channel, body);
-+        if result.is_err() {
-+            self.failed = true;
++        if result.is_ok() {
++            self.failed = false;
 +        }
 +        result
 +    }
@@ -468,7 +481,7 @@ diff --git a/crates/horizon-client/src/net/early_configuration_tests.rs b/crates
 new file mode 100644
 --- /dev/null
 +++ b/crates/horizon-client/src/net/early_configuration_tests.rs
-@@ -0,0 +1,214 @@
+@@ -0,0 +1,267 @@
 +// SPDX-License-Identifier: LGPL-3.0-or-later
 +use super::*;
 +use std::sync::{
@@ -682,6 +695,59 @@ new file mode 100644
 +            .is_err()
 +        );
 +    }
++}
++
++#[test]
++fn payload_refusal_diagnostics_do_not_reflect_invalid_or_unbounded_identifiers() {
++    let failure = Failure("unowned_configuration_payload");
++    assert_eq!(
++        failure.at_payload("neoforge:network"),
++        "configuration/neoforge:network: Failure(\"unowned_configuration_payload\")"
++    );
++    for channel in ["x:".to_owned() + &"a".repeat(32_765), "bad:\nsecret".into()] {
++        assert_eq!(
++            failure.at_payload(&channel),
++            "configuration/<invalid-channel>: Failure(\"unowned_configuration_payload\")"
++        );
++    }
++}
++
++#[test]
++fn unwinding_external_bridge_panic_poisoned_epoch_cannot_resume_or_finish() {
++    struct PanickingBridge(Arc<Observed>);
++    impl Bridge for PanickingBridge {
++        fn receive(&mut self, _: &str, _: &[u8]) -> Result<Vec<Reply>> {
++            panic!("test-only external bridge panic")
++        }
++        fn finish(&mut self) -> Result<()> {
++            self.0.finishes.fetch_add(1, Ordering::Relaxed);
++            Ok(())
++        }
++        fn reset(&mut self) {
++            self.0.resets.fetch_add(1, Ordering::Relaxed);
++        }
++    }
++    let observed = Arc::new(Observed::default());
++    let profile = profile(&observed);
++    let mut endpoint = Endpoint {
++        profile: &profile,
++        bridge: Box::new(PanickingBridge(observed.clone())),
++        failed: false,
++    };
++    assert!(
++        std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
++            let _ = endpoint.receive("c:version", &[1, 1]);
++        }))
++        .is_err()
++    );
++    assert_eq!(
++        endpoint.receive("c:version", &[1, 1]).err(),
++        Some(Failure("failed_epoch"))
++    );
++    assert_eq!(endpoint.finish(), Err(Failure("failed_epoch")));
++    assert_eq!(observed.finishes.load(Ordering::Relaxed), 0);
++    drop(endpoint);
++    assert_eq!(observed.resets.load(Ordering::Relaxed), 1);
 +}
 diff --git a/crates/horizon-client/src/net/early_configuration_net_tests.rs b/crates/horizon-client/src/net/early_configuration_net_tests.rs
 new file mode 100644

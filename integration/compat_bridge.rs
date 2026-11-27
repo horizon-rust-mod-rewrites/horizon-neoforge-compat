@@ -4,6 +4,7 @@
 //! This is NOT wired into the launcher or a loadable mod. Full engine compilation
 //! remains required. check_bridge.py exercises this actual glue against the
 //! actual patched endpoint and compatibility library without Horizon dependencies.
+//! check_full.py additionally compiles it inside the real patched client library.
 use crate::net::early_configuration::{Bridge, Factory, Failure, Reply, Result};
 use horizon_neoforge_compat::{loader::Loader, negotiation::Registration};
 
@@ -55,3 +56,7 @@ impl Bridge for CompatBridge {
         }
     }
 }
+
+#[cfg(test)]
+#[path = "bridge_contract_tests.rs"]
+mod tests;

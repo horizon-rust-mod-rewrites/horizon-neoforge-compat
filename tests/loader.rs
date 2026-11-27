@@ -140,3 +140,96 @@ fn baseline_and_close_are_strict() {
     l.close();
     assert!(l.receive(QUERY_CHANNEL, &[0]).is_err());
 }
+
+#[test]
+fn decoded_setup_failure_is_terminal_and_retains_only_untrusted_data() {
+    // Literal independently specified map + unnamed network NBT string.
+    let bytes = b"\x01\x08demo:bad\x08\x00\x03bad";
+    for after_setup in [false, true] {
+        let mut l = loader();
+        if after_setup {
+            configure(&mut l);
+            l.receive("minecraft:register", b"demo:announced\0")
+                .unwrap();
+        }
+        assert_eq!(l.receive(FAILURE_CHANNEL, bytes), Err(Error::SetupFailed));
+        assert_eq!(l.state(), State::Failed);
+        assert!(l.accepted().is_empty());
+        assert!(l.peer_dinnerbone().is_empty());
+        assert!(l.peer_common().is_empty());
+        let diagnostic = l.setup_failure().unwrap();
+        assert_eq!(diagnostic.original_body(), bytes);
+        assert!(diagnostic.reasons().contains_key(&id("demo:bad")));
+        assert!(l.receive(QUERY_CHANNEL, &[0]).is_err());
+        assert!(l.receive(SETUP_CHANNEL, &[0]).is_err());
+        assert!(l.finish_configuration().is_err());
+        assert!(l.setup_failure().is_some());
+        l.close();
+        assert!(l.setup_failure().is_none());
+        assert!(loader().setup_failure().is_none());
+    }
+    let mut l = loader();
+    assert_eq!(l.receive(FAILURE_CHANNEL, &[0]), Err(Error::SetupFailed));
+    assert!(l.setup_failure().unwrap().reasons().is_empty());
+    assert_eq!(l.state(), State::Failed);
+}
+
+#[test]
+fn malformed_failure_never_exposes_partial_reasons_or_retries() {
+    let valid = b"\x01\x08demo:bad\x08\x00\x03bad";
+    for end in 0..valid.len() {
+        let mut l = loader();
+        configure(&mut l);
+        assert!(l.receive(FAILURE_CHANNEL, &valid[..end]).is_err());
+        assert!(l.setup_failure().is_none());
+        assert_eq!(l.state(), State::Failed);
+        assert!(l.receive(FAILURE_CHANNEL, valid).is_err());
+        assert!(l.setup_failure().is_none());
+    }
+    let mut partial = valid.to_vec();
+    partial[0] = 2;
+    // Complete first reason followed by truncated second ID.
+    partial.extend([3, b'x']);
+    let mut l = loader();
+    assert!(l.receive(FAILURE_CHANNEL, &partial).is_err());
+    assert!(l.setup_failure().is_none());
+    assert_eq!(l.state(), State::Failed);
+}
+
+#[test]
+fn setup_failure_revokes_previously_accepted_handler_grants() {
+    let mut l = Loader::new(
+        "1.21.1",
+        767,
+        "21.1.248",
+        vec![Registration {
+            phase: Phase::Configuration,
+            id: id("demo:task"),
+            version: "1".into(),
+            direction: Direction::Clientbound,
+            optional: false,
+            max_body: 0,
+            receive: Some(empty),
+            validate_send: None,
+        }],
+    )
+    .unwrap();
+    l.receive(QUERY_CHANNEL, &[0]).unwrap();
+    let setup = ModdedSetup {
+        phases: BTreeMap::from([(
+            ConnectionProtocol::Configuration,
+            BTreeMap::from([(
+                id("demo:task"),
+                NetworkChannel {
+                    id: id("demo:task"),
+                    chosen_version: "1".into(),
+                },
+            )]),
+        )]),
+    };
+    l.receive(SETUP_CHANNEL, &setup.encode().unwrap()).unwrap();
+    assert_eq!(l.accepted().len(), 1);
+    assert_eq!(l.receive(FAILURE_CHANNEL, &[0]), Err(Error::SetupFailed));
+    assert!(l.accepted().is_empty());
+    assert!(l.receive("demo:task", &[]).is_err());
+}

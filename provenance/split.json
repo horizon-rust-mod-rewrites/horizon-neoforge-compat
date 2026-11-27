@@ -1,0 +1,9 @@
+{
+  "baseline": "NeoForge 21.1.248 / Minecraft 1.21.1 / protocol 767",
+  "artifact_sha256": "b4b912457549ff586873ce78b39b08af96f11a0e3a54c6b77576c6a25907083f",
+  "source_files": {
+    "net/neoforged/neoforge/network/payload/SplitPacketPayload.java": "3503fc94bce80767f57b9dcd07418692dd2390d57f3e9e3a10936c2e2780d44a",
+    "net/neoforged/neoforge/network/filters/GenericPacketSplitter.java": "550a1c005c992c60a4de3924bbfd8dea691c2e8469462cad4a1dc882599ea732",
+    "net/neoforged/neoforge/network/codec/NeoForgeStreamCodecs.java": "a2de86a00f85a3be554b759c72716afdcbda5bfdd6f539b5fa81f846be46c616"
+  }
+}

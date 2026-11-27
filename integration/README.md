@@ -4,10 +4,55 @@ Target: public Horizon `ae632edf48f6cae3ba52a5c81523ec712488c9cc`, Minecraft
 1.21.1 / protocol 767, exact caller-attested NeoForge 21.1.248 only.
 
 **Applicable source patch, not a mod. Cannot complete configuration or join.**
-The engine's hard finish latch is intentional and intentional: even an
+The engine's hard finish latch is intentional: even an
 optimistic bridge cannot enter play without the missing bidirectional modded
 content conversion boundary. Do not remove it merely because negotiation codecs
 pass tests. There is no production placeholder Bridge in the patch.
+
+## Continuation validation (2026-11-27; supersedes historical counts below)
+
+- Official checksum-verified Rust **1.95.0** installed; actual executed target is
+  Linux x86_64 musl. No native GNU or full-engine build is claimed.
+- `continuation-check.txt`: all 27 pinned-source hashes, patch/reversal/restoration,
+  four structural checks, **8 endpoint tests + 1 actual packet-table test** pass.
+- The isolated companion checker now uses a private temporary build target, compact
+  debug profile and one build job, never the repository target.
+- `continuation-bridge.txt`: **12 tests pass (the same 8 endpoint + 4 companion
+  contract tests)**. Shared `bridge_contract_tests.rs` runs against the actual
+  Loader/glue/endpoint; these counts must not be summed as independent tests.
+- Fixed two integration boundary issues: caught unwinding external bridge panics
+  cannot resume the epoch; invalid/overlong identifiers cannot be reflected in
+  payload-refusal diagnostics. New executed behavior tests cover both.
+- Added `check_full.py` to copy/verify a complete clean pin, apply the patch,
+  typecheck the engine, then wire this exact companion **inside the actual
+  client library**, audit its local-only lockfile change, and run companion,
+  configure/writer, TCP and default configuration regressions. It refuses empty
+  test selections. It never edits the input trees or commits/pushes anything.
+- **Full-driver Cargo execution was NOT reached.** Its real preflight refused:
+  the shared volume is capped at 1 GiB and full source extraction/checkouts had
+  already failed with ENOSPC. A verified sparse pin is retained for small tests;
+  this is not a complete working tree. See `continuation-full-preflight.txt`.
+  Python syntax, preparation and lock-audit helpers ran (`continuation-tooling.txt`),
+  not the full Cargo subprocess path. No dependency/engine/TCP result is invented.
+
+On a machine with a normal complete Rust >=1.95 installation (including host
+standard library and native build dependencies), a complete clean source pin,
+network dependencies and several GiB available:
+
+```sh
+python3 integration/check_full.py "$HORIZON_PIN" --scratch "$NEW_SCRATCH_TREE"
+# Optional --target TARGET; the host standard library is still needed.
+# The scratch tree and full-check.log are retained on failure.
+```
+
+The disk reservation defaults to 3 GiB after source-copy space; this is a
+conservative preflight reservation, **not a measured upper bound** for Horizon.
+Full Horizon/companion typecheck, engine/TCP/default regressions, semantic content
+application and live joins remain unvalidated here. Both finish latches remain.
+No individual mods were changed. See `../docs/horizon-continuation.md` for toolchain
+availability, source/PR identity and executed-versus-unexecuted checks.
+
+## Historical milestone record
 
 ## Integration status
 

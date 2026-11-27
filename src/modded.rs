@@ -2,8 +2,9 @@
 //!
 //! No packet framing, negotiation decisions, handler installation, or task acknowledgement.
 //! See provenance/modded-codecs.md for evidence and intentionally stricter local policy.
-//! Setup-failure Components use NBT, NOT strings: until that codec is implemented,
-//! [`reject_setup_failure`] fails terminally rather than pretending to decode a reason.
+//! Setup-failure Components use NBT, NOT strings. See crate::setup_failure for
+//! bounded lossless NBT data (not full Component semantics). The legacy
+//! [`reject_setup_failure`] helper remains a conservative terminal rejection.
 use crate::codec::{Id, Phase, Reader, Writer, MAX_CHANNELS, MAX_STRING};
 use crate::{Error, Result};
 use std::collections::BTreeMap;

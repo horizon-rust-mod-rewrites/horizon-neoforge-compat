@@ -11,7 +11,11 @@ A Horizon-derived source patch is now included under integration/ with separate
 LGPL-3.0-or-later licensing, notices and license texts; it is NOT relicensed MIT.
 The original audit checkout remains unmodified. No Minecraft proprietary source,
 game jars/assets, Create, Ponder or Sable implementation is redistributed.
-Official MC classfiles were inspected for enum ordering, not included.
+Official MC classfiles were inspected and executed locally for bounded codec
+reference tests, not included. Test preparation extracts/name-adapts selected
+NeoForge codec declarations only in external scratch storage; generated upstream
+Java source and proprietary game binaries are not redistributed. See
+`docs/java-reference.md` and `provenance/setup-failure.md`.
 Repository names identify interoperability targets, not endorsement.
 
 Sable's supplied repository identifies PolyForm Shield 1.0.0. No Sable source
