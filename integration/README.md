@@ -9,6 +9,36 @@ optimistic bridge cannot enter play without the missing bidirectional modded
 content conversion boundary. Do not remove it merely because negotiation codecs
 pass tests. There is no production placeholder Bridge in the patch.
 
+## Disk-first follow-up checkpoint (2026-11-27)
+
+The next machine again has only **1 GiB total disk**. No full source/toolchain/
+dependency downloads were repeated; **full compilation and engine/TCP/default
+regressions remain unexecuted**. This checkpoint changes only driver safety,
+tests and handoff evidence, not the patch or production bridge/core behavior.
+
+Before obtaining the complete pinned upstream checkout, check the intended
+scratch filesystem without creating a tree or invoking Git/Cargo:
+
+```sh
+python3 integration/check_full.py --scratch "$NEW_SCRATCH_TREE" --disk-preflight-only
+python3 -m unittest discover -s integration -p 'test_check_full.py' -v
+```
+
+The scratch parent must already exist and the scratch path must not exist.
+Disk-only mode does not inspect an optional source argument and makes no source,
+toolchain, dependency, build, engine/TCP or join claim. Its default 3 GiB lower
+bound omits the not-yet-downloaded source, download caches and toolchain; allow
+ample extra space. Passing is NOT a build-size guarantee. Never reduce the
+reservation just to bypass a known undersized machine. Normal mode now performs
+this cheap check first, then repeats it with actual source-copy bytes after the
+existing pin/blob verification. All build commands and lock auditing remain.
+
+Executed here: **15 Python safety tests**, actual low-disk refusal from both CLI
+modes, Python syntax checks, six existing synthetic fixtures. Driver tests use
+mock disk sizes/source verification and forbid subprocess execution. These are
+not engine or Rust/companion tests; previous Rust results were not rerun.
+See `validation-disk-preflight.txt` and updated `../NEXT_AGENT.md`.
+
 ## Continuation validation (2026-11-27; supersedes historical counts below)
 
 - Official checksum-verified Rust **1.95.0** installed; actual executed target is

@@ -10,6 +10,7 @@ outputs/logs on failure; never calls git commit/push or starts a game/server.
 import argparse
 import hashlib
 import json
+import math
 import os
 import re
 from pathlib import Path
@@ -22,6 +23,20 @@ from check import verify
 
 HERE = Path(__file__).resolve().parent
 COMPAT = HERE.parent
+
+
+def disk_preflight(parent, minimum_gib, source_bytes=0):
+    """Read-only lower-bound check; not a promise that a full build will fit."""
+    if not math.isfinite(minimum_gib) or minimum_gib < 0.1:
+        raise RuntimeError('minimum build reservation must be finite and at least 0.1 GiB')
+    free = shutil.disk_usage(parent).free
+    reservation = int(minimum_gib * 1024**3)
+    print(f'Disk preflight: {free:,} free bytes; reservation {reservation:,} bytes; '
+          f'additional source copy {source_bytes:,} bytes', flush=True)
+    if free < source_bytes + reservation:
+        raise RuntimeError('full build NOT STARTED: insufficient disk '
+                           f'(reservation {reservation:,} bytes + source copy '
+                           f'{source_bytes:,} bytes); do not download large build inputs here')
 
 
 def tracked_sources(source):
@@ -87,30 +102,39 @@ def check_lock(before, after):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('source', type=Path)
+    parser.add_argument('source', type=Path, nargs='?',
+                        help='complete clean pinned checkout; required except for disk-only preflight')
     parser.add_argument('--scratch', type=Path, required=True, help='new directory; retained, not cleaned')
     parser.add_argument('--target', help='optional Cargo target; host toolchain still required')
     parser.add_argument('--minimum-build-free-gib', type=float, default=3,
                         help='disk reservation after source copy, not a measured build-size promise')
+    parser.add_argument('--disk-preflight-only', action='store_true',
+                        help='check scratch filesystem before downloading inputs; no source/build validation')
     args = parser.parse_args()
-    source, scratch = args.source.resolve(), args.scratch.resolve()
+    if args.source is None and not args.disk_preflight_only:
+        parser.error('source is required unless --disk-preflight-only is used')
+    scratch = args.scratch.resolve()
     if scratch.exists() or not scratch.parent.is_dir():
         raise RuntimeError('scratch must not exist; its parent must already exist')
+    # Cheap refusal before source hashing, source retrieval by the caller, or Cargo.
+    # Repeat with the real copy size below; the first check has no source estimate.
+    disk_preflight(scratch.parent, args.minimum_build_free_gib)
+    if args.disk_preflight_only:
+        print('Disk-only preflight passed lower bound. NO source, toolchain, dependency, '
+              'compilation, engine/TCP or join checks executed; build fit is NOT guaranteed.')
+        return
+    source = args.source.resolve()
     if source == scratch or source in scratch.parents or scratch in source.parents:
         raise RuntimeError('scratch and source must be separate trees')
-    if args.minimum_build_free_gib < 0.1:
-        raise RuntimeError('minimum build reservation must be at least 0.1 GiB')
     verify(source)
     files, missing = tracked_sources(source)
-    free = shutil.disk_usage(scratch.parent).free
     size = sum(size for _, _, size in files)
     print(f'Preflight: {len(files)} verified source blobs, {len(missing)} missing; '
-          f'{free:,} free bytes; {size:,} materialized source bytes', flush=True)
-    reservation = int(args.minimum_build_free_gib * 1024**3)
-    if missing or free < size + reservation:
-        raise RuntimeError('full build NOT STARTED: incomplete source or insufficient disk '
-                           f'(reservation {reservation:,} bytes + source); '
+          f'{size:,} materialized source bytes', flush=True)
+    if missing:
+        raise RuntimeError('full build NOT STARTED: incomplete source; '
                            f'first missing paths: {missing[:3]}')
+    disk_preflight(scratch.parent, args.minimum_build_free_gib, size)
     scratch.mkdir()
     for name, mode, _ in files:
         src, dst = source / name, scratch / name

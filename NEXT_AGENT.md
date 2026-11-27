@@ -6,6 +6,52 @@ Read AGENTS.md and linked handoffs, then this file. Keep every commit attributed
 
     AI-Assisted-By: QX AI assistant
 
+## Disk-first continuation checkpoint (2026-11-27)
+
+Remote draft PR #1 HEAD was verified at
+`17058127b69ef9e9077843b905808dbc8fd72873` before this checkpoint; no newer work
+was present then. Verify it again before continuing. The current machine is
+still capped at **1 GiB total disk**, below even the existing 3 GiB build
+reservation. No full Horizon source/toolchain/dependency downloads were retried.
+**Full patched Horizon + companion compilation and engine/TCP/default regressions
+remain NOT EXECUTED. The client STILL CANNOT JOIN.**
+
+Focused milestone: `integration/check_full.py` now supports a read-only
+`--disk-preflight-only` check WITHOUT an upstream checkout, so the next worker
+can refuse an undersized machine before downloading anything large. Normal mode
+also checks disk before source verification, and rechecks with actual source-copy
+bytes before copying. Nonfinite/too-small reservations are rejected. Defaults,
+pins, patch, companion, Loader, inventories and both finish gates are unchanged.
+
+Executed: **15 dependency-free Python safety tests**, actual disk-only AND normal
+entry-point low-disk refusals (exit 1, no scratch tree), syntax checks, and all
+six existing synthetic fixtures. Tests mock filesystem sizes/source verification
+and forbid subprocesses; they are NOT full engine or Rust validation. The prior
+153 debug/release Rust tests and companion/Clippy results were NOT rerun in this
+checkpoint. Evidence: `integration/validation-disk-preflight.txt`.
+
+First on the next machine (scratch parent must exist):
+
+```sh
+python3 integration/check_full.py --scratch "$NEW_SCRATCH_TREE" --disk-preflight-only
+```
+
+A pass is only a lower-bound disk check, NOT proof the build will fit. Do NOT
+lower the reservation to squeeze this 1 GiB machine through. Provision ample
+additional disk for the complete source, Rust >=1.95 host/native toolchain,
+dependencies and retained build outputs; then obtain the clean pinned Horizon
+checkout and run the existing full path:
+
+```sh
+python3 -m unittest discover -s integration -p 'test_check_full.py' -v
+python3 integration/check_full.py "$HORIZON_PIN" --scratch "$NEW_SCRATCH_TREE"
+```
+
+After actual full-build evidence, follow priorities below for genuine Horizon
+host inventory/profile wiring and remaining tasks. Existing Java query/setup
+research is completed; do not repeat it. No production server tests or individual
+mod rewrites. Keep the same draft PR and mandatory AI commit footer.
+
 Current feature-flag checkpoint: bounded codecs + exact host-inventory equality
 are wired into explicit opt-in `Loader::new_with_feature_flags`. Both server-
 selected channel directions must be present or both absent. Only exact equality
