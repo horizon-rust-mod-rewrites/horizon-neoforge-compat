@@ -1,0 +1,9 @@
+[package]
+name = "horizon-neoforge-compat"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.85"
+license = "MIT"
+description = "Non-loadable, transport-independent bounded NeoForge common networking codec milestone"
+
+[dependencies]

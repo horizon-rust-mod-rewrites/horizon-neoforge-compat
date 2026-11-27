@@ -1,0 +1,28 @@
+{
+  "artifact": "https://maven.neoforged.net/releases/net/neoforged/neoforge/21.1.248/neoforge-21.1.248-sources.jar",
+  "sha256": "b4b912457549ff586873ce78b39b08af96f11a0e3a54c6b77576c6a25907083f",
+  "publisher_checksum_url": "https://maven.neoforged.net/releases/net/neoforged/neoforge/21.1.248/neoforge-21.1.248-sources.jar.sha256",
+  "publisher_checksum_verified": true,
+  "retrieved_utc_date": "2026-11-27",
+  "scope": "Source-audited subset, NOT live-server interoperability",
+  "source_files": {
+    "net/neoforged/neoforge/network/payload/CommonVersionPayload.java": "a3f9f2516ef4c3a467bfb85b08fe35b527eda34978e597ada9a75fbd6d9e671f",
+    "net/neoforged/neoforge/network/payload/CommonRegisterPayload.java": "84207a77b9a0738f6cc4176cd5e54b8916dffd48b36c25d761b8db30514b0e04",
+    "net/neoforged/neoforge/network/payload/DinnerboneProtocolUtils.java": "98a84e67320418c9f2377b0f19a6a94c931027aba438cea88398fc5cd1e15630",
+    "net/neoforged/neoforge/network/payload/MinecraftRegisterPayload.java": "2f846c68466541466c9a59d3564e7c1f3760a48b45ba5527e58f7e97c9f58da1",
+    "net/neoforged/neoforge/network/payload/MinecraftUnregisterPayload.java": "c6b328522f825888c927979fcd732d473428c43156cb2409dc9d4e0cc68ca21a",
+    "net/neoforged/neoforge/network/payload/FrozenRegistryPayload.java": "8339672a5d9aa7a92274695ed6b4e5a9d3df7423585f4df34f46cdef6307cfa3",
+    "net/neoforged/neoforge/network/payload/ModdedNetworkQueryPayload.java": "8a1d2a29e71e51265021b23cee42a9514de569d88e4e89ffadb134d0d5b8cfdc",
+    "net/neoforged/neoforge/network/payload/ModdedNetworkQueryComponent.java": "708a18e6ebabc64012055c61a0fa40b4ffe0451760c9215b7314d691c5907ebc",
+    "net/neoforged/neoforge/network/payload/ModdedNetworkPayload.java": "e3764b6d1766ab93a6a6c58e8b92ec08ef512b2f688e3f75aba2e820e6c9a54b",
+    "net/neoforged/neoforge/network/payload/ModdedNetworkSetupFailedPayload.java": "8eb12a4ec315f0463ed71b9be1f64e21defb49526ea1a9f43a5236605dd1612a",
+    "net/neoforged/neoforge/network/registration/NetworkRegistry.java": "9bd813102262dfad3efa26436f200d34c824d0eb14f6321dec798ad2f0b35e29",
+    "net/neoforged/neoforge/network/registration/NetworkPayloadSetup.java": "7ab5631215bb916c6ac69e46b7013a697a16eeb0b84a22f5d3939e144e406a22",
+    "net/neoforged/neoforge/network/registration/NetworkChannel.java": "5185cd8d7e44ae989543a986bdc787086dcdff43e1e00893318b55007969841c",
+    "net/neoforged/neoforge/network/ConfigurationInitialization.java": "1a6c6c85af5e234035e003cd87d621c7dc238813d26254bd9112391658611f03",
+    "net/neoforged/neoforge/network/NetworkInitialization.java": "b321425176641f7c90864055e3895919364f2397bf0284e00b9a13909750d570",
+    "net/neoforged/neoforge/network/handlers/ClientPayloadHandler.java": "6448f312aaac68c87d8b432d7f1ca11ef99e2be6d1a588cc1490e33d33cc8ac9",
+    "net/neoforged/neoforge/network/negotiation/NetworkComponentNegotiator.java": "c5b438a44cef98c876114ea68cd17f5c3315721897dc5fdac4592366bf1e3e36",
+    "net/neoforged/neoforge/registries/RegistrySnapshot.java": "8768151829b1281775593b8d7e6f6aab47de9464653c22088099541654f199c9"
+  }
+}

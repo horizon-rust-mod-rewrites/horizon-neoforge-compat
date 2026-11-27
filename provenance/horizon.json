@@ -1,0 +1,21 @@
+{
+  "repository": "https://github.com/rdbtCVS/horizon",
+  "commit": "ae632edf48f6cae3ba52a5c81523ec712488c9cc",
+  "modified": false,
+  "read_files": {
+    "crates/horizon-client/src/net.rs": "d28aba21f89510fc72981c9beb56e7bf9e2a61da7deca7ae9b9efb20bfce5270",
+    "crates/horizon-client/src/raw_payloads/incoming.rs": "f4f63b177d4e67e83065fb5bb93ad2891873389ee14d866a47d546cfc3933f1b",
+    "crates/horizon-mod-api/src/parts/payloads.rs": "29dcd35764d046f021857e0291df232b5f9f2328b88580197c2924cc78916204",
+    "crates/horizon-mod-vocab/src/hooks/client_packet.rs": "e2dcf408fa67ea0a0c19c79a976c4d8629a9d264534631f4395cd6966a7e839e",
+    "crates/horizon-protocol/src/adapter.rs": "b4209483098bcbda365b47548b23b7d343704dad13621bd8176911e7b8fd65eb",
+    "crates/horizon-protocol/src/adapter/v1_21_1.rs": "efbaa7e67b9cd1686a226ef02c95dd5a8a0e429dc52d4840de136ef41e52bccb",
+    "crates/horizon-protocol/src/adapter/client_session.rs": "72b77ec1cb18e691af66758479215397b814e787068918fc1a84276acb4f903c",
+    "crates/horizon-protocol/src/adapter/client_session/step_1_21_1.rs": "4c58f15f5118f31ceb25cdd15efab84a3003fc0153126c52fac6eff3d00fd12f",
+    "crates/horizon-protocol/src/adapter/client_session/synced.rs": "67cb4511a1bdec23e1f793a450a05fef40a83f469a6102b7db9404d08e420f43",
+    "crates/horizon-protocol/src/packets/custom_payload.rs": "cad388a828a24c8f66f5fe34d319bf953ae255cbc0556e3e818fc004e4ca8d0d",
+    "crates/horizon-protocol/src/connection.rs": "7fd746be12b4bfae94c831c1d6ad515810cfe0c62ccac1874976247813973b83",
+    "crates/horizon-protocol/src/adapter/session.rs": "5c9948dceeb9c606046a56f4d25089c47913834a02a132f61feb2789be97809e",
+    "crates/horizon-protocol/src/adapter/translate.rs": "43c007bd7c8f64af4775169ed8775b7aab6c645e630730ab2f2f59e96d67b8c8",
+    "crates/horizon-protocol/src/adapter/translate/v1_21_1.rs": "f8e8ae3ba57c988b202a3741bde09952a7abc2b54869b845e55fd2b8c3ef2da5"
+  }
+}
