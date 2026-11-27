@@ -6,6 +6,20 @@ Read AGENTS.md and linked handoffs, then this file. Keep every commit attributed
 
     AI-Assisted-By: QX AI assistant
 
+## Companion inventory-boundary regression checkpoint
+
+Added five actual companion contract tests: unavailable host inventory offers
+nothing; peer announcements cannot enable feature flags/split/required tasks;
+peer-selected flag pairs cannot forge a host attestation; actual bridge reset is
+idempotent/terminal with fresh independent construction; inventory is checked
+BEFORE invoking registration callbacks. Default behavior unchanged, no invented
+inventory or enabled flag profile, both finish gates unchanged.
+
+Local: 28 Python driver tests, six fixture checks and diff whitespace checks pass.
+New Rust tests are NOT yet executed locally (no compiler installed); hosted CI
+must compile/run them in both isolated and full-engine companion filters. Prior
+hosted success below applies only to its tested SHA, not these new tests.
+
 # Full hosted validation PASSED — 2026-11-27
 
 Run: https://github.com/horizon-rust-mod-rewrites/horizon-neoforge-compat/actions/runs/46079113415
