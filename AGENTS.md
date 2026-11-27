@@ -1,24 +1,45 @@
-# Hosted validation status — supersedes historical records below
+# Full hosted validation PASSED — 2026-11-27
 
-The full patched Horizon client library **and actual companion passed Cargo
-TYPECHECKING** on the complete pinned source in hosted run
-[46065611717](https://github.com/horizon-rust-mod-rewrites/horizon-neoforge-compat/actions/runs/46065611717).
-This is not linked test-binary compilation or runtime evidence. The first full
-engine test build was refused because locked Wasmtime/Cranelift dev dependencies
-require Rust 1.97, above the workspace's declared 1.95 minimum. CI now uses exact
-1.97.0; do not alter the upstream lock graph or ignore its compiler requirements.
+Run: https://github.com/horizon-rust-mod-rewrites/horizon-neoforge-compat/actions/runs/46079113415
+Tested compatibility commit: `7d4e934327ff833ec8d57707e6d8f25962c07c61`.
+Upstream Horizon: `ae632edf48f6cae3ba52a5c81523ec712488c9cc`.
+Rust/Cargo 1.97.0, GNU x86_64, Ubuntu 24.04, no default client features.
+Downloaded artifact SHA256 verified:
+`2d89b8910bdcb7c04bb8413338b1601ac4150222ec5be9dd70a130df3f4b8770`.
 
-That first GNU run also passed 153 core tests in EACH debug/release, strict Clippy,
-format/docs, synthetic fixtures, source/patch checks and isolated companion
-regressions. Retained logs: `integration/hosted-first-*.txt`.
-Engine/TCP/default runtime results of the 1.97 run are still pending verification.
-The client STILL CANNOT JOIN. Both finish gates remain. Actual host inventory,
-semantic content application and remaining required tasks are not implemented.
-See `NEXT_AGENT.md` and `docs/horizon-host-inventory-audit.md` before
-continuing; peer/world enabled flags are not evidence of implemented local flags.
-The owner explicitly requested public repository visibility for hosted CI.
-All contradictory counts/"never compiled"/private wording BELOW are historical,
-not the latest claim. No main changes, merges, force pushes or individual mods.
+Retained transcript `integration/hosted-success-full-driver.txt` ends in PASS
+after source re-verification. `integration/hosted-success-full-check.txt` proves:
+
+- Complete pin: 12,354 blobs, zero missing; 27 provenance/integration hashes.
+- Full patched client typechecks before/after ACTUAL companion wiring, with
+  audited local-only core dependency addition; upstream locked graph unchanged.
+- Linked full client test binary: **4 actual companion contract tests pass**.
+- **9 early-configuration tests pass**, including real configure/queued-writer
+  integration and engine hard finish refusal without forged epoch/ack.
+- **1 protocol-767 bidirectional TCP payload-framing test passes**.
+- Network filter: **81 passed, 3 ignored, 0 failed**: 52 direct net tests pass,
+  3 direct net daily tests ignored, plus 29 datapack/LOD/perf tests pass.
+  The filter matches module substrings; not all 81 are direct net tests.
+- Core: **153 tests in EACH debug and release**, strict Clippy, fmt/docs pass.
+- 28 Python driver tests, six fixtures, patch/reverse/source-restoration and
+  isolated companion checks pass. Isolated endpoint tests overlap the above:
+  do not add them to full-engine counts as independent coverage.
+
+This is selected full-engine test execution, NOT all 4,624 client-library or all
+593 protocol tests. Five upstream horizon-mod-wasm unused-function warnings
+remain; upstream was not changed to hide them. No runtime UI, production server,
+full task completion, semantic registry/content conversion, split host wiring
+or NeoForge join is validated. **The client STILL CANNOT JOIN. Both finish gates
+remain.** Newer commits after the tested SHA are documentation/evidence only.
+
+Next: genuine host-owned capability/profile evidence before flag inventory
+opt-in (see `docs/horizon-host-inventory-audit.md`), remaining configuration tasks,
+split transport and atomic bidirectional semantic content application. Exact
+NeoForge 21.1.248 isolated server then fixture mod only after prerequisites;
+no production-first testing or individual mod rewrites. See NEXT_AGENT.md first.
+Older contradictory status below is historical. Same draft PR; attributed
+commits only, verify remote HEAD, never merge/force-push. The owner authorized
+public visibility for standard hosted CI; no further visibility change implied.
 
 ---
 # Latest checkpoint: opt-in feature-flag task
