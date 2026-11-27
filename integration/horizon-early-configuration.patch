@@ -1061,7 +1061,18 @@ diff --git a/crates/horizon-protocol/src/connection.rs b/crates/horizon-protocol
                  memory,
                  stream,
                  buffer: Vec::new(),
-@@ -403,8 +414,88 @@
+@@ -394,6 +405,10 @@
+     }
+     /// Read exactly `len` bytes as they are, with no framing.
+     pub fn read_raw(&mut self, len: usize) -> Result<Vec<u8>> {
++        // Refuse before allocation, even for a zero-length raw read.
++        if self.reassembly_failed {
++            return Err(Error::new("invalid reconstructed configuration epoch"));
++        }
+         let mut out = vec![0u8; len];
+         self.stream.read_exact(&mut out)?;
+         Ok(out)
+@@ -403,8 +418,88 @@
          self.memory
      }
 
@@ -1150,7 +1161,7 @@ diff --git a/crates/horizon-protocol/src/connection.rs b/crates/horizon-protocol
          if let Some(packet) = self.adapter.as_ref().and_then(|a| a.next_incoming()) {
              return Ok(packet);
          }
-@@ -443,6 +534,9 @@
+@@ -443,6 +538,9 @@
      /// more: for a detached reader, after [`Self::read_from`]. Only an older
      /// client's renumbering applies (a server's connection has no other).
      pub fn buffered(&mut self) -> Result<Option<(i32, Vec<u8>)>> {
@@ -1160,7 +1171,19 @@ diff --git a/crates/horizon-protocol/src/connection.rs b/crates/horizon-protocol
          if let Some(packet) = self
              .older_client
              .as_ref()
-@@ -514,14 +608,11 @@
+@@ -468,6 +566,11 @@
+     /// buffer: the bytes read, 0 at the end of the stream, or its error
+     /// (`WouldBlock` when nothing waits).
+     pub fn read_from(&mut self, source: &mut impl Read) -> std::io::Result<usize> {
++        // A detached source is caller-owned: do not consume it or refill the
++        // cleared buffer after a reconstructed packet poisoned this reader.
++        if self.reassembly_failed {
++            return Err(detached());
++        }
+         let wanted = match self.next_header() {
+             Ok(Some((prefix, len))) => prefix + len,
+             _ => 0,
+@@ -514,14 +617,11 @@
                  if body.is_empty() {
                      return Ok(None);
                  }
@@ -1178,7 +1201,7 @@ diff --git a/crates/horizon-protocol/src/connection.rs b/crates/horizon-protocol
                  body.drain(..at);
                  Ok(Some((id, body)))
              }
-@@ -1315,3 +1406,56 @@
+@@ -1315,3 +1415,128 @@
          assert!(Connection::from_stream(stream).is_ok());
      }
  }
@@ -1219,6 +1242,78 @@ diff --git a/crates/horizon-protocol/src/connection.rs b/crates/horizon-protocol
 +        assert_eq!(session.writing(), State::Configuration);
 +        assert!(peer.recv().is_err(), "no finish ack fabricated");
 +        assert!(client.reader.recv().is_err());
++    }
++
++    #[test]
++    fn reassembled_failure_refuses_external_and_raw_reads_before_side_effects() {
++        let (client, _peer) = configured();
++        let (_socket, mut reader, _writer) = client.detach();
++        assert!(reader.decode_reassembled_configuration(vec![]).is_err());
++        let mut source = std::io::Cursor::new(vec![0; 32]);
++        let bytes_in = reader.counters.bytes_in.load(Ordering::Relaxed);
++        assert_eq!(reader.read_from(&mut source).unwrap_err().kind(),
++            std::io::ErrorKind::NotConnected);
++        assert_eq!(source.position(), 0, "poison must precede external I/O");
++        assert_eq!(reader.counters.bytes_in.load(Ordering::Relaxed), bytes_in);
++        assert!(reader.buffer.is_empty());
++        assert_eq!((reader.start, reader.end), (0, 0));
++        assert!(reader.read_raw(0).is_err(), "zero bytes cannot bypass poison");
++        // Vec allocation would panic for this size if attempted before refusal.
++        assert!(reader.read_raw(usize::MAX).is_err());
++        assert!(reader.buffered().is_err());
++        assert!(reader.recv().is_err());
++    }
++
++    #[test]
++    fn reassembled_success_preserves_prefetched_socket_bytes_and_counters() {
++        let (mut client, mut peer) = configured();
++        peer.send(&[14, 0]).unwrap();
++        client.reader.fill(0).unwrap();
++        let pending = client.reader.buffer[client.reader.start..client.reader.end].to_vec();
++        let bytes_in = client.reader.counters.bytes_in.load(Ordering::Relaxed);
++        let received = client.reader.counters.received.load(Ordering::Relaxed);
++        let sent = client.reader.counters.sent.load(Ordering::Relaxed);
++        assert_eq!(client.reader.decode_reassembled_configuration(vec![14, 0]).unwrap(),
++            (15, vec![0]));
++        assert_eq!(&client.reader.buffer[client.reader.start..client.reader.end], pending);
++        assert_eq!(client.reader.counters.bytes_in.load(Ordering::Relaxed), bytes_in);
++        assert_eq!(client.reader.counters.received.load(Ordering::Relaxed), received);
++        assert_eq!(client.reader.counters.sent.load(Ordering::Relaxed), sent);
++        assert_eq!(client.recv().unwrap(), (15, vec![0]));
++        assert_eq!(client.reader.counters.received.load(Ordering::Relaxed), received + 1);
++        // No bytes read or response fabricated by decoding the reconstructed original.
++        assert_eq!(client.reader.counters.bytes_in.load(Ordering::Relaxed), bytes_in);
++    }
++
++    #[test]
++    fn reassembled_real_codecs_reject_trailing_and_malformed_bodies() {
++        let mut trailing_keepalive = cfg::Clientbound::KeepAlive(cfg::KeepAlive { id: 7 }).encode();
++        trailing_keepalive.push(0);
++        let mut trailing_ping = cfg::Clientbound::Ping(cfg::Ping { id: 7 }).encode();
++        trailing_ping.push(0);
++        for body in [
++            trailing_keepalive,
++            trailing_ping,
++            vec![14, 0, 0], // zero known packs followed by junk
++            vec![14, 1], // missing pack strings
++            vec![14, 0xff, 0xff, 0xff, 0xff, 0x07], // count exceeds remaining bytes
++            vec![14, 0xff, 0xff, 0xff, 0xff, 0x0f], // negative count
++            vec![1, 0x80], // incomplete custom-payload channel length
++        ] {
++            let (mut client, mut peer) = configured();
++            peer.reader.set_read_timeout(Some(Duration::from_millis(50))).unwrap();
++            let session = client.reader.adapter.as_ref().unwrap().clone();
++            assert!(client.reader.decode_reassembled_configuration(body).is_err());
++            assert_eq!(session.reading(), State::Configuration);
++            assert_eq!(session.writing(), State::Configuration);
++            assert!(session.next_incoming().is_none());
++            assert!(client.reader.recv().is_err());
++            assert!(client.send(&cfg::Serverbound::KeepAlive(cfg::KeepAlive { id: 7 }).encode()).is_err(),
++                "attached writer shares transport shutdown");
++            // EOF, not a timeout or a fabricated acknowledgement. The timeout
++            // bounds the regression test if transport shutdown stops working.
++            assert_eq!(peer.reader.stream.read(&mut [0]).unwrap(), 0);
++        }
 +    }
 +
 +    #[test]

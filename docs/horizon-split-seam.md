@@ -5,6 +5,58 @@ Baseline remains MC 1.21.1 / protocol 767 / NeoForge 21.1.248 and Horizon
 full-driver changes, host inventory inventions, flag opt-ins, mod rewrites or
 finish-gate changes belong to this milestone. The client still cannot join.
 
+## Follow-up: terminal ingress bypass fixed
+
+A focused source review found two real bypasses after a rejected reconstructed
+original poisoned the reader. `read_from` still read from its caller-owned source,
+allocated/refilled the cleared receive buffer and incremented bytes-in; guarding
+only `recv`/`buffered` did not prevent those side effects. `read_raw` allocated
+before finding the detached stream, and a zero-length raw read could even succeed.
+
+The actual dependency's connection implementation now checks the terminal bit at
+both public entry points, before source I/O or allocation. Live readers retain
+their old paths; the shared packet-ID parser, allowlist, adapter, size policy and
+phase rules are unchanged. The real packet-enum decoder already checks complete
+body consumption; no second parser or speculative trailing-byte fix was added.
+The inspected list codec checks counts against remaining bytes, and the custom
+payload codec retains its existing directional limits.
+
+Three additional dependency-local tests were added to the existing protocol
+framing filter (not a model or facade):
+
+- A detached reader refuses external reads without consuming a Cursor, changing
+  counters or refilling its buffer; raw reads of zero and `usize::MAX` refuse
+  before success/allocation, and normal/buffered reads remain terminal.
+- A successful reconstructed known-packs original leaves already-prefetched socket
+  bytes and counters unchanged; ordinary receive then delivers that packet once.
+- Actual codecs reject trailing keepalive/ping/known-packs bytes, truncated pack
+  strings/channel length, and impossible/negative counts without adapter phase
+  changes or queued packets; attached peer/writer observe transport shutdown.
+
+Expected selected suites are now **14 companion / 6 protocol framing** (the latter
+is five connection tests plus the existing adapter TCP test). These are authored
+test counts, NOT executed Rust results. The full driver now requires minimum floors **14 / 6**; these are
+selection requirements rather than executed new Rust evidence. Early-configuration/network filters are
+unchanged. Both finish gates remain; no split/flag opt-in or join support added.
+
+Locally executed for this follow-up: all **35 Python tests**, **six fixtures**,
+all nine available original-source hash checks, exact six-file patch application
+and edited-byte comparison, duplicate refusal, reverse check/application and
+original restoration, byte-identical regeneration, and whitespace checking.
+Only four small audit source fetches were attempted (three succeeded, one 404),
+then the packet macro module was fetched separately; the fetched custom-payload
+codec matches its existing pin hash. No compiler/dependency/full-source downloads.
+No Rust/rustfmt/full-engine execution is claimed; hosted compilation remains
+required. Parent-owned handoff, checksums, workflows and full driver were not
+edited; nothing was committed or published.
+
+**Detached close limitation:** after `Connection::detach`, the actual socket is
+owned externally. The seam can poison the reader but cannot shut that socket or
+its independent writer down through `Stream::Detached`. The future caller must
+retain/use a real closer (and reset Loader); no production caller is wired yet.
+The new ingress guard prevents subsequent source consumption, not external socket
+closure. Attached-stream rejection still shuts down both transport directions.
+
 ## Why the transport alternative
 
 The host-inventory audit does not establish an implemented-feature inventory or
@@ -27,7 +79,7 @@ The patch modifies the pinned `horizon-protocol` connection implementation:
   Content packets (including registries and tags), unknown IDs, finish and nested
   `neoforge:split` payloads fail before adaptation. This specifically avoids
   presenting vanilla numeric translation as modded content support.
-- Rejected input shuts down/detaches the stream, clears buffered socket bytes and
+- Rejected input shuts down/detaches an attached stream, clears buffered socket bytes and
   terminally poisons ordinary recv, buffered reads and repeated seam calls. The
   terminal check precedes queued adapter delivery. Fresh connections are separate.
 - Successful decoding returns one adapted packet without reading a socket packet,
@@ -72,9 +124,10 @@ verify finish refusal before a phase change/ack, and refusal of a valid registry
 packet before content translation. Independent patch testing remains possible:
 full-engine-only companion tests are excluded explicitly by the isolated checker,
 without fake Horizon declarations. Full companion filter should now execute
-14 tests (9 existing + 5); protocol framing filter should execute 3 (1 existing
-TCP + 2 new). The full driver now requires 14 companion and 3 protocol passes; these
-are selection floors, NOT executed new Rust test results. Existing early endpoint filter stays at 9.
+14 tests (9 existing + 5); protocol framing originally selected 3 (1 existing
+TCP + 2 new), now 6 after the follow-up above. The full driver now requires
+14 companion and 6 protocol passes; these are selection floors, NOT executed new
+Rust test results. Existing early endpoint filter stays at 9.
 
 ## Remaining prerequisites
 

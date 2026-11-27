@@ -6,6 +6,32 @@ Read AGENTS.md and linked handoffs, then this file. Keep every commit attributed
 
     AI-Assisted-By: QX AI assistant
 
+## Terminal decoder ingress hardening checkpoint
+
+Follow-up source review found that reconstructed-packet rejection poisoned recv
+and buffered reads, but public read_from could still consume caller-owned input,
+refill buffers and increment counters. read_raw allocated before finding the
+closed stream, and zero-length raw reads could succeed. Both now refuse before
+I/O/allocation. Added three actual dependency-local tests covering external/raw
+terminal reads, preservation of prefetched packet bytes/counters on success, and
+real-codec malformed/trailing/count rejection with attached transport shutdown.
+Full-driver floors are now 14 companion / 6 protocol / 9 early / 81 network.
+These new Rust tests are NOT executed locally. Both finish refusals and default
+split/flag refusals remain. Client STILL CANNOT JOIN.
+
+Executed locally: 35 Python tests, six fixtures, syntax, whitespace/checksums;
+narrow exact-source hash and patch apply/reverse/restoration/regeneration checks.
+Last current-head run 46083513758 (SHA 89adc878a4d96b1ccb102326f3c73f3a5d39224e)
+had no jobs yet when inspected. Older 46082288102 was still in its full engine
+step, with preflight/core/provenance/isolated checks successful. A background
+CI inspection is retaining completed/failing evidence; no new full success is
+inferred. This commit requires its own SHA's run; verify remote before edits.
+
+Detached socket caveat: the socket returned by Connection::detach belongs to its
+caller; reader poisoning cannot shut that externally owned socket or independent
+writer. Future production wiring must keep a real closer and reset Loader on
+all failures. No production split ingress/timer/authority/queue route is enabled.
+
 ## Concrete split decoder seam checkpoint
 
 Substantive six-file Horizon patch now adds a concrete protocol-reader boundary

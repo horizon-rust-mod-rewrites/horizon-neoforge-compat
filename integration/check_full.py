@@ -208,7 +208,7 @@ def main():
     for package, test_filter, minimum_passed in [
         ('horizon-client-lib', 'neoforge_compat_bridge::tests::', 14),
         ('horizon-client-lib', 'early_configuration', 9),
-        ('horizon-protocol', 'neoforge_configuration_framing_tests', 3),
+        ('horizon-protocol', 'neoforge_configuration_framing_tests', 6),
         ('horizon-client-lib', 'net::tests::', 81),
     ]:
         execute(['test', '--locked', '--offline', '-p', package, '--no-default-features',
