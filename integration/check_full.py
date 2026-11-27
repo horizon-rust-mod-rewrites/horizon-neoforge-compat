@@ -84,10 +84,21 @@ def wire_companion(scratch):
 
 def check_lock(before, after):
     """Adding the local dependency must not change any existing pinned dependency."""
-    old = {p['name'] + '@' + p['version'] + '@' + p.get('source', ''): p
-           for p in before['package']}
-    new = {p['name'] + '@' + p['version'] + '@' + p.get('source', ''): p
-           for p in after['package']}
+    if ({k: v for k, v in before.items() if k != 'package'}
+            != {k: v for k, v in after.items() if k != 'package'}):
+        raise RuntimeError('companion changed pinned lock metadata')
+
+    def indexed(packages):
+        entries = {}
+        for package in packages:
+            key = package['name'] + '@' + package['version'] + '@' + package.get('source', '')
+            if key in entries:
+                raise RuntimeError('duplicate pinned lock identity: ' + key)
+            entries[key] = package
+        return entries
+
+    old = indexed(before['package'])
+    new = indexed(after['package'])
     for key, original in old.items():
         expected = dict(original)
         if original['name'] == 'horizon-client-lib':

@@ -79,6 +79,23 @@ class LockAuditTests(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, 'existing pinned lock entry'):
             self.audit()
 
+    def test_duplicate_lock_identities_refuse_in_either_graph(self):
+        for graph in [self.before, self.after]:
+            with self.subTest(graph=graph):
+                graph['package'].append(copy.deepcopy(graph['package'][1]))
+                with self.assertRaisesRegex(RuntimeError, 'duplicate pinned lock identity'):
+                    self.audit()
+                graph['package'].pop()
+
+    def test_lock_metadata_changes_refuse(self):
+        for key, value in [('version', 3), ('metadata', {'injected': 'value'})]:
+            with self.subTest(key=key):
+                changed = copy.deepcopy(self.after)
+                changed[key] = value
+                with self.assertRaisesRegex(RuntimeError, 'pinned lock metadata'):
+                    check_full.check_lock(self.before, changed)
+
+
 
 class WiringTests(unittest.TestCase):
     def test_actual_glue_bytes_and_explicit_dependency_are_wired_only_in_scratch(self):

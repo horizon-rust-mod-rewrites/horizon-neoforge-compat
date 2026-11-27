@@ -6,6 +6,22 @@ Read AGENTS.md and linked handoffs, then this file. Keep every commit attributed
 
     AI-Assisted-By: QX AI assistant
 
+## Lock-audit ambiguity hardening / handoff checkpoint
+
+The full-driver lock audit now rejects duplicate package identities in either
+input instead of silently losing entries during dictionary construction, and
+rejects changed top-level lock format/metadata. Two new synthetic regression
+tests cover both graphs and metadata/version mutation. Local 35 Python tests,
+six fixtures, actionlint and whitespace validation pass. No Rust or engine
+behavior change; new actual companion Rust tests still need hosted execution.
+
+Latest observed CI: run 46082076294 for 025097c4c is PENDING, with no jobs yet;
+46081103967 for documentation/evidence commit 16d6ce33e is IN PROGRESS. Intermediate
+runs 46081949222 and 46082027794 were CANCELLED, not passing. Do not assume the
+new preflight or nine companion tests have executed. This next pushed commit
+will enqueue its own run; inspect current branch HEAD and jobs before more work.
+No full source/compiler/dependency downloads in the 1 GiB local environment.
+
 ## Fast actual-companion CI prerequisite
 
 Added a ten-minute standard hosted prerequisite that runs actual isolated
