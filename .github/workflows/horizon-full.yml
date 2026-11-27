@@ -32,9 +32,9 @@ jobs:
       CARGO_BUILD_JOBS: '2'
       CARGO_PROFILE_DEV_DEBUG: '0'
       CARGO_PROFILE_TEST_DEBUG: '0'
-      CARGO_HOME: ${{ runner.temp }}/neoforge-cargo
-      HORIZON_PIN: ${{ runner.temp }}/horizon-pin
-      HORIZON_SCRATCH: ${{ runner.temp }}/horizon-full
+      CARGO_HOME: ${{ github.workspace }}/../neoforge-cargo
+      HORIZON_PIN: ${{ github.workspace }}/../horizon-pin
+      HORIZON_SCRATCH: ${{ github.workspace }}/../horizon-full
       HORIZON_TELEMETRY_URL: 'off'
       # Avoid inherited unstable parallel-front-end flags from upstream config.
       RUSTFLAGS: '-C debuginfo=0'

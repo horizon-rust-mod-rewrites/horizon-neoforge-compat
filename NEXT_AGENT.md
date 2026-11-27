@@ -6,6 +6,15 @@ Read AGENTS.md and linked handoffs, then this file. Keep every commit attributed
 
     AI-Assisted-By: QX AI assistant
 
+## Hosted workflow parser correction
+
+Initial run https://github.com/horizon-rust-mod-rewrites/horizon-neoforge-compat/actions/runs/46065494193
+failed BEFORE any job was allocated: job-level env cannot reference `runner`.
+Corrected the three job-level paths to workspace siblings using `github.workspace`
+(which is valid there); step-level `runner.temp` remains valid. This initial
+failure is workflow parsing only, NOT compilation evidence. Added actionlint to
+local validation beyond YAML/bash parsing; hosted build still pending.
+
 ## Hosted full-build checkpoint (2026-11-27)
 
 Owner explicitly requested public visibility (now public), then ongoing work
