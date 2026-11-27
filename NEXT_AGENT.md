@@ -1,10 +1,37 @@
 # Credit-conscious continuation: start here
 
-Continue existing private draft PR #1, branch
+Continue existing draft PR #1, branch
 `feat/neoforge-21.1.248-early-handshake`; always verify current remote HEAD.
 Read AGENTS.md and linked handoffs, then this file. Keep every commit attributed:
 
     AI-Assisted-By: QX AI assistant
+
+## Hosted full-build checkpoint (2026-11-27)
+
+Owner explicitly requested public visibility (now public), then ongoing work
+with frequent attributed commits on this SAME draft PR, without pausing after
+each checkpoint. This supersedes historical private-only wording; do not change
+visibility again without a new owner request. Remote start verified at
+`5591f0bd33ca9160e073ab4fc05f9e36f498ee7c`.
+
+Added `.github/workflows/horizon-full.yml`: standard public GitHub ubuntu-24.04
+runner only, 90-minute timeout, read-only token, no stored checkout credentials,
+SHA-pinned checkout/artifact actions, no secrets, no paid larger runner. Checks
+10 GiB free before large inputs, installs Rust 1.95.0/native headers, reruns core
+and Python safety tests, retrieves the COMPLETE exact Horizon pin, checks patch
+and isolated bridge, fetches locked host-target dependencies INCLUDING dev crates,
+and invokes the existing full integration driver. Its logs only (no game data or
+source archives) are retained as a seven-day artifact. Workflow triggers only on
+relevant source/integration/workflow pushes to this branch, not doc-only updates.
+No merges, force pushes, main changes, fake tasks or finish-gate removal.
+
+Local executed evidence: workflow YAML and every bash snippet parsed; read-only
+permissions/standard runner checked; 15 Python tests and six synthetic fixtures
+pass; `git diff --check` passes. Full hosted run is PENDING, not passing evidence.
+No large local downloads retried on the still-1-GiB machine. Review actual Actions
+results and retained `ci-evidence/full-check.txt` before any success claim; fix
+real compilation/runtime failures in small tested commits. Full engine/companion,
+TCP and Rust reruns are NOT yet executed at this checkpoint. Client cannot join.
 
 ## Disk-first continuation checkpoint (2026-11-27)
 

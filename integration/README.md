@@ -9,6 +9,17 @@ optimistic bridge cannot enter play without the missing bidirectional modded
 content conversion boundary. Do not remove it merely because negotiation codecs
 pass tests. There is no production placeholder Bridge in the patch.
 
+## Hosted full check
+
+`.github/workflows/horizon-full.yml` runs on a standard public GitHub Ubuntu
+runner, with Rust 1.95.0, disk checks BEFORE downloads, complete pinned upstream
+source, locked host-target test dependencies and the existing full driver. Its
+read-only job retains textual evidence for seven days (never source/game data).
+A workflow definition is NOT a passing result. Inspect each run and its
+`full-check.txt` artifact; full compilation/runtime remains pending until an
+actual run completes successfully. No join or content-semantic evidence is
+provided by this workflow. See NEXT_AGENT.md for the current run status.
+
 ## Disk-first follow-up checkpoint (2026-11-27)
 
 The next machine again has only **1 GiB total disk**. No full source/toolchain/
