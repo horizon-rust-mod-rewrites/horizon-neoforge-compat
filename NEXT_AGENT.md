@@ -6,6 +6,30 @@ Read AGENTS.md and linked handoffs, then this file. Keep every commit attributed
 
     AI-Assisted-By: QX AI assistant
 
+## First executed full-host build: typecheck PASSED, tests toolchain-blocked
+
+Actual run: https://github.com/horizon-rust-mod-rewrites/horizon-neoforge-compat/actions/runs/46065611717
+(commit `5ff746f78e9ff9524e6c344127182044bebb2943`, Ubuntu GNU, Rust 1.95.0).
+Disk was ample: ~89.6 GB free; complete exact upstream pin verified all 12,354
+blobs with zero missing. BOTH full patched horizon-client-lib typechecks passed,
+including the actual companion; audited lock change added only the local core.
+This supersedes historical claims that full compilation was never reached.
+
+The FIRST full client test invocation was refused before compilation because
+locked test-only Wasmtime 50 / Cranelift 0.137 require Rust **1.97.0**, despite
+upstream workspace declaring 1.95 minimum. Do not downgrade/update the pinned
+dependency graph or use --ignore-rust-version. Hosted toolchain now upgraded to
+exact 1.97.0 to satisfy the locked graph. Subsequent run remains unverified.
+Full-engine test compilation, configure/writer runtime, TCP and default net
+regressions DID NOT execute in this first run. No joining/content claim.
+
+Executed in the first run: core 153 tests in EACH debug/release, strict Clippy,
+formatting, warning-denied docs; 15 then-present Python tests; six fixtures;
+27 source hashes, patch/reversal/restoration; 8 isolated endpoint tests, actual
+protocol-table test; 12 isolated companion tests (including those same endpoint
+cases; do not sum). Text evidence retained here as `integration/hosted-first-*.txt`,
+not just seven-day Actions artifacts. Both finish gates and production code unchanged.
+
 ## Full-driver regression safety checkpoint
 
 Added 13 dependency-free synthetic lock/wiring regression tests (28 Python tests

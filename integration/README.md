@@ -9,10 +9,21 @@ optimistic bridge cannot enter play without the missing bidirectional modded
 content conversion boundary. Do not remove it merely because negotiation codecs
 pass tests. There is no production placeholder Bridge in the patch.
 
+## First hosted result
+
+Run [46065611717](https://github.com/horizon-rust-mod-rewrites/horizon-neoforge-compat/actions/runs/46065611717)
+verified the complete pin and passed BOTH full patched-client typechecks,
+including actual companion wiring and lock audit. Rust 1.95.0 then refused the
+first full test build: locked Wasmtime/Cranelift test dependencies need 1.97.0.
+The workflow now installs 1.97.0 without changing upstream dependencies. Engine
+runtime/TCP/default regressions remain unexecuted in that run. Core 153 tests per
+profile, Clippy/docs/fmt and isolated checks passed on GNU. Exact retained
+transcripts: `hosted-first-*.txt`; see NEXT_AGENT.md. No finish gate removed.
+
 ## Hosted full check
 
 `.github/workflows/horizon-full.yml` runs on a standard public GitHub Ubuntu
-runner, with Rust 1.95.0, disk checks BEFORE downloads, complete pinned upstream
+runner, with Rust 1.97.0 (locked test dependencies require it), disk checks BEFORE downloads, complete pinned upstream
 source, locked host-target test dependencies and the existing full driver. Its
 read-only job retains textual evidence for seven days (never source/game data).
 A workflow definition is NOT a passing result. Inspect each run and its

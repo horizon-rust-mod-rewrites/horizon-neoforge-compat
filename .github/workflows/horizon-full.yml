@@ -58,8 +58,8 @@ jobs:
           sudo timeout 300 apt-get update
           sudo timeout 300 apt-get install -y --no-install-recommends \
             build-essential pkg-config libasound2-dev libudev-dev
-          rustup toolchain install 1.95.0 --profile minimal --component rustfmt --component clippy
-          rustup default 1.95.0
+          rustup toolchain install 1.97.0 --profile minimal --component rustfmt --component clippy
+          rustup default 1.97.0
           rustc --version | tee ci-evidence/toolchain.txt
           cargo --version | tee -a ci-evidence/toolchain.txt
       - name: Revalidate core and driver safety

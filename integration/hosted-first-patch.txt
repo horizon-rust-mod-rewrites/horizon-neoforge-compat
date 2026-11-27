@@ -1,0 +1,36 @@
+test_default_reconfiguration_still_uses_original_path (__main__.main.<locals>.Structure.test_default_reconfiguration_still_uses_original_path) ... ok
+test_finish_is_before_horizon_accept_and_writer_transition (__main__.main.<locals>.Structure.test_finish_is_before_horizon_accept_and_writer_transition) ... ok
+test_opt_in_and_offer_suppression (__main__.main.<locals>.Structure.test_opt_in_and_offer_suppression) ... ok
+test_route_precedes_horizon_special_cases_and_generic_dispatch (__main__.main.<locals>.Structure.test_route_precedes_horizon_special_cases_and_generic_dispatch) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.001s
+
+OK
+PASS: HEAD ae632edf48f6cae3ba52a5c81523ec712488c9cc, 14 provenance hashes + 13 integration hashes
+PASS: clean application, reverse check, duplicate application refused
+rustc 1.95.0 (59807616e 2026-04-14)
+
+running 8 tests
+test tests::early_loader_delivery_preserves_body_and_replies_without_an_accepted_horizon_epoch ... ok
+test tests::finish_refuses_pending_tasks_and_drop_resets_before_next_epoch ... ok
+test tests::invalid_batch_is_rejected_whole_and_even_optimistic_bridge_cannot_enter_play ... ok
+test tests::profile_rejects_wrong_baselines_and_reserved_or_duplicate_adapters ... ok
+test tests::payload_refusal_diagnostics_do_not_reflect_invalid_or_unbounded_identifiers ... ok
+test tests::undeclared_or_oversized_payloads_never_reach_bridge ... ok
+test tests::unsupported_neoforge_tasks_poison_the_epoch_and_cannot_finish ... ok
+test tests::unwinding_external_bridge_panic_poisoned_epoch_cannot_resume_or_finish ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+
+running 1 test
+test directions_767 ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+NOT EXECUTED here: full Horizon configure/queued-writer and TCP framing tests; see README.
+PASS: exact restoration after reverse application
+PASS: HEAD ae632edf48f6cae3ba52a5c81523ec712488c9cc, 14 provenance hashes + 13 integration hashes
