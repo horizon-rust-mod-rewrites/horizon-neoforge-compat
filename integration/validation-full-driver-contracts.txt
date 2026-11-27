@@ -1,0 +1,33 @@
+test_below_reservation_refuses (test_check_full.DiskPreflightTests.test_below_reservation_refuses) ... ok
+test_exact_reservation_passes (test_check_full.DiskPreflightTests.test_exact_reservation_passes) ... ok
+test_invalid_reservations_refuse_before_disk_access (test_check_full.DiskPreflightTests.test_invalid_reservations_refuse_before_disk_access) ... ok
+test_minimum_allowed_reservation (test_check_full.DiskPreflightTests.test_minimum_allowed_reservation) ... ok
+test_source_copy_is_additional (test_check_full.DiskPreflightTests.test_source_copy_is_additional) ... ok
+test_disk_only_ignores_optional_nonexistent_source (test_check_full.DriverPreflightTests.test_disk_only_ignores_optional_nonexistent_source) ... ok
+test_disk_only_low_space_refuses (test_check_full.DriverPreflightTests.test_disk_only_low_space_refuses) ... ok
+test_disk_only_success_does_not_claim_build_or_touch_inputs (test_check_full.DriverPreflightTests.test_disk_only_success_does_not_claim_build_or_touch_inputs) ... ok
+test_existing_scratch_refuses_without_modification (test_check_full.DriverPreflightTests.test_existing_scratch_refuses_without_modification) ... ok
+test_missing_parent_refuses_without_creation (test_check_full.DriverPreflightTests.test_missing_parent_refuses_without_creation) ... ok
+test_normal_mode_missing_source_blobs_refuse (test_check_full.DriverPreflightTests.test_normal_mode_missing_source_blobs_refuse) ... ok
+test_normal_mode_rechecks_disk_with_source_copy_size (test_check_full.DriverPreflightTests.test_normal_mode_rechecks_disk_with_source_copy_size) ... ok
+test_normal_mode_refuses_disk_before_reading_source (test_check_full.DriverPreflightTests.test_normal_mode_refuses_disk_before_reading_source) ... ok
+test_normal_mode_still_rejects_overlapping_trees (test_check_full.DriverPreflightTests.test_normal_mode_still_rejects_overlapping_trees) ... ok
+test_normal_mode_still_requires_source (test_check_full.DriverPreflightTests.test_normal_mode_still_requires_source) ... ok
+test_client_did_not_link_core_refuses (test_full_contracts.LockAuditTests.test_client_did_not_link_core_refuses) ... ok
+test_core_from_registry_refuses (test_full_contracts.LockAuditTests.test_core_from_registry_refuses) ... ok
+test_core_not_added_refuses (test_full_contracts.LockAuditTests.test_core_not_added_refuses) ... ok
+test_existing_checksum_change_refuses (test_full_contracts.LockAuditTests.test_existing_checksum_change_refuses) ... ok
+test_existing_source_change_refuses (test_full_contracts.LockAuditTests.test_existing_source_change_refuses) ... ok
+test_existing_version_change_refuses (test_full_contracts.LockAuditTests.test_existing_version_change_refuses) ... ok
+test_extra_unexpected_package_refuses (test_full_contracts.LockAuditTests.test_extra_unexpected_package_refuses) ... ok
+test_new_transitive_dependency_on_core_refuses (test_full_contracts.LockAuditTests.test_new_transitive_dependency_on_core_refuses) ... ok
+test_only_local_core_addition_passes (test_full_contracts.LockAuditTests.test_only_local_core_addition_passes) ... ok
+test_removed_existing_package_refuses (test_full_contracts.LockAuditTests.test_removed_existing_package_refuses) ... ok
+test_unexpected_client_dependency_refuses (test_full_contracts.LockAuditTests.test_unexpected_client_dependency_refuses) ... ok
+test_actual_glue_bytes_and_explicit_dependency_are_wired_only_in_scratch (test_full_contracts.WiringTests.test_actual_glue_bytes_and_explicit_dependency_are_wired_only_in_scratch) ... ok
+test_unexpected_manifest_shape_refuses (test_full_contracts.WiringTests.test_unexpected_manifest_shape_refuses) ... ok
+
+----------------------------------------------------------------------
+Ran 28 tests in 0.033s
+
+OK

@@ -6,6 +6,24 @@ Read AGENTS.md and linked handoffs, then this file. Keep every commit attributed
 
     AI-Assisted-By: QX AI assistant
 
+## Full-driver regression safety checkpoint
+
+Added 13 dependency-free synthetic lock/wiring regression tests (28 Python tests
+now pass together). These retain the actual companion/test-module bytes, verify
+explicit local path wiring, and reject changed dependency versions, checksums,
+sources, removed packages, unexpected additions, registry substitution or newly
+introduced dependencies. These are tooling tests, NOT Cargo/engine validation.
+Transcript: `integration/validation-full-driver-contracts.txt`.
+
+Read-only exact-pin host audit also confirms that received enabled-feature lists,
+world/candidate flags and generic flag-condition evaluators are NOT authoritative
+inventories of implemented modded flags. `FeatureFlags::iter()` even synthesizes
+vanilla on empty backing storage. Do not replace unknown inventory with empty,
+or use the server's enabled list/pack fingerprint as local support evidence.
+Companion opt-in stays disabled pending a genuine host-owned capability snapshot
+bound to the actual implementation/profile lifetime; see
+`docs/horizon-host-inventory-audit.md`. Both finish gates stay unchanged.
+
 ## Hosted workflow parser correction
 
 Initial run https://github.com/horizon-rust-mod-rewrites/horizon-neoforge-compat/actions/runs/46065494193
