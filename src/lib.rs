@@ -1,9 +1,13 @@
-//! A tested common-networking subset, NOT a NeoForge client or loadable Horizon mod.
+//! Bounded loader negotiation infrastructure, NOT a joining client or loadable mod.
 //! All byte slices are payload bodies (no channel, packet ID, compression or framing).
 #![forbid(unsafe_code)]
 pub mod codec;
 pub mod extension;
+pub mod loader;
+pub mod modded;
+pub mod negotiation;
 pub mod registry;
+pub mod registry_sync;
 pub mod session;
 
 pub const MINECRAFT: &str = "1.21.1";

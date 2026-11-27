@@ -1,0 +1,962 @@
+diff --git a/crates/horizon-client/src/net.rs b/crates/horizon-client/src/net.rs
+--- a/crates/horizon-client/src/net.rs
++++ b/crates/horizon-client/src/net.rs
+@@ -7,6 +7,10 @@
+ //! (crate::auth): the login joins the server through the session service and
+ //! encrypts the connection (ClientHandshakePacketListenerImpl.handleHello).
+ use crate::auth::AuthSession;
++pub mod early_configuration;
++#[cfg(test)]
++#[path = "net/early_configuration_net_tests.rs"]
++mod early_configuration_net_tests;
+ pub mod ingress;
+ mod known_packs;
+ use known_packs::{fill_known_entries, select_known_packs};
+@@ -320,6 +324,30 @@
+             address, name, auth, info, lang, None, None, resources, false,
+         )
+     }
++    /// Explicit early NeoForge endpoint. This bootstrap milestone intentionally
++    /// refuses finish: it does not supply modded play/content conversion.
++    pub fn connect_neoforge(
++        address: &str,
++        name: &str,
++        auth: Option<Arc<AuthSession>>,
++        info: cfg::ClientInformation,
++        lang: Arc<Language>,
++        resources: Arc<ItemData>,
++        profile: early_configuration::Profile,
++    ) -> Self {
++        Self::start_with_profile(
++            address,
++            name,
++            auth,
++            info,
++            lang,
++            None,
++            None,
++            resources,
++            false,
++            Some(profile),
++        )
++    }
+     /// `ClientHandshakePacketListenerImpl.handleHello`: LAN entries can continue
+     /// after session authentication fails; the server still decides whether to admit them.
+     /// Only for entries selected from LAN discovery, not addresses classified by IP.
+@@ -412,6 +440,22 @@
+         cookies: Option<Cookies>,
+         resources: Arc<ItemData>,
+         lan: bool,
++    ) -> Self {
++        Self::start_with_profile(
++            address, name, auth, info, lang, local, cookies, resources, lan, None,
++        )
++    }
++    fn start_with_profile(
++        address: &str,
++        name: &str,
++        auth: Option<Arc<AuthSession>>,
++        info: cfg::ClientInformation,
++        lang: Arc<Language>,
++        local: Option<horizon_protocol::connection::Pipe>,
++        cookies: Option<Cookies>,
++        resources: Arc<ItemData>,
++        lan: bool,
++        early_profile: Option<early_configuration::Profile>,
+     ) -> Self {
+         let (send, events) = event_channel();
+         let payload_events = send.clone();
+@@ -462,6 +506,7 @@
+                     &thread_recorder,
+                     &thread_payloads,
+                     &thread_reached,
++                    early_profile.as_ref(),
+                 )
+             });
+             thread_payloads.close();
+@@ -1084,6 +1129,7 @@
+     recorder: &RecorderSlot,
+     payloads: &Arc<crate::raw_payloads::Transport>,
+     reached: &AtomicU8,
++    early_profile: Option<&early_configuration::Profile>,
+ ) -> Result<Reason, Reason> {
+     let (host, port, mut c) = if let Some(pipe) = local {
+         (address.to_owned(), 0, Connection::local(pipe))
+@@ -1129,7 +1175,11 @@
+                 .write_raw(&token)
+                 .map_err(|e| Reason::plain(e.to_string()))?;
+         }
+-        if !address.starts_with(FRIEND)
++        if early_profile.is_some() {
++            // Explicit profile pins the wire protocol; never infer the loader
++            // from a status brand, or silently fall back to current protocol.
++            c.adapt(horizon_protocol::adapter::ServerVersion::V1_21_1);
++        } else if !address.starts_with(FRIEND)
+             && let Some(version) = older_server(address)
+         {
+             log::info!("Joining {address} as a {} server", version.name());
+@@ -1241,21 +1291,23 @@
+     status(send, &tr(lang, "connect.joining"));
+     // ClientHandshakePacketListenerImpl.handleLoginFinished: the brand, then
+     // the client information.
+-    c.send(
+-        &cfg::Serverbound::CustomPayload(cfg::CustomPayload {
+-            channel: "minecraft:brand".into(),
+-            data: brand(),
+-        })
+-        .try_encode()
+-        .map_err(e)?,
+-    )
+-    .map_err(e)?;
++    if early_profile.is_none() {
++        c.send(
++            &cfg::Serverbound::CustomPayload(cfg::CustomPayload {
++                channel: "minecraft:brand".into(),
++                data: brand(),
++            })
++            .try_encode()
++            .map_err(e)?,
++        )
++        .map_err(e)?;
++    }
+     c.send(&cfg::Serverbound::ClientInformation(info).encode())
+         .map_err(e)?;
+     let (mut reader, writer) = c.split();
+     *shared_writer.lock().unwrap() =
+         Some(QueuedWriter::new(writer).map_err(|error| Reason::plain(error.to_string()))?);
+-    let registries = configure(
++    let registries = configure_with_profile(
+         &mut reader,
+         shared_writer,
+         configuring,
+@@ -1265,6 +1317,7 @@
+         resources,
+         payloads,
+         true,
++        early_profile,
+     )?;
+     deliver(
+         send,
+@@ -1750,18 +1803,56 @@
+     // The connection's first configuration, not a reconfiguration from play.
+     initial: bool,
+ ) -> Result<Dynamic, Reason> {
++    configure_with_profile(
++        reader,
++        writer,
++        configuring,
++        lang,
++        send,
++        cookies,
++        resources,
++        payloads,
++        initial,
++        None,
++    )
++}
++
++fn configure_with_profile(
++    reader: &mut ConnReader,
++    writer: &Arc<Mutex<Option<QueuedWriter>>>,
++    configuring: &Arc<AtomicBool>,
++    lang: &Language,
++    send: &ingress::Producer<Event>,
++    cookies: &Cookies,
++    resources: &ItemData,
++    payloads: &Arc<crate::raw_payloads::Transport>,
++    // The connection's first configuration, not a reconfiguration from play.
++    initial: bool,
++    early_profile: Option<&early_configuration::Profile>,
++) -> Result<Dynamic, Reason> {
+     let mut registries = Dynamic::default();
+     let mut content_verified = false;
+     payloads.begin_configuration();
++    // Fresh bridge per epoch; the stack guard resets it on every return path.
++    // Begin BEFORE any Horizon offer or receive dispatch.
++    let mut early = early_profile
++        .map(early_configuration::Profile::begin)
++        .transpose()
++        .map_err(|error| Reason::plain(format!("configuration/bootstrap: {error:?}")))?;
+     let mut negotiation =
+         horizon_protocol::payload_negotiation::Negotiation::new(payloads.local.manifest.clone());
+     crate::datapack_net::clear_received();
+     let reply = |p: cfg::Serverbound| -> Result<(), Reason> {
+         match writer.lock().unwrap().as_mut() {
+-            Some(w) => p
+-                .try_encode_with_payload_codecs(&payloads.local.codecs)
+-                .and_then(|body| w.send(&body))
+-                .map_err(|e| Reason::plain(connection_lost(e, lang))),
++            Some(w) => {
++                let body = if early_profile.is_some() {
++                    p.try_encode()
++                } else {
++                    p.try_encode_with_payload_codecs(&payloads.local.codecs)
++                };
++                body.and_then(|body| w.send(&body))
++                    .map_err(|e| Reason::plain(connection_lost(e, lang)))
++            }
+             None => Err(Reason::plain("Disconnected")),
+         }
+     };
+@@ -1793,7 +1884,8 @@
+     };
+     // With only engine declarations the client waits for the server's query, so a vanilla
+     // server is sent nothing new.
+-    if payloads.local.has_mod_declarations()
++    if early_profile.is_none()
++        && payloads.local.has_mod_declarations()
+         && let Some(control) = negotiation.initial()
+     {
+         send_control(control, &mut build_sent)?;
+@@ -1802,10 +1894,35 @@
+         let (id, payload) = reader
+             .recv()
+             .map_err(|e| Reason::plain(connection_lost(e, lang)))?;
+-        match cfg::Clientbound::decode_with_payload_codecs(id, &payload, &payloads.local.codecs)
+-            .map_err(|e| Reason::plain(connection_lost(e, lang)))?
+-        {
++        let packet = if early_profile.is_some() {
++            cfg::Clientbound::decode(id, &payload)
++        } else {
++            cfg::Clientbound::decode_with_payload_codecs(id, &payload, &payloads.local.codecs)
++        }
++        .map_err(|e| Reason::plain(connection_lost(e, lang)))?;
++        match packet {
+             cfg::Clientbound::KeepAlive(k) => reply(cfg::Serverbound::KeepAlive(k))?,
++            // Before EVERY Horizon special case and generic application routing.
++            // Brand stays engine-owned but can never activate Horizon offers here.
++            cfg::Clientbound::CustomPayload(p) if early.is_some() => {
++                if p.channel == "minecraft:brand" {
++                    receive_brand(&p, send);
++                    continue;
++                }
++                let replies = early
++                    .as_mut()
++                    .expect("guarded endpoint")
++                    .receive(&p.channel, &p.data)
++                    .map_err(|error| {
++                        Reason::plain(format!("configuration/{}: {error:?}", p.channel))
++                    })?;
++                for response in replies {
++                    reply(cfg::Serverbound::CustomPayload(cfg::CustomPayload {
++                        channel: response.channel,
++                        data: response.body,
++                    }))?;
++                }
++            }
+             cfg::Clientbound::CustomPayload(p) if p.channel == crate::build_mismatch::CHANNEL => {
+                 server_build = crate::build_mismatch::decode(&p.data);
+             }
+@@ -1953,6 +2070,18 @@
+             }
+             cfg::Clientbound::Disconnect(d) => return Err(Reason::tag(&d.reason, lang)),
+             cfg::Clientbound::FinishConfiguration(_) => {
++                if let Some(endpoint) = early.as_mut() {
++                    // Adapter reading may already be Play. On error immediately
++                    // unwind and shut down: no ack, writer transition or next read.
++                    return match endpoint.finish() {
++                        Err(error) => {
++                            Err(Reason::plain(format!("configuration/finish: {error:?}")))
++                        }
++                        Ok(()) => {
++                            unreachable!("early endpoint retains the modded-play safety latch")
++                        }
++                    };
++                }
+                 // A Horizon server that never sent on horizon:payloads predates the
+                 // negotiation: play on with nothing negotiated, as on a vanilla server.
+                 // Only on the first configuration: a server that goes silent when it
+@@ -1995,6 +2124,11 @@
+                     })
+                     .map_err(Reason::plain)?;
+                 return Ok(registries);
++            }
++            cfg::Clientbound::Unknown(id, _) if early.is_some() => {
++                return Err(Reason::plain(format!(
++                    "configuration/packet/{id}: unsupported_packet"
++                )));
+             }
+             _ => {}
+         }
+diff --git a/crates/horizon-client/src/net/early_configuration.rs b/crates/horizon-client/src/net/early_configuration.rs
+new file mode 100644
+--- /dev/null
++++ b/crates/horizon-client/src/net/early_configuration.rs
+@@ -0,0 +1,181 @@
++// SPDX-License-Identifier: LGPL-3.0-or-later
++//! Engine-owned, explicitly selected configuration endpoint. No global registration,
++//! Horizon negotiation, play delivery, or implicit permission from channel lists.
++use std::{collections::BTreeSet, sync::Arc};
++
++pub const MAX_BODY: usize = 32_767;
++const MAX_CHANNELS: usize = 1_024;
++const MAX_REPLIES: usize = 32;
++const MAX_REPLY_BYTES: usize = 65_536;
++
++/// Stable diagnostic code; the engine adds phase/channel context when displaying it.
++#[derive(Clone, Debug, PartialEq, Eq)]
++pub struct Failure(pub &'static str);
++pub type Result<T> = std::result::Result<T, Failure>;
++
++pub struct Reply {
++    pub channel: String,
++    /// Body only: never include the channel, packet id or length a second time.
++    pub body: Vec<u8>,
++}
++
++/// Implemented outside the engine by the actual compatibility layer. No default
++/// handlers: unsupported required work MUST return Err, never an empty success.
++/// Calls are synchronous on the network thread: bounded decoding/work only. A task
++/// needing main-thread completion must remain pending and refuse the finish barrier.
++pub trait Bridge: Send {
++    fn receive(&mut self, channel: &str, body: &[u8]) -> Result<Vec<Reply>>;
++    /// Must check negotiation, required handlers, tasks, and atomically applied maps.
++    fn finish(&mut self) -> Result<()>;
++    /// Discard all epoch state, including staged maps/work. Called on EVERY exit.
++    fn reset(&mut self);
++}
++
++/// A new, independent bridge for each configuration. Do not share mutable epochs
++/// between connections. The fingerprint identifies caller-attested pack inventory,
++/// not a claim that a server brand/status packet authenticates that inventory.
++pub trait Factory: Send + Sync {
++    fn create(&self, pack_sha256: [u8; 32]) -> Result<Box<dyn Bridge>>;
++}
++
++/// Connection-scoped opt-in; not a normal mod payload declaration. The caller
++/// supplies an exact out-of-band inventory and handler-backed adapter allowlist.
++#[derive(Clone)]
++pub struct Profile {
++    pack_sha256: [u8; 32],
++    adapters: BTreeSet<String>,
++    factory: Arc<dyn Factory>,
++}
++impl Profile {
++    pub fn neoforge(
++        minecraft: &str,
++        protocol: i32,
++        loader: &str,
++        pack_sha256: [u8; 32],
++        adapters: Vec<String>,
++        factory: Arc<dyn Factory>,
++    ) -> Result<Self> {
++        if (minecraft, protocol, loader) != ("1.21.1", 767, "21.1.248") {
++            return Err(Failure("unsupported_baseline"));
++        }
++        if pack_sha256 == [0; 32] || adapters.len() > MAX_CHANNELS {
++            return Err(Failure("invalid_inventory"));
++        }
++        let mut channels = BTreeSet::new();
++        for channel in adapters {
++            if !valid_id(&channel)
++                || matches!(
++                    namespace(&channel),
++                    "minecraft" | "neoforge" | "c" | "horizon"
++                )
++                || !channels.insert(channel)
++            {
++                return Err(Failure("invalid_adapter_declaration"));
++            }
++        }
++        Ok(Self {
++            pack_sha256,
++            adapters: channels,
++            factory,
++        })
++    }
++    pub(crate) fn begin(&self) -> Result<Endpoint<'_>> {
++        Ok(Endpoint {
++            profile: self,
++            bridge: self.factory.create(self.pack_sha256)?,
++            failed: false,
++        })
++    }
++    fn owns(&self, channel: &str) -> bool {
++        channel.starts_with("neoforge:")
++            || matches!(
++                channel,
++                "c:version" | "c:register" | "minecraft:register" | "minecraft:unregister"
++            )
++            || self.adapters.contains(channel)
++    }
++}
++fn namespace(channel: &str) -> &str {
++    channel.split_once(':').map_or("", |(ns, _)| ns)
++}
++fn valid_id(channel: &str) -> bool {
++    let Some((ns, path)) = channel.split_once(':') else {
++        return false;
++    };
++    !ns.is_empty()
++        && !path.is_empty()
++        && channel.len() <= 256
++        && ns
++            .bytes()
++            .all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || b"_.-".contains(&b))
++        && path
++            .bytes()
++            .all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || b"_.-/".contains(&b))
++}
++
++/// Lives on the configuration stack. Drop resets on failure, transfer, EOF and
++/// disconnect; the next configuration creates a new bridge, never reuses this one.
++pub(crate) struct Endpoint<'a> {
++    profile: &'a Profile,
++    bridge: Box<dyn Bridge>,
++    failed: bool,
++}
++impl Endpoint<'_> {
++    pub(crate) fn receive(&mut self, channel: &str, body: &[u8]) -> Result<Vec<Reply>> {
++        if self.failed {
++            return Err(Failure("failed_epoch"));
++        }
++        let result = self.receive_inner(channel, body);
++        if result.is_err() {
++            self.failed = true;
++        }
++        result
++    }
++    fn receive_inner(&mut self, channel: &str, body: &[u8]) -> Result<Vec<Reply>> {
++        if !valid_id(channel) || !self.profile.owns(channel) {
++            return Err(Failure("unowned_configuration_payload"));
++        }
++        if body.len() > MAX_BODY {
++            return Err(Failure("configuration_body_limit"));
++        }
++        let replies = self.bridge.receive(channel, body)?;
++        // Validate the WHOLE batch before any packet is queued. A registration
++        // list never expands ownership; the bridge enforces negotiated flow too.
++        if replies.len() > MAX_REPLIES {
++            return Err(Failure("reply_count_limit"));
++        }
++        let mut bytes = 0usize;
++        for reply in &replies {
++            bytes = bytes.saturating_add(reply.body.len() + reply.channel.len());
++            if !valid_id(&reply.channel)
++                || !self.profile.owns(&reply.channel)
++                || reply.body.len() > MAX_BODY
++                || bytes > MAX_REPLY_BYTES
++            {
++                return Err(Failure("invalid_reply_batch"));
++            }
++        }
++        Ok(replies)
++    }
++    pub(crate) fn finish(&mut self) -> Result<()> {
++        if self.failed {
++            return Err(Failure("failed_epoch"));
++        }
++        self.failed = true;
++        self.bridge.finish()?;
++        // Deliberate safety latch: this patch has no bidirectional modded content
++        // conversion or play route. Even a buggy/overoptimistic bridge cannot ack
++        // finish and expose modded IDs to vanilla translation. Remove only in a
++        // separately validated engine/content integration, not a codec milestone.
++        Err(Failure("modded_play_boundary_not_implemented"))
++    }
++}
++impl Drop for Endpoint<'_> {
++    fn drop(&mut self) {
++        self.bridge.reset();
++    }
++}
++
++#[cfg(test)]
++#[path = "early_configuration_tests.rs"]
++mod tests;
+diff --git a/crates/horizon-client/src/net/early_configuration_tests.rs b/crates/horizon-client/src/net/early_configuration_tests.rs
+new file mode 100644
+--- /dev/null
++++ b/crates/horizon-client/src/net/early_configuration_tests.rs
+@@ -0,0 +1,214 @@
++// SPDX-License-Identifier: LGPL-3.0-or-later
++use super::*;
++use std::sync::{
++    Mutex,
++    atomic::{AtomicUsize, Ordering},
++};
++
++#[derive(Default)]
++struct Observed {
++    created: AtomicUsize,
++    resets: AtomicUsize,
++    finishes: AtomicUsize,
++    received: Mutex<Vec<(String, Vec<u8>)>>,
++}
++struct VersionBridge(Arc<Observed>);
++impl Bridge for VersionBridge {
++    fn receive(&mut self, channel: &str, body: &[u8]) -> Result<Vec<Reply>> {
++        self.0
++            .received
++            .lock()
++            .unwrap()
++            .push((channel.into(), body.to_vec()));
++        // Test-only implementation of a single real body transformation, NOT a
++        // required-task placeholder. Every other loader task is refused.
++        if channel != "c:version" || body != [1, 1] {
++            return Err(Failure("unsupported_test_task"));
++        }
++        Ok(vec![Reply {
++            channel: channel.into(),
++            body: vec![1, 1],
++        }])
++    }
++    fn finish(&mut self) -> Result<()> {
++        self.0.finishes.fetch_add(1, Ordering::Relaxed);
++        Err(Failure("pending_required_tasks"))
++    }
++    fn reset(&mut self) {
++        self.0.resets.fetch_add(1, Ordering::Relaxed);
++    }
++}
++impl Factory for Arc<Observed> {
++    fn create(&self, hash: [u8; 32]) -> Result<Box<dyn Bridge>> {
++        assert_eq!(hash, [7; 32]);
++        self.created.fetch_add(1, Ordering::Relaxed);
++        Ok(Box::new(VersionBridge(self.clone())))
++    }
++}
++fn profile(observed: &Arc<Observed>) -> Profile {
++    Profile::neoforge(
++        "1.21.1",
++        767,
++        "21.1.248",
++        [7; 32],
++        vec!["demo:task".into()],
++        Arc::new(observed.clone()),
++    )
++    .unwrap()
++}
++
++#[test]
++fn early_loader_delivery_preserves_body_and_replies_without_an_accepted_horizon_epoch() {
++    let observed = Arc::new(Observed::default());
++    let profile = profile(&observed);
++    let mut endpoint = profile.begin().unwrap();
++    let replies = endpoint.receive("c:version", &[1, 1]).unwrap();
++    assert_eq!(replies.len(), 1);
++    assert_eq!(replies[0].channel, "c:version");
++    assert_eq!(replies[0].body, [1, 1]);
++    assert_eq!(
++        *observed.received.lock().unwrap(),
++        [("c:version".into(), vec![1, 1])]
++    );
++}
++
++#[test]
++fn unsupported_neoforge_tasks_poison_the_epoch_and_cannot_finish() {
++    let observed = Arc::new(Observed::default());
++    let profile = profile(&observed);
++    let mut endpoint = profile.begin().unwrap();
++    assert_eq!(
++        endpoint.receive("neoforge:register", &[0]).err(),
++        Some(Failure("unsupported_test_task"))
++    );
++    assert_eq!(
++        endpoint.receive("c:version", &[1, 1]).err(),
++        Some(Failure("failed_epoch"))
++    );
++    assert_eq!(endpoint.finish(), Err(Failure("failed_epoch")));
++    assert_eq!(observed.finishes.load(Ordering::Relaxed), 0);
++}
++
++#[test]
++fn undeclared_or_oversized_payloads_never_reach_bridge() {
++    for (channel, body) in [
++        ("other:task", vec![0]),
++        ("horizon:payloads", vec![0]),
++        ("c:version", vec![0; MAX_BODY + 1]),
++        ("neoforge:BAD", vec![0]),
++    ] {
++        let observed = Arc::new(Observed::default());
++        let profile = profile(&observed);
++        assert!(profile.begin().unwrap().receive(channel, &body).is_err());
++        assert!(observed.received.lock().unwrap().is_empty());
++    }
++}
++
++#[test]
++fn finish_refuses_pending_tasks_and_drop_resets_before_next_epoch() {
++    let observed = Arc::new(Observed::default());
++    let profile = profile(&observed);
++    {
++        let mut endpoint = profile.begin().unwrap();
++        assert_eq!(endpoint.finish(), Err(Failure("pending_required_tasks")));
++    }
++    assert_eq!(observed.resets.load(Ordering::Relaxed), 1);
++    {
++        let mut next = profile.begin().unwrap();
++        assert!(next.receive("c:version", &[1, 1]).is_ok());
++    }
++    assert_eq!(observed.created.load(Ordering::Relaxed), 2);
++    assert_eq!(observed.resets.load(Ordering::Relaxed), 2);
++}
++
++struct InvalidBridge {
++    reply_channel: &'static str,
++    complete: bool,
++}
++impl Bridge for InvalidBridge {
++    fn receive(&mut self, _: &str, _: &[u8]) -> Result<Vec<Reply>> {
++        // Only adversarial tests instantiate this deliberately invalid bridge.
++        Ok(vec![
++            Reply {
++                channel: "c:version".into(),
++                body: vec![1, 1],
++            },
++            Reply {
++                channel: self.reply_channel.into(),
++                body: vec![0],
++            },
++        ])
++    }
++    fn finish(&mut self) -> Result<()> {
++        if self.complete {
++            Ok(())
++        } else {
++            Err(Failure("incomplete"))
++        }
++    }
++    fn reset(&mut self) {
++        self.complete = false;
++    }
++}
++#[test]
++fn invalid_batch_is_rejected_whole_and_even_optimistic_bridge_cannot_enter_play() {
++    let observed = Arc::new(Observed::default());
++    let profile = profile(&observed);
++    let mut endpoint = Endpoint {
++        profile: &profile,
++        bridge: Box::new(InvalidBridge {
++            reply_channel: "horizon:payloads",
++            complete: true,
++        }),
++        failed: false,
++    };
++    assert_eq!(
++        endpoint.receive("c:version", &[1, 1]).err(),
++        Some(Failure("invalid_reply_batch"))
++    );
++    assert!(endpoint.finish().is_err());
++    let mut endpoint = Endpoint {
++        profile: &profile,
++        bridge: Box::new(InvalidBridge {
++            reply_channel: "c:version",
++            complete: true,
++        }),
++        failed: false,
++    };
++    assert_eq!(
++        endpoint.finish(),
++        Err(Failure("modded_play_boundary_not_implemented"))
++    );
++}
++
++#[test]
++fn profile_rejects_wrong_baselines_and_reserved_or_duplicate_adapters() {
++    let observed = Arc::new(Observed::default());
++    let factory: Arc<dyn Factory> = Arc::new(observed);
++    for (mc, protocol, nf) in [
++        ("1.21", 767, "21.1.248"),
++        ("1.21.1", 777, "21.1.248"),
++        ("1.21.1", 767, "21.1.249"),
++    ] {
++        assert!(Profile::neoforge(mc, protocol, nf, [7; 32], vec![], factory.clone()).is_err());
++    }
++    for channels in [
++        vec!["neoforge:task"],
++        vec!["horizon:task"],
++        vec!["demo:a", "demo:a"],
++        vec!["BAD:task"],
++        vec!["minecraft:brand"],
++    ] {
++        assert!(
++            Profile::neoforge(
++                "1.21.1",
++                767,
++                "21.1.248",
++                [7; 32],
++                channels.into_iter().map(str::to_owned).collect(),
++                factory.clone()
++            )
++            .is_err()
++        );
++    }
++}
+diff --git a/crates/horizon-client/src/net/early_configuration_net_tests.rs b/crates/horizon-client/src/net/early_configuration_net_tests.rs
+new file mode 100644
+--- /dev/null
++++ b/crates/horizon-client/src/net/early_configuration_net_tests.rs
+@@ -0,0 +1,178 @@
++// SPDX-License-Identifier: LGPL-3.0-or-later
++//! Engine integration test; requires the full horizon-client-lib dependency graph.
++use super::*;
++use early_configuration::{Bridge, Factory, Failure, Profile, Reply};
++use std::sync::atomic::AtomicUsize;
++
++#[derive(Default)]
++struct Observed {
++    starts: AtomicUsize,
++    resets: AtomicUsize,
++    received: Mutex<Vec<(String, Vec<u8>)>>,
++}
++struct VersionOnly(Arc<Observed>);
++impl Bridge for VersionOnly {
++    fn receive(&mut self, channel: &str, body: &[u8]) -> early_configuration::Result<Vec<Reply>> {
++        self.0
++            .received
++            .lock()
++            .unwrap()
++            .push((channel.into(), body.to_vec()));
++        if channel != "c:version" || body != [1, 1] {
++            return Err(Failure("unsupported_test_task"));
++        }
++        Ok(vec![Reply {
++            channel: channel.into(),
++            body: vec![1, 1],
++        }])
++    }
++    fn finish(&mut self) -> early_configuration::Result<()> {
++        Err(Failure("required_tasks_pending"))
++    }
++    fn reset(&mut self) {
++        self.0.resets.fetch_add(1, Ordering::Relaxed);
++    }
++}
++impl Factory for Arc<Observed> {
++    fn create(&self, _: [u8; 32]) -> early_configuration::Result<Box<dyn Bridge>> {
++        self.starts.fetch_add(1, Ordering::Relaxed);
++        Ok(Box::new(VersionOnly(self.clone())))
++    }
++}
++
++#[test]
++fn explicit_neoforge_routes_before_horizon_and_refuses_finish_without_ack_or_epoch() {
++    use horizon_world::native_load_context::DataLoadOrigin;
++    let root = std::env::temp_dir().join(format!("horizon-early-{}", next_serial()));
++    std::fs::create_dir_all(&root).unwrap();
++    std::fs::write(root.join("items.json"), "{}").unwrap();
++    let resources = crate::test_resources::item_data(&root, DataLoadOrigin::ClientPreload).unwrap();
++    let observed = Arc::new(Observed::default());
++    let profile = Profile::neoforge(
++        "1.21.1",
++        767,
++        "21.1.248",
++        [7; 32],
++        vec![],
++        Arc::new(observed.clone()),
++    )
++    .unwrap();
++    let payloads =
++        crate::raw_payloads::Transport::capture(crate::raw_payloads::Side::Client).unwrap();
++    for initial in [true, false] {
++        let (client, server) = horizon_protocol::connection::Pipe::pair();
++        let mut client = Connection::local(client);
++        client.adapt(horizon_protocol::adapter::ServerVersion::V1_21_1);
++        let mut server = Connection::local(server);
++        server
++            .reader
++            .set_read_timeout(Some(Duration::from_millis(50)))
++            .unwrap();
++        client
++            .send(
++                &handshake::Serverbound::Intention(handshake::Intention {
++                    protocol: PROTOCOL_VERSION,
++                    host: "localhost".into(),
++                    port: 25565,
++                    intent: handshake::LOGIN,
++                })
++                .encode(),
++            )
++            .unwrap();
++        server.recv().unwrap();
++        server.send(&[2]).unwrap();
++        client.recv().unwrap();
++        client
++            .send(&login::Serverbound::LoginAcknowledged(Empty).encode())
++            .unwrap();
++        server.recv().unwrap();
++        let (mut reader, writer) = client.split();
++        let writer = Arc::new(Mutex::new(Some(QueuedWriter::new(writer).unwrap())));
++        let configuring = Arc::new(AtomicBool::new(true));
++        let (send, _events) = event_channel();
++        let mut brand = horizon_protocol::buf::Writer::new();
++        brand.string("horizon"); // MUST NOT activate any Horizon offers.
++        for (channel, data) in [("minecraft:brand", brand.data), ("c:version", vec![1, 1])] {
++            server
++                .send(
++                    &cfg::Clientbound::CustomPayload(cfg::CustomPayload {
++                        channel: channel.into(),
++                        data,
++                    })
++                    .encode(),
++                )
++                .unwrap();
++        }
++        server
++            .send(&cfg::Clientbound::KeepAlive(cfg::KeepAlive { id: 42 }).encode())
++            .unwrap();
++        server
++            .send(&cfg::Clientbound::Ping(cfg::Ping { id: 13 }).encode())
++            .unwrap();
++        server
++            .send(&cfg::Clientbound::FinishConfiguration(Empty).encode())
++            .unwrap();
++        // Queue a later packet; the refusing engine must never read it.
++        server.send(&[0]).unwrap();
++        let result = configure_with_profile(
++            &mut reader,
++            &writer,
++            &configuring,
++            &Language::new(),
++            &send,
++            &Cookies::default(),
++            &resources,
++            &payloads,
++            initial,
++            Some(&profile),
++        );
++        assert!(
++            result
++                .err()
++                .unwrap()
++                .text
++                .contains("required_tasks_pending")
++        );
++        assert!(configuring.load(Ordering::Acquire));
++        assert!(
++            payloads.epoch().is_none(),
++            "no fabricated Horizon acceptance"
++        );
++        let drained = writer
++            .lock()
++            .unwrap()
++            .as_ref()
++            .unwrap()
++            .drain_and_take()
++            .unwrap();
++        let (id, bytes) = server.recv().unwrap();
++        assert_eq!(id, 2);
++        let cfg::Serverbound::CustomPayload(reply) = cfg::Serverbound::decode(id, &bytes).unwrap()
++        else {
++            panic!("only loader response expected");
++        };
++        assert_eq!(
++            (reply.channel.as_str(), reply.data.as_slice()),
++            ("c:version", &[1, 1][..])
++        );
++        let (id, bytes) = server.recv().unwrap();
++        assert_eq!(
++            cfg::Serverbound::decode(id, &bytes).unwrap(),
++            cfg::Serverbound::KeepAlive(cfg::KeepAlive { id: 42 })
++        );
++        let (id, bytes) = server.recv().unwrap();
++        assert_eq!(
++            cfg::Serverbound::decode(id, &bytes).unwrap(),
++            cfg::Serverbound::Pong(cfg::Ping { id: 13 })
++        );
++        assert!(server.recv().is_err(), "no Horizon offer or finish ack");
++        // The adapter read phase switched on FinishConfiguration already. The
++        // engine returned without consuming a following play/unknown packet.
++        assert_eq!(reader.recv().unwrap(), (0, vec![]));
++        drained.shutdown();
++    }
++    assert_eq!(observed.starts.load(Ordering::Relaxed), 2);
++    assert_eq!(observed.resets.load(Ordering::Relaxed), 2);
++    assert_eq!(observed.received.lock().unwrap().len(), 2);
++    std::fs::remove_dir_all(root).unwrap();
++}
+diff --git a/crates/horizon-protocol/src/adapter/session.rs b/crates/horizon-protocol/src/adapter/session.rs
+--- a/crates/horizon-protocol/src/adapter/session.rs
++++ b/crates/horizon-protocol/src/adapter/session.rs
+@@ -545,3 +545,90 @@
+         assert_eq!(sent, vec![49, 7]);
+     }
+ }
++
++#[cfg(test)]
++mod neoforge_configuration_framing_tests {
++    use super::*;
++    use crate::{
++        connection::Connection,
++        packets::{Empty, configuration as cfg, login},
++    };
++
++    #[test]
++    fn protocol_767_configuration_payload_bodies_cross_tcp_in_both_directions() {
++        // Synthetic opaque bytes, NOT a valid loader negotiation transcript.
++        // Real TCP exercises VarInt framing; Pipe uses a different private frame.
++        let listener = std::net::TcpListener::bind(("127.0.0.1", 0)).unwrap();
++        let stream = std::net::TcpStream::connect(listener.local_addr().unwrap()).unwrap();
++        let (peer, _) = listener.accept().unwrap();
++        let mut client = Connection::from_stream(stream).unwrap();
++        let mut server = Connection::from_stream(peer).unwrap();
++        client
++            .reader
++            .set_read_timeout(Some(std::time::Duration::from_secs(2)))
++            .unwrap();
++        server
++            .reader
++            .set_read_timeout(Some(std::time::Duration::from_secs(2)))
++            .unwrap();
++        client.adapt(ServerVersion::V1_21_1);
++        client
++            .send(
++                &handshake::Serverbound::Intention(handshake::Intention {
++                    protocol: crate::PROTOCOL_VERSION,
++                    host: "localhost".into(),
++                    port: 25565,
++                    intent: handshake::LOGIN,
++                })
++                .encode(),
++            )
++            .unwrap();
++        let (id, bytes) = server.recv().unwrap();
++        let intention = handshake::decode_intention(id, &bytes, 255).unwrap();
++        assert_eq!(intention.protocol, 767);
++        // State tracking only: Session does not decode the profile at this point.
++        server.send(&[2]).unwrap();
++        assert_eq!(
++            client.recv().unwrap().0,
++            crate::ids::login::clientbound::LOGIN_FINISHED
++        );
++        client
++            .send(&login::Serverbound::LoginAcknowledged(Empty).encode())
++            .unwrap();
++        assert_eq!(server.recv().unwrap(), (3, vec![]));
++        let mut old_clientbound = vec![1, 17];
++        old_clientbound.extend_from_slice(b"neoforge:register");
++        old_clientbound.extend_from_slice(&[0, 128, 255, 0]);
++        server.send(&old_clientbound).unwrap();
++        let (id, payload) = client.recv().unwrap();
++        assert_eq!(id, 1); // 767 clientbound configuration custom_payload
++        assert_eq!(payload, old_clientbound[1..]);
++        let cfg::Clientbound::CustomPayload(received) =
++            cfg::Clientbound::decode(id, &payload).unwrap()
++        else {
++            panic!("expected custom payload");
++        };
++        assert_eq!(received.channel, "neoforge:register");
++        assert_eq!(received.data, [0, 128, 255, 0]);
++        client
++            .send(
++                &cfg::Serverbound::CustomPayload(received)
++                    .try_encode()
++                    .unwrap(),
++            )
++            .unwrap();
++        let (id, payload) = server.recv().unwrap();
++        assert_eq!(id, 2); // 767 serverbound configuration custom_payload
++        assert_eq!(payload, old_clientbound[1..]);
++        // Non-identity packet-id evidence: 767 known packs is 14, not pinned 15.
++        server.send(&[14, 0]).unwrap();
++        assert_eq!(client.recv().unwrap(), (15, vec![0]));
++        client
++            .send(
++                &cfg::Serverbound::SelectKnownPacks(cfg::SelectKnownPacks { packs: vec![] })
++                    .encode(),
++            )
++            .unwrap();
++        assert_eq!(server.recv().unwrap(), (7, vec![0]));
++    }
++}

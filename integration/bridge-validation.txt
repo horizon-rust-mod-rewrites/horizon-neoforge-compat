@@ -1,0 +1,16 @@
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.04s
+
+running 9 tests
+test net::early_configuration::tests::early_loader_delivery_preserves_body_and_replies_without_an_accepted_horizon_epoch ... ok
+test net::early_configuration::tests::finish_refuses_pending_tasks_and_drop_resets_before_next_epoch ... ok
+test failure_payload_never_becomes_success ... ok
+test actual_wire_query_setup_common_then_finish_refusal ... ok
+test net::early_configuration::tests::invalid_batch_is_rejected_whole_and_even_optimistic_bridge_cannot_enter_play ... ok
+test net::early_configuration::tests::profile_rejects_wrong_baselines_and_reserved_or_duplicate_adapters ... ok
+test net::early_configuration::tests::undeclared_or_oversized_payloads_never_reach_bridge ... ok
+test net::early_configuration::tests::unsupported_neoforge_tasks_poison_the_epoch_and_cannot_finish ... ok
+test unknown_required_task_and_reconnect_cleanup ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+PASS: actual library/companion/patched-endpoint contract; NOT full Horizon or sockets

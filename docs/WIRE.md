@@ -1,3 +1,15 @@
+# Current modded codec additions
+
+The historical subset below is extended by `src/modded.rs` and
+`../provenance/modded-codecs.md` (exact field layouts and evidence). Query
+component versions are **required strings**, not optional values. Exact MC
+1.21.1 enum ordinals are audited. Query/setup are implemented; NBT Component
+setup-failure reasons are not and terminate the epoch. `registry_sync` adds
+bounded start/completed codecs and staging, but no Horizon semantic host.
+The old common-only Session remains conservative; use Loader for modded
+query/setup. Neither endpoint can finish configuration.
+
+---
 # Wire contract: verified subset, not a full loader handshake
 
 All functions consume or produce **only the custom-payload body**. The Minecraft

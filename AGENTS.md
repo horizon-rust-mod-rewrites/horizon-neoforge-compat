@@ -1,3 +1,17 @@
+# Current continuation status (supersedes milestone 0.1 truth below)
+
+Read `docs/PROGRESS.md` and updated README along with the read order below.
+This branch adds modded query/setup codecs, an early Loader controller,
+handler-backed server selection validation, bounded registry task staging with
+mandatory semantic-host commit barrier, and an applicable Horizon early endpoint
+patch + companion. Main crate: 90 tests pass debug/release. Patch and companion
+contract tests pass in isolation. **Still cannot join.** Full Horizon typecheck,
+Java differential codecs, setup-failure NBT Component decoding, actual Horizon
+content application, remaining required loader tasks and live joins are missing.
+Both core and engine retain hard finish refusal. No individual mod rewrites.
+Exact baseline and mandatory AI commit footer policy below remain unchanged.
+
+---
 # Development handoff: read before changing this repository
 
 ## Goal and user decisions

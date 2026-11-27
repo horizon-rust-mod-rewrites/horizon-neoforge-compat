@@ -1,3 +1,14 @@
+# Current patch status
+
+The assessment below describes milestone 0.1 and is retained as historical
+source analysis. There is now an **applicable, isolated-tested early endpoint
+patch** in `../integration/`, plus actual core/companion/endpoint contract tests.
+See `../integration/README.md` for precise scope, license separation, commands,
+and unexecuted full-engine tests. Full Horizon is not compiled, the launcher is
+not wired, and no NeoForge content conversion is applied. A hard finish refusal
+remains in the engine even if a bridge erroneously reports success.
+
+---
 # Horizon integration assessment — DESIGN ONLY, NO PATCH APPLIED
 
 Pinned checkout: https://github.com/rdbtCVS/horizon at

@@ -1,3 +1,15 @@
+# Current development handoff
+
+Start with `PROGRESS.md` and the updated README, then read the historical
+handoff below. Query/setup codecs, a handler-backed early Loader controller,
+registry task staging/host barriers, and a concrete Horizon patch now exist.
+No successful finish or join exists. Next: failure Component/NBT codec + genuine
+Java differential execution; full pinned Horizon + companion typecheck/runtime
+and TCP tests; real host semantic registry/content application; remaining
+config/data-map/enum/flag tasks and split transport; isolated baseline join.
+Do not remove finish latches as a shortcut and do not rewrite individual mods.
+
+---
 # Handoff for the next development chat
 
 ## Start here

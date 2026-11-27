@@ -1,3 +1,28 @@
+# Current development validation (2026-11-27)
+
+Supersedes the historical 0.1 status below. Main crate: **90 tests passed in
+both debug and release**, Rust 1.85.1 / x86_64 musl. Strict Clippy, formatting,
+API docs, fixture checks and upstream verification passed. Recorded current
+commands/output: `validation-current.txt`. New coverage: 14 modded-codec tests,
+10 selection tests, 10 integrated loader tests and 23 registry lifecycle tests,
+in addition to the original 33. Synthetic fixtures are not real transcripts.
+
+Horizon patch checker: 4 structural checks, 6 Rust endpoint tests, 1 actual
+protocol-table test, patch application/reversal and provenance checks passed.
+Companion compilation: 9 tests (the same 6 endpoint tests plus 3 cross-component
+checks) passed. Do not sum these as independent endpoint tests.
+See `../integration/validation.txt` and `../integration/bridge-validation.txt`.
+Exact MC enum classfile audit passed; no genuine Java codec execution occurred.
+
+**Not validated:** full Horizon compilation/typecheck (offline missing dependency;
+pinned workspace also needs Rust 1.95), included full-engine/TCP tests, live
+NeoForge server join, real semantic registry application. Setup-failure NBT
+Component decoding and required loader tasks remain missing. All finish paths
+still refuse; this is not a completed handshake or a joining client.
+
+---
+# Historical milestone 0.1 record
+
 # Validation and reproducibility
 
 ## Actually executed

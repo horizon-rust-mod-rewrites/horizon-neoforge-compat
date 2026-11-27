@@ -1,0 +1,53 @@
+{
+  "baseline": {
+    "minecraft": "1.21.1",
+    "protocol": 767,
+    "neoforge": "21.1.248"
+  },
+  "artifact_sha256": "b4b912457549ff586873ce78b39b08af96f11a0e3a54c6b77576c6a25907083f",
+  "artifact_and_publisher_checksum_reverified": true,
+  "source_files": {
+    "net/neoforged/neoforge/network/payload/ModdedNetworkQueryPayload.java": "8a1d2a29e71e51265021b23cee42a9514de569d88e4e89ffadb134d0d5b8cfdc",
+    "net/neoforged/neoforge/network/payload/ModdedNetworkQueryComponent.java": "708a18e6ebabc64012055c61a0fa40b4ffe0451760c9215b7314d691c5907ebc",
+    "net/neoforged/neoforge/network/payload/ModdedNetworkPayload.java": "e3764b6d1766ab93a6a6c58e8b92ec08ef512b2f688e3f75aba2e820e6c9a54b",
+    "net/neoforged/neoforge/network/payload/ModdedNetworkSetupFailedPayload.java": "8eb12a4ec315f0463ed71b9be1f64e21defb49526ea1a9f43a5236605dd1612a",
+    "net/neoforged/neoforge/network/registration/NetworkPayloadSetup.java": "7ab5631215bb916c6ac69e46b7013a697a16eeb0b84a22f5d3939e144e406a22",
+    "net/neoforged/neoforge/network/registration/NetworkChannel.java": "5185cd8d7e44ae989543a986bdc787086dcdff43e1e00893318b55007969841c",
+    "net/neoforged/neoforge/network/codec/NeoForgeStreamCodecs.java": "a2de86a00f85a3be554b759c72716afdcbda5bfdd6f539b5fa81f846be46c616"
+  },
+  "minecraft_version_metadata_sha256": "bb0a1413744530df54451e4f973bac81b1e27477999e79cfe7e66aaf6d4db6e6",
+  "official_downloads": {
+    "server": {
+      "url": "https://piston-data.mojang.com/v1/objects/59353fb40c36d304f2035d51e7d6e6baa98dc05c/server.jar",
+      "publisher_sha1": "59353fb40c36d304f2035d51e7d6e6baa98dc05c",
+      "sha256": "e3bc55693e93cda0188f2e60aea28113fc647c5e85a15fa3d1b347349231b4bb",
+      "size": 51627615
+    },
+    "server_mappings": {
+      "url": "https://piston-data.mojang.com/v1/objects/03f8985492bda0afc0898465341eb0acef35f570/server.txt",
+      "publisher_sha1": "03f8985492bda0afc0898465341eb0acef35f570",
+      "sha256": "9d0b04bead421c8229aff14b534432bbc927bea642e7c8593d1276b8df8ba53f",
+      "size": 7456063
+    }
+  },
+  "enum_class_sha256": {
+    "vu.class": "1e2e860e0bf1462dc180f2be2de04a8f425e02ec2f9846f4e8241d41f5a58841",
+    "zh.class": "b8bebcd2cd710fa96b3305297047e5b7fcb17a0e84d17a9d21f8a340925a6d8f"
+  },
+  "enum_ordinals": {
+    "ConnectionProtocol": {
+      "HANDSHAKING": 0,
+      "PLAY": 1,
+      "STATUS": 2,
+      "LOGIN": 3,
+      "CONFIGURATION": 4
+    },
+    "PacketFlow": {
+      "SERVERBOUND": 0,
+      "CLIENTBOUND": 1
+    }
+  },
+  "reference_execution": "No JVM available. Official enum initializer and values-array bytecode parsed/asserted in Python; this is NOT Java execution or differential codec testing.",
+  "failure_codec": "Not implemented: explicit terminal unsupported rejection. No NBT Component semantic validation or fake string decoding.",
+  "retrieved_utc_date": "2026-11-27"
+}
