@@ -3,6 +3,7 @@
 #![forbid(unsafe_code)]
 pub mod codec;
 pub mod extension;
+pub mod feature_flags;
 pub mod loader;
 pub mod modded;
 pub mod negotiation;
