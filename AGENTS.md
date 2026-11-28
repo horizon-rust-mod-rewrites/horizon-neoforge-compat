@@ -4,41 +4,36 @@ Maintain `COMPATIBILITY_PROGRESS.md` from `progress/compatibility.json`. Run `py
 
 ---
 
-# Latest exact-SHA hosted validation: outbound milestone PASSED
+# Latest exact-SHA hosted validation: focused fixes PASSED
 
-Run: https://github.com/horizon-rust-mod-rewrites/horizon-neoforge-compat/actions/runs/46087704109
-Tested compatibility SHA: `fb0294b4976bd78d4ee4cbfce44a6f049e0a4307`.
+Run: https://github.com/horizon-rust-mod-rewrites/horizon-neoforge-compat/actions/runs/46137932076
+Tested compatibility SHA: `7becb053b2d75f4a8978decbd8ecf94fb9d0dd95`.
 Horizon pin: `ae632edf48f6cae3ba52a5c81523ec712488c9cc`.
-Artifact SHA-256 verified: `357207d45ab75c4e2cf94485f31f661915498617bb9fc51db73e570ed3670f5f`.
-Retained `integration/hosted-46087704109-{core,full-check,full-driver,scope}.txt`.
+Downloaded artifact SHA-256 verified: `51e780c2b15dedfe656528ea6995f067b205b816eccb3d8cc14584146b259f27`.
+Retained `integration/hosted-46137932076-{core,full-check,full-driver,scope}.txt`.
 
-- Full actual patched client + companion typechecks passed; pinned lock audit passed.
+- Full actual patched client + companion typechecks, pinned lock audit and selected engine regressions passed.
 - **16 actual companion**, **9 early configuration**, **14 protocol framing**,
   **81 network-filter passed / 3 ignored**. Selected suites, NOT all upstream tests.
-- **171 core tests EACH debug and release**, including **36 split tests**;
-  strict Clippy, fmt, warning-denied docs, 35 Python tests and six fixtures passed.
-- New actual outbound preparation tests and the TCP split/compression/encryption
-  matrix REALLY executed. No production split route, Java split equivalence,
-  complete loader tasks, semantic content application, UI or live join is proven.
+- **172 core tests EACH debug and release**, including **37 split tests**;
+  strict Clippy, fmt, warning-denied docs, 35 integration-driver tests and six fixtures passed.
+- Progress-metadata push/PR workflows passed with 28 validator tests. This checkpoint
+  adds malformed-metadata validation and exact-maximum split-boundary test coverage;
+  no production runtime routing changed.
 
 Default split/feature-flag opt-ins remain disabled. Both finish refusals remain.
-**The client STILL CANNOT JOIN.** Newer evidence/documentation-only commits do not
-change the tested source and deliberately do not trigger another full build.
-See NEXT_AGENT.md for precise continuation priorities. Older contradictory
-counts/pending statements below are historical, not current validation status.
+**The client STILL CANNOT JOIN.** No production split route, complete loader tasks,
+semantic content application, UI or live join is proven. See NEXT_AGENT.md for
+precise continuation priorities; historical counts below do not supersede this run.
 
 ---
 
 # Current continuation checkpoint — NEXT_AGENT.md is authoritative
 
-Concrete actual-dependency outbound preparation and actual TCP regression wiring
-have been added; new Rust execution is PENDING hosted CI. Current authored floors:
-16 actual companion / 14 protocol / 9 early / 81 network-filter; expected core171.
-These are not executed results. See docs/horizon-split-outbound-seam.md. Default
-split/flags stay disabled, both finish gates remain, client STILL CANNOT JOIN.
-Run46084373021's older exact SHA passed 14/6/9/81 and core153; it does NOT validate
-the newer outbound work. Original outbound run46085995030 failed formatting;
-fix35649b8 has its own run. Read newest NEXT_AGENT status before using old counts.
+Run 46137932076 validated exact SHA 7becb05 and supersedes the previously pending
+outbound validation note. It did not remove a finish gate or prove a server join.
+For source runtime priorities and the exact evidence interpretation, read
+NEXT_AGENT.md and docs/ordered-connection-owner.md first.
 
 --- Historical checkpoints below ---
 

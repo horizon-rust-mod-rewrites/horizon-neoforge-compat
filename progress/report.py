@@ -143,7 +143,7 @@ def render(data, root=ROOT):
         '## Latest executed engine checkpoint', '',
         f'- Tested source SHA: `{run["tested_sha"]}`; distinct from newer tracking/docs commits.',
         f'- [Successful hosted run]({run["run_url"]}); [retained selected-engine evidence]({run["retained_evidence"]}).',
-        '- 171 core tests EACH debug/release; 16 companion / 9 early / 14 protocol / 81 network-filter passed, 3 ignored. Selected suites only; overlapping isolated tests are not additional coverage.',
+        '- 172 core tests EACH debug/release, including 37 split tests; 16 companion / 9 early / 14 protocol / 81 network-filter passed, 3 ignored. Selected suites only; overlapping isolated tests are not additional coverage.',
         '- **Current runtime: CANNOT JOIN.** Production split routing, complete tasks, real semantic content publication, launcher/UI and live interoperability remain unproven. Default split/feature-flag opt-ins remain disabled; both finish refusals remain.', '',
         '## Milestone percentages', '',
         '| Milestone | Earned / allocated points | Completion |',

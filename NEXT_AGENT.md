@@ -1,22 +1,25 @@
 # Completion tracking checkpoint — 2026-11-28
 
 See [COMPATIBILITY_PROGRESS.md](COMPATIBILITY_PROGRESS.md): initial rubric v1
-is **30% evidence-backed checklist completion**, NOT effort/ETA/coverage or mod
-support. Only fully completed weighted criteria earn points; partial work earns
-zero. Readiness to begin separate mod rewrites remains **NO**. Tracker work adds
-no compatibility points and does not implement protocol/runtime behavior.
+remains **30% evidence-backed checklist completion**, NOT effort/ETA/coverage or
+mod support. Only fully completed weighted criteria earn points; partial work
+earns zero. Readiness to begin separate mod rewrites remains **NO**. The fixes in
+7becb05 add no compatibility points and do not change production protocol code.
 
 Machine-readable source: `progress/compatibility.json`; regenerate/check with
-`python3 progress/report.py` / `python3 progress/report.py --check`. Run its
-25 dependency-free metadata regression tests using unittest discovery in
-`progress/`. Lightweight progress CI is separate from full-engine CI; it cannot
-prove protocol compatibility. See `progress/validation.txt` for local results.
+`python3 progress/report.py` / `python3 progress/report.py --check`. The current
+dependency-free metadata suite has **28 tests**. Its lightweight CI is separate
+from full-engine CI and cannot prove protocol compatibility.
 
-Latest Actions run and BOTH jobs were rechecked: success46087704109 at exact
-fb0294b4976bd78d4ee4cbfce44a6f049e0a4307, not a new-source execution. No newer
-full-engine run was found. Runtime/core/patch/driver/full-build workflow are
-unchanged. Local 35 driver safety tests and six fixtures also pass; no Rust
-compiler/full Horizon/live server execution in this checkpoint.
+## Latest exact-SHA hosted validation — SUCCESS
+
+- Full run: https://github.com/horizon-rust-mod-rewrites/horizon-neoforge-compat/actions/runs/46137932076
+- Tested compatibility SHA: `7becb053b2d75f4a8978decbd8ecf94fb9d0dd95`.
+- Verified downloaded artifact SHA-256: `51e780c2b15dedfe656528ea6995f067b205b816eccb3d8cc14584146b259f27`.
+- Retained `integration/hosted-46137932076-{core,full-check,full-driver,scope}.txt`.
+- Full pinned patched client and actual companion typechecks, lock audit and selected engine regressions passed. **16 companion / 9 early configuration / 14 protocol framing / 81 network-filter passed, 3 ignored**; selected tests only.
+- **172 core tests EACH debug/release**, including **37 split tests**; strict Clippy, fmt, warning-denied docs, 35 integration-driver tests and six fixtures passed. Metadata push and PR runs also passed with 28 progress tests.
+- This commit adds malformed metadata validation, exact-maximum inbound split coverage and portable scratch-path instructions; no production runtime routing changed.
 
 Next substantive runtime work remains the ordered connection owner, specified
 in [docs/ordered-connection-owner.md](docs/ordered-connection-owner.md). It covers
@@ -25,8 +28,9 @@ admission, actual completion, real transport closure and profile-safe reconnect/
 reconfiguration. Then prove split authority, task host effects, atomic both-way
 semantic content and isolated live interoperability; do not skip to mod rewrites.
 
-Keep default split/flags disabled and both finish refusals. CANNOT JOIN.
-Read the previous exact-SHA checkpoint below for retained runtime evidence.
+Keep default split/flags disabled and both finish refusals. The latest run does
+NOT test a NeoForge join or semantic content application. **CANNOT JOIN.** The
+previous exact-SHA checkpoint below is historical runtime evidence.
 
 ---
 

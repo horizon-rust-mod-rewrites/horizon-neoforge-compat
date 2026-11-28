@@ -17,9 +17,9 @@ Updated: 2026-11-28. Rubric: v1.
 
 ## Latest executed engine checkpoint
 
-- Tested source SHA: `fb0294b4976bd78d4ee4cbfce44a6f049e0a4307`; distinct from newer tracking/docs commits.
-- [Successful hosted run](https://github.com/horizon-rust-mod-rewrites/horizon-neoforge-compat/actions/runs/46087704109); [retained selected-engine evidence](integration/hosted-46087704109-full-check.txt).
-- 171 core tests EACH debug/release; 16 companion / 9 early / 14 protocol / 81 network-filter passed, 3 ignored. Selected suites only; overlapping isolated tests are not additional coverage.
+- Tested source SHA: `7becb053b2d75f4a8978decbd8ecf94fb9d0dd95`; distinct from newer tracking/docs commits.
+- [Successful hosted run](https://github.com/horizon-rust-mod-rewrites/horizon-neoforge-compat/actions/runs/46137932076); [retained selected-engine evidence](integration/hosted-46137932076-full-check.txt).
+- 172 core tests EACH debug/release, including 37 split tests; 16 companion / 9 early / 14 protocol / 81 network-filter passed, 3 ignored. Selected suites only; overlapping isolated tests are not additional coverage.
 - **Current runtime: CANNOT JOIN.** Production split routing, complete tasks, real semantic content publication, launcher/UI and live interoperability remain unproven. Default split/feature-flag opt-ins remain disabled; both finish refusals remain.
 
 ## Milestone percentages
