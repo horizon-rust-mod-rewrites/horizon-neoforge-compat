@@ -1,3 +1,9 @@
+# Completion tracking (read alongside NEXT_AGENT.md)
+
+Maintain `COMPATIBILITY_PROGRESS.md` from `progress/compatibility.json`. Run `python3 progress/report.py --check` and progress unittest discovery when updating it. Credit only evidenced complete criteria; changes in scope require a rubric-version change, not hidden exclusions. Tracker arithmetic never authorizes finish or mod rewrites. See `docs/ordered-connection-owner.md` for the next runtime gate.
+
+---
+
 # Latest exact-SHA hosted validation: outbound milestone PASSED
 
 Run: https://github.com/horizon-rust-mod-rewrites/horizon-neoforge-compat/actions/runs/46087704109

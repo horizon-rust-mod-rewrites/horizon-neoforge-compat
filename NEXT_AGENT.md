@@ -1,3 +1,35 @@
+# Completion tracking checkpoint — 2026-11-28
+
+See [COMPATIBILITY_PROGRESS.md](COMPATIBILITY_PROGRESS.md): initial rubric v1
+is **30% evidence-backed checklist completion**, NOT effort/ETA/coverage or mod
+support. Only fully completed weighted criteria earn points; partial work earns
+zero. Readiness to begin separate mod rewrites remains **NO**. Tracker work adds
+no compatibility points and does not implement protocol/runtime behavior.
+
+Machine-readable source: `progress/compatibility.json`; regenerate/check with
+`python3 progress/report.py` / `python3 progress/report.py --check`. Run its
+25 dependency-free metadata regression tests using unittest discovery in
+`progress/`. Lightweight progress CI is separate from full-engine CI; it cannot
+prove protocol compatibility. See `progress/validation.txt` for local results.
+
+Latest Actions run and BOTH jobs were rechecked: success46087704109 at exact
+fb0294b4976bd78d4ee4cbfce44a6f049e0a4307, not a new-source execution. No newer
+full-engine run was found. Runtime/core/patch/driver/full-build workflow are
+unchanged. Local 35 driver safety tests and six fixtures also pass; no Rust
+compiler/full Horizon/live server execution in this checkpoint.
+
+Next substantive runtime work remains the ordered connection owner, specified
+in [docs/ordered-connection-owner.md](docs/ordered-connection-owner.md). It covers
+both phases/epoch, real ingress and queued output, idle expiry, atomic batch
+admission, actual completion, real transport closure and profile-safe reconnect/
+reconfiguration. Then prove split authority, task host effects, atomic both-way
+semantic content and isolated live interoperability; do not skip to mod rewrites.
+
+Keep default split/flags disabled and both finish refusals. CANNOT JOIN.
+Read the previous exact-SHA checkpoint below for retained runtime evidence.
+
+---
+
 # Continue SAME draft PR #1 — outbound milestone fully hosted-tested
 
 ## Rules and exact baseline

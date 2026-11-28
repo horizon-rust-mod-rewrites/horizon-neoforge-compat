@@ -1,0 +1,37 @@
+name: Compatibility progress metadata
+
+on:
+  push:
+    branches: [feat/neoforge-21.1.248-early-handshake]
+    paths:
+      - '.github/workflows/compat-progress.yml'
+      - 'progress/**'
+      - 'COMPATIBILITY_PROGRESS.md'
+      - 'docs/ordered-connection-owner.md'
+  pull_request:
+    paths:
+      - '.github/workflows/compat-progress.yml'
+      - 'progress/**'
+      - 'COMPATIBILITY_PROGRESS.md'
+      - 'docs/ordered-connection-owner.md'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  metadata-only:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - name: Check out without persistent credentials
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Validate checklist arithmetic, evidence references and generated report
+        run: |
+          python3 progress/report.py --check
+          python3 -m unittest discover -s progress -p 'test_*.py' -v
+          sha256sum --check SHA256SUMS
+      # Intentionally no Rust, engine/source downloads, credentials or live join.
+      # This is NOT a replacement for the pinned actual-engine validation.

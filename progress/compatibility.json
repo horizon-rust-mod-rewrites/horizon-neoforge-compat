@@ -1,0 +1,643 @@
+{
+  "schema_version": 1,
+  "rubric_version": 1,
+  "updated": "2026-11-28",
+  "baseline": {
+    "minecraft": "1.21.1",
+    "protocol": 767,
+    "neoforge": "21.1.248",
+    "horizon": "ae632edf48f6cae3ba52a5c81523ec712488c9cc"
+  },
+  "last_engine_validation": {
+    "tested_sha": "fb0294b4976bd78d4ee4cbfce44a6f049e0a4307",
+    "run_url": "https://github.com/horizon-rust-mod-rewrites/horizon-neoforge-compat/actions/runs/46087704109",
+    "retained_evidence": "integration/hosted-46087704109-full-check.txt"
+  },
+  "sections": [
+    {
+      "id": "foundation",
+      "title": "Exact baseline and reproducibility",
+      "tasks": [
+        {
+          "id": "pins",
+          "title": "Exact source and version pins",
+          "weight": 2,
+          "status": "complete",
+          "acceptance": "Exact loader, Minecraft ordinals and Horizon sources are identified, checksummed and reproducibly verified.",
+          "evidence": [
+            {
+              "path": "provenance/neoforge-21.1.248.json",
+              "checkpoint_sha": "fb0294b4976bd78d4ee4cbfce44a6f049e0a4307"
+            },
+            {
+              "path": "provenance/horizon.json",
+              "checkpoint_sha": "fb0294b4976bd78d4ee4cbfce44a6f049e0a4307"
+            },
+            {
+              "path": "integration/hosted-46087704109-full-check.txt",
+              "checkpoint_sha": "fb0294b4976bd78d4ee4cbfce44a6f049e0a4307"
+            }
+          ],
+          "depends_on": []
+        },
+        {
+          "id": "licenses",
+          "title": "License separation and attribution",
+          "weight": 1,
+          "status": "complete",
+          "acceptance": "Existing core/patch/reference provenance, notices and AI commit policy are recorded; review new imports separately.",
+          "evidence": [
+            {
+              "path": "THIRD_PARTY_NOTICES.md",
+              "checkpoint_sha": "fb0294b4976bd78d4ee4cbfce44a6f049e0a4307"
+            },
+            {
+              "path": "integration/NOTICE.md",
+              "checkpoint_sha": "fb0294b4976bd78d4ee4cbfce44a6f049e0a4307"
+            }
+          ],
+          "depends_on": []
+        },
+        {
+          "id": "reproduction",
+          "title": "Bounded reproducible validation",
+          "weight": 3,
+          "status": "complete",
+          "acceptance": "Resource preflight, pin/lock audit and core/full-engine validation run with retained exact-SHA results.",
+          "evidence": [
+            {
+              "path": "integration/hosted-46087704109-core.txt",
+              "checkpoint_sha": "fb0294b4976bd78d4ee4cbfce44a6f049e0a4307"
+            },
+            {
+              "path": "integration/hosted-46087704109-full-check.txt",
+              "checkpoint_sha": "fb0294b4976bd78d4ee4cbfce44a6f049e0a4307"
+            }
+          ],
+          "depends_on": [
+            "pins"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "negotiation",
+      "title": "Negotiation, routing and diagnostics",
+      "tasks": [
+        {
+          "id": "codecs",
+          "title": "Bounded query/setup and common codecs",
+          "weight": 3,
+          "status": "complete",
+          "acceptance": "Bounded common/query/setup codecs and negative/truncation regressions pass.",
+          "evidence": [
+            {
+              "path": "integration/hosted-46087704109-core.txt",
+              "checkpoint_sha": "fb0294b4976bd78d4ee4cbfce44a6f049e0a4307"
+            },
+            {
+              "path": "docs/WIRE.md",
+              "checkpoint_sha": "fb0294b4976bd78d4ee4cbfce44a6f049e0a4307"
+            }
+          ],
+          "depends_on": []
+        },
+        {
+          "id": "java-query",
+          "title": "Independent Java query/setup comparison",
+          "weight": 3,
+          "status": "complete",
+          "acceptance": "Actual pinned Java/Rust query/setup comparison executes; policy differences are documented. Does NOT cover split transport.",
+          "evidence": [
+            {
+              "path": "tests/reference/results.json",
+              "checkpoint_sha": "fb0294b4976bd78d4ee4cbfce44a6f049e0a4307"
+            },
+            {
+              "path": "tests/reference/validation.txt",
+              "checkpoint_sha": "fb0294b4976bd78d4ee4cbfce44a6f049e0a4307"
+            }
+          ],
+          "depends_on": [
+            "codecs"
+          ]
+        },
+        {
+          "id": "selection",
+          "title": "Handler-backed selection and fail-closed Loader",
+          "weight": 2,
+          "status": "complete",
+          "acceptance": "Exact phase/version/direction selection, ordering, epoch cleanup and finish refusal are tested.",
+          "evidence": [
+            {
+              "path": "integration/hosted-46087704109-core.txt",
+              "checkpoint_sha": "fb0294b4976bd78d4ee4cbfce44a6f049e0a4307"
+            },
+            {
+              "path": "tests/loader.rs",
+              "checkpoint_sha": "fb0294b4976bd78d4ee4cbfce44a6f049e0a4307"
+            },
+            {
+              "path": "tests/negotiation.rs",
+              "checkpoint_sha": "fb0294b4976bd78d4ee4cbfce44a6f049e0a4307"
+            }
+          ],
+          "depends_on": [
+            "codecs"
+          ]
+        },
+        {
+          "id": "diagnostics",
+          "title": "Safe actionable failure diagnostics",
+          "weight": 2,
+          "status": "in_progress",
+          "acceptance": "Decode and safely expose bounded Component/NBT failure semantics with phase/channel context; raw NBT alone is insufficient.",
+          "evidence": [],
+          "depends_on": []
+        },
+        {
+          "id": "routing",
+          "title": "Complete required payload routing inventory",
+          "weight": 2,
+          "status": "in_progress",
+          "acceptance": "Audit every baseline required payload/task and both directions; registration never supplies authority; unsupported required behavior terminates.",
+          "evidence": [],
+          "depends_on": []
+        }
+      ]
+    },
+    {
+      "id": "transport",
+      "title": "Ordered production transport and split support",
+      "tasks": [
+        {
+          "id": "assembly",
+          "title": "Bounded inbound split primitive",
+          "weight": 2,
+          "status": "complete",
+          "acceptance": "Fallible bounded reassembly, deadlines and lifecycle tests execute. This is not production ingress.",
+          "evidence": [
+            {
+              "path": "integration/hosted-46087704109-core.txt",
+              "checkpoint_sha": "fb0294b4976bd78d4ee4cbfce44a6f049e0a4307"
+            },
+            {
+              "path": "src/split.rs",
+              "checkpoint_sha": "fb0294b4976bd78d4ee4cbfce44a6f049e0a4307"
+            }
+          ],
+          "depends_on": []
+        },
+        {
+          "id": "splitter",
+          "title": "Bounded outbound split primitive",
+          "weight": 2,
+          "status": "complete",
+          "acceptance": "Original/envelope limits, capacity and split boundary tests execute. This is not production emission.",
+          "evidence": [
+            {
+              "path": "integration/hosted-46087704109-core.txt",
+              "checkpoint_sha": "fb0294b4976bd78d4ee4cbfce44a6f049e0a4307"
+            },
+            {
+              "path": "tests/split.rs",
+              "checkpoint_sha": "fb0294b4976bd78d4ee4cbfce44a6f049e0a4307"
+            }
+          ],
+          "depends_on": []
+        },
+        {
+          "id": "adapter-seams",
+          "title": "Actual adapter and TCP split seams",
+          "weight": 2,
+          "status": "complete",
+          "acceptance": "Actual preparation/decoder and TCP compression/encryption matrix passes without queue/cipher side effects; not a production route.",
+          "evidence": [
+            {
+              "path": "integration/hosted-46087704109-full-check.txt",
+              "checkpoint_sha": "fb0294b4976bd78d4ee4cbfce44a6f049e0a4307"
+            },
+            {
+              "path": "docs/horizon-split-outbound-seam.md",
+              "checkpoint_sha": "fb0294b4976bd78d4ee4cbfce44a6f049e0a4307"
+            }
+          ],
+          "depends_on": []
+        },
+        {
+          "id": "owner",
+          "title": "Single live ordered connection owner",
+          "weight": 4,
+          "status": "not_started",
+          "acceptance": "One owner serializes both phase transitions, Loader epoch, ingress, preparation, queued writes and close/reset; idle timer cannot race them.",
+          "evidence": [],
+          "depends_on": [
+            "adapter-seams",
+            "selection"
+          ]
+        },
+        {
+          "id": "split-authority",
+          "title": "Negotiated bidirectional split authority",
+          "weight": 2,
+          "status": "blocked",
+          "acceptance": "Actual selected setup plus real host handlers grants both needed directions per epoch; no registration/threshold inference.",
+          "evidence": [],
+          "depends_on": [
+            "owner"
+          ]
+        },
+        {
+          "id": "transport-budgets",
+          "title": "Connection-wide bounded admission and idle expiry",
+          "weight": 3,
+          "status": "blocked",
+          "acceptance": "Whole-traffic/pending budgets, idle assembly deadline, fallible whole-batch atomic admission and serialized output are enforced by real owner.",
+          "evidence": [],
+          "depends_on": [
+            "owner",
+            "assembly",
+            "splitter"
+          ]
+        },
+        {
+          "id": "transport-runtime",
+          "title": "Production ingress/emission and awaited completion",
+          "weight": 3,
+          "status": "blocked",
+          "acceptance": "Actual ingress and direct framing route are enabled only with authority; dispatch/write completion is awaited; failures close socket and reset Loader without ack.",
+          "evidence": [],
+          "depends_on": [
+            "split-authority",
+            "transport-budgets"
+          ]
+        },
+        {
+          "id": "java-split",
+          "title": "Java split codec/transport interoperability",
+          "weight": 2,
+          "status": "not_started",
+          "acceptance": "Pinned independent Java split reference and malformed/limit/threshold cases validate both directions against Rust.",
+          "evidence": [],
+          "depends_on": []
+        }
+      ]
+    },
+    {
+      "id": "tasks",
+      "title": "Required configuration tasks and host behavior",
+      "tasks": [
+        {
+          "id": "staging",
+          "title": "Registry staging and semantic commit barrier",
+          "weight": 1,
+          "status": "complete",
+          "acceptance": "Bounded epoch staging and mandatory semantic validation/atomic commit barriers pass synthetic-host tests; no real content host claimed.",
+          "evidence": [
+            {
+              "path": "integration/hosted-46087704109-core.txt",
+              "checkpoint_sha": "fb0294b4976bd78d4ee4cbfce44a6f049e0a4307"
+            },
+            {
+              "path": "tests/registry_sync.rs",
+              "checkpoint_sha": "fb0294b4976bd78d4ee4cbfce44a6f049e0a4307"
+            }
+          ],
+          "depends_on": []
+        },
+        {
+          "id": "flag-primitive",
+          "title": "Opt-in feature-flag equality primitive",
+          "weight": 1,
+          "status": "complete",
+          "acceptance": "Bounded equality and negotiated data/ack task routing tests pass; default stays off without genuine host inventory.",
+          "evidence": [
+            {
+              "path": "integration/hosted-46087704109-core.txt",
+              "checkpoint_sha": "fb0294b4976bd78d4ee4cbfce44a6f049e0a4307"
+            },
+            {
+              "path": "tests/feature_flags_loader.rs",
+              "checkpoint_sha": "fb0294b4976bd78d4ee4cbfce44a6f049e0a4307"
+            }
+          ],
+          "depends_on": []
+        },
+        {
+          "id": "config-files",
+          "title": "Config-file task and enforced host config",
+          "weight": 3,
+          "status": "not_started",
+          "acceptance": "Exact bounded config task codecs/order and actual host enforcement/ack behavior are independently tested, with explicit refusal for unsupported semantics.",
+          "evidence": [],
+          "depends_on": []
+        },
+        {
+          "id": "data-maps",
+          "title": "Registry data-map tasks",
+          "weight": 3,
+          "status": "not_started",
+          "acceptance": "Exact baseline data-map inventory/codecs and host semantic apply/ack behavior are implemented and tested.",
+          "evidence": [],
+          "depends_on": []
+        },
+        {
+          "id": "enums",
+          "title": "Extensible-enum task",
+          "weight": 3,
+          "status": "not_started",
+          "acceptance": "Exact enum codec/order and actual host enum semantics/equality are implemented and tested; no invented empty inventory.",
+          "evidence": [],
+          "depends_on": []
+        },
+        {
+          "id": "host-flags",
+          "title": "Host-owned implemented-feature inventory",
+          "weight": 3,
+          "status": "blocked",
+          "acceptance": "Capability/profile inventory is tied to implementation lifetime, enforced by host behavior and wired to real flag task; enabled peer/world names are not evidence.",
+          "evidence": [],
+          "depends_on": [
+            "flag-primitive",
+            "owner"
+          ]
+        },
+        {
+          "id": "task-order",
+          "title": "Complete task ordering and reconnect lifecycle",
+          "weight": 2,
+          "status": "blocked",
+          "acceptance": "Real baseline task graph, required-handler failure, duplicate/out-of-order/timeout and epoch reset cases execute without silent acknowledgment.",
+          "evidence": [],
+          "depends_on": [
+            "routing",
+            "config-files",
+            "data-maps",
+            "enums",
+            "host-flags",
+            "transport-runtime"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "content",
+      "title": "Atomic bidirectional semantic content compatibility",
+      "tasks": [
+        {
+          "id": "numeric-maps",
+          "title": "Explicit bidirectional numeric-map infrastructure",
+          "weight": 2,
+          "status": "complete",
+          "acceptance": "Sparse IDs, aliases and atomic map construction tested; not semantic registry publication.",
+          "evidence": [
+            {
+              "path": "integration/hosted-46087704109-core.txt",
+              "checkpoint_sha": "fb0294b4976bd78d4ee4cbfce44a6f049e0a4307"
+            },
+            {
+              "path": "tests/core.rs",
+              "checkpoint_sha": "fb0294b4976bd78d4ee4cbfce44a6f049e0a4307"
+            }
+          ],
+          "depends_on": []
+        },
+        {
+          "id": "content-transaction",
+          "title": "Real host inventory and atomic publication",
+          "weight": 4,
+          "status": "blocked",
+          "acceptance": "Define supported content inventory and implement transactional both-way semantic validation/publication across real host packet paths, with rollback/refusal.",
+          "evidence": [],
+          "depends_on": [
+            "staging",
+            "numeric-maps",
+            "owner"
+          ]
+        },
+        {
+          "id": "items",
+          "title": "Items and data components",
+          "weight": 4,
+          "status": "blocked",
+          "acceptance": "Real inbound/outbound item stacks, components and nested content are translated semantically with independent/round-trip tests.",
+          "evidence": [],
+          "depends_on": [
+            "content-transaction"
+          ]
+        },
+        {
+          "id": "blocks",
+          "title": "Blocks, states, chunks and palettes",
+          "weight": 5,
+          "status": "blocked",
+          "acceptance": "Real block/state/chunk/palette paths apply semantic mappings in both directions, including unsupported-content failures.",
+          "evidence": [],
+          "depends_on": [
+            "content-transaction"
+          ]
+        },
+        {
+          "id": "entities",
+          "title": "Entities and serializers",
+          "weight": 3,
+          "status": "blocked",
+          "acceptance": "Real entity types, metadata serializers and payload paths use verified semantic adapters both ways.",
+          "evidence": [],
+          "depends_on": [
+            "content-transaction"
+          ]
+        },
+        {
+          "id": "recipes-tags",
+          "title": "Recipes, tags and remaining content-bearing paths",
+          "weight": 4,
+          "status": "blocked",
+          "acceptance": "Audit complete packet/content surface; recipes, tags, menus and remaining relevant IDs/semantics are implemented or explicitly rejected before finish.",
+          "evidence": [],
+          "depends_on": [
+            "content-transaction",
+            "items",
+            "blocks",
+            "entities"
+          ]
+        },
+        {
+          "id": "resource-semantics",
+          "title": "Resource and datapack semantic parity",
+          "weight": 2,
+          "status": "blocked",
+          "acceptance": "Known-pack/resource/datapack claims correspond to actual implemented host semantics, not hash/name equality or forged pack support.",
+          "evidence": [],
+          "depends_on": [
+            "content-transaction"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "engine",
+      "title": "Actual engine validation and usable integration",
+      "tasks": [
+        {
+          "id": "engine-build",
+          "title": "Full patched actual-client and companion typecheck",
+          "weight": 3,
+          "status": "complete",
+          "acceptance": "Full pinned actual client and wired companion typecheck; upstream locked graph unchanged except local dependency-free core.",
+          "evidence": [
+            {
+              "path": "integration/hosted-46087704109-full-check.txt",
+              "checkpoint_sha": "fb0294b4976bd78d4ee4cbfce44a6f049e0a4307"
+            }
+          ],
+          "depends_on": []
+        },
+        {
+          "id": "engine-tests",
+          "title": "Selected actual-engine TCP and lifecycle regressions",
+          "weight": 3,
+          "status": "complete",
+          "acceptance": "Recorded selected suites execute: 16 companion, 9 early, 14 protocol, 81 network-filter passed/3 ignored; not all upstream tests.",
+          "evidence": [
+            {
+              "path": "integration/hosted-46087704109-full-check.txt",
+              "checkpoint_sha": "fb0294b4976bd78d4ee4cbfce44a6f049e0a4307"
+            },
+            {
+              "path": "integration/hosted-46087704109-core.txt",
+              "checkpoint_sha": "fb0294b4976bd78d4ee4cbfce44a6f049e0a4307"
+            }
+          ],
+          "depends_on": []
+        },
+        {
+          "id": "launcher",
+          "title": "Usable opt-in launcher/runtime wiring",
+          "weight": 2,
+          "status": "blocked",
+          "acceptance": "Reproducible real entry-point/profile wiring with ownership and cleanup is exercised; not merely a standalone checker/patch. Preserve/renegotiate explicit profile on reconnect, transfer and reconfiguration; no vanilla fallback.",
+          "evidence": [],
+          "depends_on": [
+            "owner",
+            "transport-runtime",
+            "task-order"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "live",
+      "title": "Isolated live interoperability and completion proof",
+      "tasks": [
+        {
+          "id": "baseline-join",
+          "title": "Isolated exact NeoForge baseline join",
+          "weight": 3,
+          "status": "blocked",
+          "acceptance": "Only after all prerequisites: exact 21.1.248 isolated server completes real configuration and representative play with retained sanitized logs and exact versions.",
+          "evidence": [],
+          "depends_on": [
+            "task-order",
+            "java-split",
+            "diagnostics",
+            "items",
+            "blocks",
+            "entities",
+            "recipes-tags",
+            "resource-semantics",
+            "launcher"
+          ]
+        },
+        {
+          "id": "fixture-join",
+          "title": "Minimal fixture-mod join and content round trips",
+          "weight": 3,
+          "status": "blocked",
+          "acceptance": "Small licensed fixture exercises required payloads/tasks and semantic content in both directions on isolated server; no production-first testing.",
+          "evidence": [],
+          "depends_on": [
+            "baseline-join"
+          ]
+        },
+        {
+          "id": "live-lifecycle",
+          "title": "Real disconnect, failure and reconnect matrix",
+          "weight": 2,
+          "status": "blocked",
+          "acceptance": "Timeout, malformed/unsupported/mismatch, mid-write failure and clean reconnect produce terminal cleanup and no stale state; compression/encryption covered.",
+          "evidence": [],
+          "depends_on": [
+            "baseline-join"
+          ]
+        },
+        {
+          "id": "finish-proof",
+          "title": "Reviewed completion gate and end-to-end repeatability",
+          "weight": 2,
+          "status": "blocked",
+          "acceptance": "Review both finish refusals only after actual complete prerequisites; replace with proven gating, rerun regressions and live matrix on exact final source SHA. No unconditional unlock.",
+          "evidence": [],
+          "depends_on": [
+            "fixture-join",
+            "live-lifecycle"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "rewrite-readiness",
+      "title": "Readiness to BEGIN separate mod rewrites",
+      "tasks": [
+        {
+          "id": "adapter-api",
+          "title": "Stable reusable adapter contract",
+          "weight": 1,
+          "status": "blocked",
+          "acceptance": "Document and exercise a stable extension API with per-connection state, negotiated sends/replies, configuration AND play routing, lifecycle/reset hooks, async completion barriers, budgets, diagnostics and exact supported/rejected content/version constraints.",
+          "evidence": [],
+          "depends_on": [
+            "finish-proof"
+          ]
+        },
+        {
+          "id": "fixture-example",
+          "title": "Minimal reusable extension example",
+          "weight": 1,
+          "status": "blocked",
+          "acceptance": "Publish a tested minimal fixture/example showing a real handler/content extension without claiming any real mod rewritten.",
+          "evidence": [],
+          "depends_on": [
+            "fixture-join",
+            "adapter-api"
+          ]
+        },
+        {
+          "id": "release-repro",
+          "title": "Reproducible installation and diagnostics",
+          "weight": 1,
+          "status": "blocked",
+          "acceptance": "Document installation/build/profile selection, isolated test procedure, failure triage and tested release SHA; no user credentials/game assets.",
+          "evidence": [],
+          "depends_on": [
+            "finish-proof",
+            "launcher"
+          ]
+        },
+        {
+          "id": "scope-review",
+          "title": "Final support/license and rewrite handoff review",
+          "weight": 1,
+          "status": "blocked",
+          "acceptance": "Review all acceptance evidence, supported baseline and exclusions; record explicit readiness to start separate mod projects with per-mod source/license/version review. No universal 70-mod claim.",
+          "evidence": [],
+          "depends_on": [
+            "adapter-api",
+            "fixture-example",
+            "release-repro"
+          ]
+        }
+      ]
+    }
+  ]
+}

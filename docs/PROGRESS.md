@@ -1,3 +1,9 @@
+# Full compatibility completion tracker
+
+See [COMPATIBILITY_PROGRESS.md](../COMPATIBILITY_PROGRESS.md): **30%** of the initial evidence-backed, weighted acceptance checklist. This is not an effort estimate or mod-support percentage. **Not ready to begin individual mod rewrites; CANNOT JOIN.** The tracker includes remaining transport ownership, required tasks, semantic content, actual-client integration and isolated live proof. This checkpoint adds tracking/acceptance criteria only, not runtime support.
+
+---
+
 # Latest exact-SHA hosted validation: outbound milestone PASSED
 
 Run: https://github.com/horizon-rust-mod-rewrites/horizon-neoforge-compat/actions/runs/46087704109
