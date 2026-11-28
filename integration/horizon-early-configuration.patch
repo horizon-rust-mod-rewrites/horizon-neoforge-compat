@@ -1,0 +1,4427 @@
+diff --git a/crates/horizon-client/src/net.rs b/crates/horizon-client/src/net.rs
+--- a/crates/horizon-client/src/net.rs
++++ b/crates/horizon-client/src/net.rs
+@@ -7,8 +7,16 @@
+ //! (crate::auth): the login joins the server through the session service and
+ //! encrypts the connection (ClientHandshakePacketListenerImpl.handleHello).
+ use crate::auth::AuthSession;
++pub mod early_configuration;
++#[cfg(test)]
++#[path = "net/early_configuration_net_tests.rs"]
++mod early_configuration_net_tests;
+ pub mod ingress;
+ mod known_packs;
++pub mod ordered_owner;
++#[cfg(test)]
++#[path = "net/ordered_owner_tests.rs"]
++mod ordered_owner_tests;
+ use known_packs::{fill_known_entries, select_known_packs};
+ #[cfg(test)]
+ #[path = "net/mod_packet_tests.rs"]
+@@ -278,6 +286,9 @@
+ fn next_serial() -> u64 {
+     NEXT_SERIAL.fetch_add(1, Ordering::Relaxed)
+ }
++/// The next configuration owner [`ordered_owner::Epoch`] tag. Monotonic and
++/// never reused within a process, so stale callbacks and timers are refused.
++static NEXT_OWNER_EPOCH: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(1);
+ use std::path::PathBuf;
+
+ impl Session {
+@@ -318,6 +329,30 @@
+     ) -> Self {
+         Self::start(
+             address, name, auth, info, lang, None, None, resources, false,
++        )
++    }
++    /// Explicit early NeoForge endpoint. This bootstrap milestone intentionally
++    /// refuses finish: it does not supply modded play/content conversion.
++    pub fn connect_neoforge(
++        address: &str,
++        name: &str,
++        auth: Option<Arc<AuthSession>>,
++        info: cfg::ClientInformation,
++        lang: Arc<Language>,
++        resources: Arc<ItemData>,
++        profile: early_configuration::Profile,
++    ) -> Self {
++        Self::start_with_profile(
++            address,
++            name,
++            auth,
++            info,
++            lang,
++            None,
++            None,
++            resources,
++            false,
++            Some(profile),
+         )
+     }
+     /// `ClientHandshakePacketListenerImpl.handleHello`: LAN entries can continue
+@@ -412,6 +447,22 @@
+         cookies: Option<Cookies>,
+         resources: Arc<ItemData>,
+         lan: bool,
++    ) -> Self {
++        Self::start_with_profile(
++            address, name, auth, info, lang, local, cookies, resources, lan, None,
++        )
++    }
++    fn start_with_profile(
++        address: &str,
++        name: &str,
++        auth: Option<Arc<AuthSession>>,
++        info: cfg::ClientInformation,
++        lang: Arc<Language>,
++        local: Option<horizon_protocol::connection::Pipe>,
++        cookies: Option<Cookies>,
++        resources: Arc<ItemData>,
++        lan: bool,
++        early_profile: Option<early_configuration::Profile>,
+     ) -> Self {
+         let (send, events) = event_channel();
+         let payload_events = send.clone();
+@@ -462,6 +513,7 @@
+                     &thread_recorder,
+                     &thread_payloads,
+                     &thread_reached,
++                    early_profile.as_ref(),
+                 )
+             });
+             thread_payloads.close();
+@@ -1084,6 +1136,7 @@
+     recorder: &RecorderSlot,
+     payloads: &Arc<crate::raw_payloads::Transport>,
+     reached: &AtomicU8,
++    early_profile: Option<&early_configuration::Profile>,
+ ) -> Result<Reason, Reason> {
+     let (host, port, mut c) = if let Some(pipe) = local {
+         (address.to_owned(), 0, Connection::local(pipe))
+@@ -1129,7 +1182,11 @@
+                 .write_raw(&token)
+                 .map_err(|e| Reason::plain(e.to_string()))?;
+         }
+-        if !address.starts_with(FRIEND)
++        if early_profile.is_some() {
++            // Explicit profile pins the wire protocol; never infer the loader
++            // from a status brand, or silently fall back to current protocol.
++            c.adapt(horizon_protocol::adapter::ServerVersion::V1_21_1);
++        } else if !address.starts_with(FRIEND)
+             && let Some(version) = older_server(address)
+         {
+             log::info!("Joining {address} as a {} server", version.name());
+@@ -1241,21 +1298,23 @@
+     status(send, &tr(lang, "connect.joining"));
+     // ClientHandshakePacketListenerImpl.handleLoginFinished: the brand, then
+     // the client information.
+-    c.send(
+-        &cfg::Serverbound::CustomPayload(cfg::CustomPayload {
+-            channel: "minecraft:brand".into(),
+-            data: brand(),
+-        })
+-        .try_encode()
+-        .map_err(e)?,
+-    )
+-    .map_err(e)?;
++    if early_profile.is_none() {
++        c.send(
++            &cfg::Serverbound::CustomPayload(cfg::CustomPayload {
++                channel: "minecraft:brand".into(),
++                data: brand(),
++            })
++            .try_encode()
++            .map_err(e)?,
++        )
++        .map_err(e)?;
++    }
+     c.send(&cfg::Serverbound::ClientInformation(info).encode())
+         .map_err(e)?;
+     let (mut reader, writer) = c.split();
+     *shared_writer.lock().unwrap() =
+         Some(QueuedWriter::new(writer).map_err(|error| Reason::plain(error.to_string()))?);
+-    let registries = configure(
++    let registries = configure_with_profile(
+         &mut reader,
+         shared_writer,
+         configuring,
+@@ -1265,6 +1324,7 @@
+         resources,
+         payloads,
+         true,
++        early_profile,
+     )?;
+     deliver(
+         send,
+@@ -1639,6 +1699,111 @@
+ /// while a world's first view streams in no longer ends the connection (#18380).
+ /// Events main already dropped under pressure keep `send`, so keepalives are still
+ /// answered behind them.
++/// Map an owner error to a bounded transport reason with channel context. The
++/// owner's error already carries a stable diagnostic; the channel is peer input,
++/// so it is bounded/escaped by the same identifier policy the endpoint uses.
++fn owner_error(error: &horizon_protocol::Error, channel: &str) -> String {
++    let channel = if channel.len() <= 256
++        && channel.split_once(':').is_some_and(|(ns, path)| {
++            !ns.is_empty()
++                && !path.is_empty()
++                && ns
++                    .bytes()
++                    .all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || b"_.-".contains(&b))
++                && path
++                    .bytes()
++                    .all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || b"_.-/".contains(&b))
++        }) {
++        channel.to_owned()
++    } else {
++        "<invalid-channel>".to_owned()
++    };
++    format!("configuration/{channel}: {error}")
++}
++
++/// Bound early writes independently of socket read timeouts. Never wait while
++/// holding shared_writer or an engine lock: cancellation must be able to close it.
++const EARLY_WRITE_TIMEOUT: Duration = Duration::from_secs(5);
++
++fn emit_early_bodies(
++    writer: &Arc<Mutex<Option<QueuedWriter>>>,
++    lang: &Language,
++    bodies: Vec<Vec<u8>>,
++    budget: &ordered_owner::ConfigurationBudget,
++) -> Result<(), Reason> {
++    budget
++        .outbound(&bodies)
++        .map_err(|error| Reason::plain(error.to_string()))?;
++    let timeout = budget
++        .remaining()
++        .map_err(|error| Reason::plain(error.to_string()))?
++        .min(EARLY_WRITE_TIMEOUT);
++    let writer = writer
++        .lock()
++        .unwrap()
++        .as_ref()
++        .cloned()
++        .ok_or_else(|| Reason::plain("Disconnected"))?;
++    writer
++        .send_batch(bodies)
++        .and_then(|receipt| receipt.wait(timeout))
++        .map_err(|error| Reason::plain(connection_lost(error, lang)))?;
++    // A callback or write may have consumed the last remaining lifetime. Never
++    // dispatch another original or report success after that absolute deadline.
++    budget
++        .poll()
++        .map_err(|error| Reason::plain(error.to_string()))
++}
++
++/// Validate/encode the entire batch before admission. The worker's actual write
++/// completion is awaited before dispatching any subsequent configuration packet.
++fn emit_reply_batch(
++    writer: &Arc<Mutex<Option<QueuedWriter>>>,
++    lang: &Language,
++    replies: Vec<early_configuration::Reply>,
++    budget: &ordered_owner::ConfigurationBudget,
++) -> Result<(), Reason> {
++    if replies.is_empty() {
++        return Ok(());
++    }
++    let mut bodies = Vec::new();
++    bodies
++        .try_reserve_exact(replies.len())
++        .map_err(|_| Reason::plain("configuration/batch: allocation failed"))?;
++    for reply in replies {
++        let packet = cfg::Serverbound::CustomPayload(cfg::CustomPayload {
++            channel: reply.channel,
++            data: reply.body,
++        });
++        bodies.push(
++            packet
++                .try_encode()
++                .map_err(|error| Reason::plain(format!("configuration/encode: {error}")))?,
++        );
++    }
++    emit_early_bodies(writer, lang, bodies, budget)
++}
++
++/// Own the reader borrow through the entire early configure call. Teardown can
++/// therefore invalidate its buffered old epoch as well as close the physical
++/// transport, even if the shared writer is absent or cloning a closer would fail.
++/// Default configuration uses the same borrow with terminal cleanup disabled.
++struct EarlyTransportGuard<'a> {
++    reader: &'a mut ConnReader,
++    writer: Option<QueuedWriter>,
++    enabled: bool,
++}
++impl Drop for EarlyTransportGuard<'_> {
++    fn drop(&mut self) {
++        if self.enabled {
++            self.reader.shutdown();
++            if let Some(writer) = &self.writer {
++                writer.shutdown();
++            }
++        }
++    }
++}
++
+ fn deliver(send: &ingress::Producer<Event>, lang: &Language, event: Event) -> Result<(), Reason> {
+     send.send_waiting(event)
+         .map_err(|refused| refusal(refused, lang))
+@@ -1750,18 +1915,102 @@
+     // The connection's first configuration, not a reconfiguration from play.
+     initial: bool,
+ ) -> Result<Dynamic, Reason> {
++    configure_with_profile(
++        reader,
++        writer,
++        configuring,
++        lang,
++        send,
++        cookies,
++        resources,
++        payloads,
++        initial,
++        None,
++    )
++}
++
++fn configure_with_profile(
++    reader: &mut ConnReader,
++    writer: &Arc<Mutex<Option<QueuedWriter>>>,
++    configuring: &Arc<AtomicBool>,
++    lang: &Language,
++    send: &ingress::Producer<Event>,
++    cookies: &Cookies,
++    resources: &ItemData,
++    payloads: &Arc<crate::raw_payloads::Transport>,
++    // The connection's first configuration, not a reconfiguration from play.
++    initial: bool,
++    early_profile: Option<&early_configuration::Profile>,
++) -> Result<Dynamic, Reason> {
++    // Construct the guard BEFORE checking writer availability: a concurrently
++    // removed writer must not strand the still-owned reader/socket or its buffer.
++    let budget =
++        early_profile.map(|profile| ordered_owner::ConfigurationBudget::new(profile.limits));
++    let early_transport = EarlyTransportGuard {
++        reader,
++        writer: if early_profile.is_some() {
++            writer.lock().unwrap().as_ref().cloned()
++        } else {
++            None
++        },
++        enabled: early_profile.is_some(),
++    };
++    if early_transport.enabled && early_transport.writer.is_none() {
++        return Err(Reason::plain("Disconnected"));
++    }
++    let reader = &mut *early_transport.reader;
++    if let Some(budget) = &budget {
++        reader.set_read_deadline(Some(budget.deadline()));
++    }
+     let mut registries = Dynamic::default();
+     let mut content_verified = false;
+     payloads.begin_configuration();
++    if early_profile.is_some() {
++        reader
++            .order_configuration()
++            .map_err(|error| Reason::plain(format!("configuration/order: {error}")))?;
++    }
++    // Fresh owner per epoch; the stack guard resets it on every return path.
++    // Begin BEFORE any Horizon offer or receive dispatch. The owner is the single
++    // serialization domain for the early path: it tags work with this epoch,
++    // drives the split idle deadline from the read-timeout path, and resets the
++    // bridge on drop. Split authority is never granted here (no host inventory).
++    let mut owner = match early_profile {
++        Some(profile) => {
++            let epoch = ordered_owner::Epoch(NEXT_OWNER_EPOCH.fetch_add(1, Ordering::Relaxed));
++            // Wake periodically so a partial split assembly expires on its idle
++            // deadline even when no further packet arrives. Early path only.
++            reader
++                .set_read_timeout(Some(Duration::from_millis(500)))
++                .map_err(|error| Reason::plain(connection_lost(error, lang)))?;
++            Some(
++                ordered_owner::OrderedOwner::new(epoch, profile, None)
++                    .map_err(|error| Reason::plain(format!("configuration/bootstrap: {error}")))?,
++            )
++        }
++        None => None,
++    };
+     let mut negotiation =
+         horizon_protocol::payload_negotiation::Negotiation::new(payloads.local.manifest.clone());
+     crate::datapack_net::clear_received();
+     let reply = |p: cfg::Serverbound| -> Result<(), Reason> {
++        if early_profile.is_some() {
++            let body = p
++                .try_encode()
++                .map_err(|error| Reason::plain(connection_lost(error, lang)))?;
++            return emit_early_bodies(
++                writer,
++                lang,
++                vec![body],
++                budget.as_ref().expect("early budget"),
++            );
++        }
+         match writer.lock().unwrap().as_mut() {
+-            Some(w) => p
+-                .try_encode_with_payload_codecs(&payloads.local.codecs)
+-                .and_then(|body| w.send(&body))
+-                .map_err(|e| Reason::plain(connection_lost(e, lang))),
++            Some(w) => {
++                let body = p.try_encode_with_payload_codecs(&payloads.local.codecs);
++                body.and_then(|body| w.send(&body))
++                    .map_err(|e| Reason::plain(connection_lost(e, lang)))
++            }
+             None => Err(Reason::plain("Disconnected")),
+         }
+     };
+@@ -1793,19 +2042,105 @@
+     };
+     // With only engine declarations the client waits for the server's query, so a vanilla
+     // server is sent nothing new.
+-    if payloads.local.has_mod_declarations()
++    if early_profile.is_none()
++        && payloads.local.has_mod_declarations()
+         && let Some(control) = negotiation.initial()
+     {
+         send_control(control, &mut build_sent)?;
+     }
+     loop {
+-        let (id, payload) = reader
+-            .recv()
+-            .map_err(|e| Reason::plain(connection_lost(e, lang)))?;
+-        match cfg::Clientbound::decode_with_payload_codecs(id, &payload, &payloads.local.codecs)
+-            .map_err(|e| Reason::plain(connection_lost(e, lang)))?
+-        {
++        if let Some(budget) = &budget {
++            budget
++                .poll()
++                .map_err(|error| Reason::plain(error.to_string()))?;
++        }
++        if let Some(owner) = owner.as_mut() {
++            owner
++                .poll_idle()
++                .map_err(|error| Reason::plain(format!("configuration/deadline: {error}")))?;
++        }
++        let (id, payload) = match reader.recv() {
++            Ok(packet) => packet,
++            // Early path only: a read timeout drives the owner's idle deadline so
++            // a partial split assembly expires without any further input.
++            Err(error) if owner.is_some() && error.is_timed_out() => {
++                let owner = owner.as_mut().expect("guarded owner");
++                owner
++                    .poll_idle()
++                    .map_err(|error| Reason::plain(format!("configuration/idle: {error}")))?;
++                continue;
++            }
++            Err(error) => return Err(Reason::plain(connection_lost(error, lang))),
++        };
++        if let Some(budget) = &budget {
++            // Five bytes conservatively charge the decoded packet-id prefix.
++            // Every packet counts, including brand, keepalive and ignored data.
++            budget
++                .charge(1, payload.len().saturating_add(5))
++                .map_err(|error| Reason::plain(error.to_string()))?;
++        }
++        let packet = if early_profile.is_some() {
++            cfg::Clientbound::decode(id, &payload)
++        } else {
++            cfg::Clientbound::decode_with_payload_codecs(id, &payload, &payloads.local.codecs)
++        }
++        .map_err(|e| Reason::plain(connection_lost(e, lang)))?;
++        match packet {
+             cfg::Clientbound::KeepAlive(k) => reply(cfg::Serverbound::KeepAlive(k))?,
++            // Before EVERY Horizon special case and generic application routing.
++            // Brand stays engine-owned but can never activate Horizon offers here.
++            cfg::Clientbound::CustomPayload(p) if owner.is_some() => {
++                if p.channel == "minecraft:brand" {
++                    receive_brand(&p, send);
++                    continue;
++                }
++                let owner = owner.as_mut().expect("guarded owner");
++                match owner
++                    .receive(&p.channel, &p.data)
++                    .map_err(|error| Reason::plain(owner_error(&error, &p.channel)))?
++                {
++                    ordered_owner::Step::Partial => {}
++                    ordered_owner::Step::Assembled(original) => {
++                        // Decode the reconstructed original exactly once with the
++                        // real protocol-767 decoder, then dispatch the inner payload.
++                        let (rid, rbody) = reader
++                            .decode_reassembled_configuration(original)
++                            .map_err(|error| {
++                                Reason::plain(format!("configuration/split: {error}"))
++                            })?;
++                        let packet = cfg::Clientbound::decode(rid, &rbody).map_err(|error| {
++                            Reason::plain(format!("configuration/split: {error}"))
++                        })?;
++                        let cfg::Clientbound::CustomPayload(inner) = packet else {
++                            return Err(Reason::plain(
++                                "configuration/split: reconstructed non-payload packet",
++                            ));
++                        };
++                        if inner.channel == ordered_owner::SPLIT_CHANNEL {
++                            return Err(Reason::plain(
++                                "configuration/split: recursive reconstructed split packet",
++                            ));
++                        }
++                        let replies = owner
++                            .dispatch(&inner.channel, &inner.data)
++                            .map_err(|error| Reason::plain(owner_error(&error, &inner.channel)))?;
++                        emit_reply_batch(
++                            writer,
++                            lang,
++                            replies,
++                            budget.as_ref().expect("early budget"),
++                        )?;
++                    }
++                    ordered_owner::Step::Replies(replies) => {
++                        emit_reply_batch(
++                            writer,
++                            lang,
++                            replies,
++                            budget.as_ref().expect("early budget"),
++                        )?;
++                    }
++                }
++            }
+             cfg::Clientbound::CustomPayload(p) if p.channel == crate::build_mismatch::CHANNEL => {
+                 server_build = crate::build_mismatch::decode(&p.data);
+             }
+@@ -1945,6 +2280,14 @@
+                 let _ = send.send(Event::ServerLinks(p.links));
+             }
+             cfg::Clientbound::Transfer(p) => {
++                if owner.is_some() {
++                    // Event::Transfer currently reconnects through the ordinary
++                    // profile-less wrapper. Refuse rather than silently downgrading
++                    // an explicit NeoForge connection to vanilla at a new host.
++                    return Err(Reason::plain(
++                        "configuration/transfer: explicit NeoForge profile must be reselected",
++                    ));
++                }
+                 let _ = send.send(Event::Transfer {
+                     host: p.host,
+                     port: p.port,
+@@ -1953,6 +2296,17 @@
+             }
+             cfg::Clientbound::Disconnect(d) => return Err(Reason::tag(&d.reason, lang)),
+             cfg::Clientbound::FinishConfiguration(_) => {
++                if let Some(owner) = owner.as_mut() {
++                    // Adapter reading may already be Play. On error immediately
++                    // unwind and shut down: no ack, writer transition or next read.
++                    // The owner still retains the hard modded-play safety latch.
++                    return match owner.finish() {
++                        Err(error) => Err(Reason::plain(format!("configuration/finish: {error}"))),
++                        Ok(()) => {
++                            unreachable!("owner retains the modded-play safety latch")
++                        }
++                    };
++                }
+                 // A Horizon server that never sent on horizon:payloads predates the
+                 // negotiation: play on with nothing negotiated, as on a vanilla server.
+                 // Only on the first configuration: a server that goes silent when it
+@@ -1995,6 +2349,11 @@
+                     })
+                     .map_err(Reason::plain)?;
+                 return Ok(registries);
++            }
++            cfg::Clientbound::Unknown(id, _) if owner.is_some() => {
++                return Err(Reason::plain(format!(
++                    "configuration/packet/{id}: unsupported_packet"
++                )));
+             }
+             _ => {}
+         }
+diff --git a/crates/horizon-client/src/net/early_configuration.rs b/crates/horizon-client/src/net/early_configuration.rs
+new file mode 100644
+--- /dev/null
++++ b/crates/horizon-client/src/net/early_configuration.rs
+@@ -0,0 +1,242 @@
++// SPDX-License-Identifier: LGPL-3.0-or-later
++//! Engine-owned, explicitly selected configuration endpoint. No global registration,
++//! Horizon negotiation, play delivery, or implicit permission from channel lists.
++use std::{collections::BTreeSet, sync::Arc, time::Duration};
++
++pub const MAX_BODY: usize = 32_767;
++const MAX_CHANNELS: usize = 1_024;
++const MAX_REPLIES: usize = 32;
++const MAX_REPLY_BYTES: usize = 65_536;
++
++/// Stable diagnostic code; the engine adds phase/channel context when displaying it.
++#[derive(Clone, Debug, PartialEq, Eq)]
++pub struct Failure(pub &'static str);
++impl Failure {
++    /// The protocol identifier decoder accepts much longer identifiers than this
++    /// endpoint. Never reflect an invalid/overlong peer channel in diagnostics.
++    pub(crate) fn at_payload(&self, channel: &str) -> String {
++        let channel = if valid_id(channel) {
++            channel
++        } else {
++            "<invalid-channel>"
++        };
++        format!("configuration/{channel}: {self:?}")
++    }
++}
++pub type Result<T> = std::result::Result<T, Failure>;
++
++pub struct Reply {
++    pub channel: String,
++    /// Body only: never include the channel, packet id or length a second time.
++    pub body: Vec<u8>,
++}
++
++/// Implemented outside the engine by the actual compatibility layer. No default
++/// handlers: unsupported required work MUST return Err, never an empty success.
++/// Calls are synchronous on the network thread: bounded decoding/work only. A task
++/// needing main-thread completion must remain pending and refuse the finish barrier.
++pub trait Bridge: Send {
++    fn receive(&mut self, channel: &str, body: &[u8]) -> Result<Vec<Reply>>;
++    /// Must check negotiation, required handlers, tasks, and atomically applied maps.
++    fn finish(&mut self) -> Result<()>;
++    /// Discard all epoch state, including staged maps/work. Called on EVERY exit.
++    fn reset(&mut self);
++}
++
++/// A new, independent bridge for each configuration. Do not share mutable epochs
++/// between connections. The fingerprint identifies caller-attested pack inventory,
++/// not a claim that a server brand/status packet authenticates that inventory.
++pub trait Factory: Send + Sync {
++    fn create(&self, pack_sha256: [u8; 32]) -> Result<Box<dyn Bridge>>;
++}
++
++/// Connection-scoped opt-in; not a normal mod payload declaration. The caller
++/// supplies an exact out-of-band inventory and handler-backed adapter allowlist.
++#[derive(Clone)]
++pub struct Profile {
++    pack_sha256: [u8; 32],
++    adapters: BTreeSet<String>,
++    factory: Arc<dyn Factory>,
++    pub(crate) limits: ConfigurationLimits,
++}
++/// Cumulative decoded ingress + encoded egress, including ordinary traffic.
++/// Pending retained allocations remain independently bounded by the real writer
++/// and ingress queues. Login/play and adapter-generated traffic are NOT covered.
++#[derive(Clone, Copy)]
++pub(crate) struct ConfigurationLimits {
++    pub(crate) packets: usize,
++    pub(crate) bytes: usize,
++    pub(crate) lifetime: Duration,
++}
++impl Default for ConfigurationLimits {
++    fn default() -> Self {
++        Self {
++            packets: 16_384,
++            bytes: 64 * 1_048_576,
++            lifetime: Duration::from_secs(120),
++        }
++    }
++}
++impl Profile {
++    pub fn neoforge(
++        minecraft: &str,
++        protocol: i32,
++        loader: &str,
++        pack_sha256: [u8; 32],
++        adapters: Vec<String>,
++        factory: Arc<dyn Factory>,
++    ) -> Result<Self> {
++        if (minecraft, protocol, loader) != ("1.21.1", 767, "21.1.248") {
++            return Err(Failure("unsupported_baseline"));
++        }
++        if pack_sha256 == [0; 32] || adapters.len() > MAX_CHANNELS {
++            return Err(Failure("invalid_inventory"));
++        }
++        let mut channels = BTreeSet::new();
++        for channel in adapters {
++            if !valid_id(&channel)
++                || matches!(
++                    namespace(&channel),
++                    "minecraft" | "neoforge" | "c" | "horizon"
++                )
++                || !channels.insert(channel)
++            {
++                return Err(Failure("invalid_adapter_declaration"));
++            }
++        }
++        Ok(Self {
++            pack_sha256,
++            adapters: channels,
++            factory,
++            limits: ConfigurationLimits::default(),
++        })
++    }
++    /// Tighten the local configuration-epoch policy. These are not negotiated
++    /// NeoForge limits or a claim that a real pack fits. Zero/unbounded policies
++    /// and increases above the conservative defaults are rejected.
++    pub fn with_configuration_limits(
++        mut self,
++        packets: usize,
++        bytes: usize,
++        lifetime: Duration,
++    ) -> Result<Self> {
++        let defaults = self.limits;
++        if packets == 0
++            || packets > defaults.packets
++            || bytes == 0
++            || bytes > defaults.bytes
++            || lifetime.is_zero()
++            || lifetime > defaults.lifetime
++        {
++            return Err(Failure("invalid_configuration_limits"));
++        }
++        self.limits = ConfigurationLimits {
++            packets,
++            bytes,
++            lifetime,
++        };
++        Ok(self)
++    }
++    pub(crate) fn begin(&self) -> Result<Endpoint<'_>> {
++        Ok(Endpoint {
++            profile: self,
++            bridge: self.factory.create(self.pack_sha256)?,
++            failed: false,
++        })
++    }
++    fn owns(&self, channel: &str) -> bool {
++        channel.starts_with("neoforge:")
++            || matches!(
++                channel,
++                "c:version" | "c:register" | "minecraft:register" | "minecraft:unregister"
++            )
++            || self.adapters.contains(channel)
++    }
++}
++fn namespace(channel: &str) -> &str {
++    channel.split_once(':').map_or("", |(ns, _)| ns)
++}
++fn valid_id(channel: &str) -> bool {
++    let Some((ns, path)) = channel.split_once(':') else {
++        return false;
++    };
++    !ns.is_empty()
++        && !path.is_empty()
++        && channel.len() <= 256
++        && ns
++            .bytes()
++            .all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || b"_.-".contains(&b))
++        && path
++            .bytes()
++            .all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || b"_.-/".contains(&b))
++}
++
++/// Lives on the configuration stack. Drop resets on failure, transfer, EOF and
++/// disconnect; the next configuration creates a new bridge, never reuses this one.
++pub(crate) struct Endpoint<'a> {
++    profile: &'a Profile,
++    bridge: Box<dyn Bridge>,
++    failed: bool,
++}
++impl Endpoint<'_> {
++    pub(crate) fn receive(&mut self, channel: &str, body: &[u8]) -> Result<Vec<Reply>> {
++        if self.failed {
++            return Err(Failure("failed_epoch"));
++        }
++        // Poison BEFORE crossing the external bridge boundary. If a caller
++        // catches an unwinding callback panic, it must not reuse this epoch.
++        self.failed = true;
++        let result = self.receive_inner(channel, body);
++        if result.is_ok() {
++            self.failed = false;
++        }
++        result
++    }
++    fn receive_inner(&mut self, channel: &str, body: &[u8]) -> Result<Vec<Reply>> {
++        if !valid_id(channel) || !self.profile.owns(channel) {
++            return Err(Failure("unowned_configuration_payload"));
++        }
++        if body.len() > MAX_BODY {
++            return Err(Failure("configuration_body_limit"));
++        }
++        let replies = self.bridge.receive(channel, body)?;
++        // Validate the WHOLE batch before any packet is queued. A registration
++        // list never expands ownership; the bridge enforces negotiated flow too.
++        if replies.len() > MAX_REPLIES {
++            return Err(Failure("reply_count_limit"));
++        }
++        let mut bytes = 0usize;
++        for reply in &replies {
++            bytes = bytes.saturating_add(reply.body.len() + reply.channel.len());
++            if !valid_id(&reply.channel)
++                || !self.profile.owns(&reply.channel)
++                || reply.body.len() > MAX_BODY
++                || bytes > MAX_REPLY_BYTES
++            {
++                return Err(Failure("invalid_reply_batch"));
++            }
++        }
++        Ok(replies)
++    }
++    pub(crate) fn finish(&mut self) -> Result<()> {
++        if self.failed {
++            return Err(Failure("failed_epoch"));
++        }
++        self.failed = true;
++        self.bridge.finish()?;
++        // Deliberate safety latch: this patch has no bidirectional modded content
++        // conversion or play route. Even a buggy/overoptimistic bridge cannot ack
++        // finish and expose modded IDs to vanilla translation. Remove only in a
++        // separately validated engine/content integration, not a codec milestone.
++        Err(Failure("modded_play_boundary_not_implemented"))
++    }
++}
++impl Drop for Endpoint<'_> {
++    fn drop(&mut self) {
++        self.bridge.reset();
++    }
++}
++
++#[cfg(test)]
++#[path = "early_configuration_tests.rs"]
++mod tests;
+diff --git a/crates/horizon-client/src/net/early_configuration_tests.rs b/crates/horizon-client/src/net/early_configuration_tests.rs
+new file mode 100644
+--- /dev/null
++++ b/crates/horizon-client/src/net/early_configuration_tests.rs
+@@ -0,0 +1,292 @@
++// SPDX-License-Identifier: LGPL-3.0-or-later
++use super::*;
++use std::sync::{
++    Mutex,
++    atomic::{AtomicUsize, Ordering},
++};
++
++#[derive(Default)]
++struct Observed {
++    created: AtomicUsize,
++    resets: AtomicUsize,
++    finishes: AtomicUsize,
++    received: Mutex<Vec<(String, Vec<u8>)>>,
++}
++struct VersionBridge(Arc<Observed>);
++impl Bridge for VersionBridge {
++    fn receive(&mut self, channel: &str, body: &[u8]) -> Result<Vec<Reply>> {
++        self.0
++            .received
++            .lock()
++            .unwrap()
++            .push((channel.into(), body.to_vec()));
++        // Test-only implementation of a single real body transformation, NOT a
++        // required-task placeholder. Every other loader task is refused.
++        if channel != "c:version" || body != [1, 1] {
++            return Err(Failure("unsupported_test_task"));
++        }
++        Ok(vec![Reply {
++            channel: channel.into(),
++            body: vec![1, 1],
++        }])
++    }
++    fn finish(&mut self) -> Result<()> {
++        self.0.finishes.fetch_add(1, Ordering::Relaxed);
++        Err(Failure("pending_required_tasks"))
++    }
++    fn reset(&mut self) {
++        self.0.resets.fetch_add(1, Ordering::Relaxed);
++    }
++}
++impl Factory for Arc<Observed> {
++    fn create(&self, hash: [u8; 32]) -> Result<Box<dyn Bridge>> {
++        assert_eq!(hash, [7; 32]);
++        self.created.fetch_add(1, Ordering::Relaxed);
++        Ok(Box::new(VersionBridge(self.clone())))
++    }
++}
++fn profile(observed: &Arc<Observed>) -> Profile {
++    Profile::neoforge(
++        "1.21.1",
++        767,
++        "21.1.248",
++        [7; 32],
++        vec!["demo:task".into()],
++        Arc::new(observed.clone()),
++    )
++    .unwrap()
++}
++
++#[test]
++fn early_loader_delivery_preserves_body_and_replies_without_an_accepted_horizon_epoch() {
++    let observed = Arc::new(Observed::default());
++    let profile = profile(&observed);
++    let mut endpoint = profile.begin().unwrap();
++    let replies = endpoint.receive("c:version", &[1, 1]).unwrap();
++    assert_eq!(replies.len(), 1);
++    assert_eq!(replies[0].channel, "c:version");
++    assert_eq!(replies[0].body, [1, 1]);
++    assert_eq!(
++        *observed.received.lock().unwrap(),
++        [("c:version".into(), vec![1, 1])]
++    );
++}
++
++#[test]
++fn unsupported_neoforge_tasks_poison_the_epoch_and_cannot_finish() {
++    let observed = Arc::new(Observed::default());
++    let profile = profile(&observed);
++    let mut endpoint = profile.begin().unwrap();
++    assert_eq!(
++        endpoint.receive("neoforge:register", &[0]).err(),
++        Some(Failure("unsupported_test_task"))
++    );
++    assert_eq!(
++        endpoint.receive("c:version", &[1, 1]).err(),
++        Some(Failure("failed_epoch"))
++    );
++    assert_eq!(endpoint.finish(), Err(Failure("failed_epoch")));
++    assert_eq!(observed.finishes.load(Ordering::Relaxed), 0);
++}
++
++#[test]
++fn undeclared_or_oversized_payloads_never_reach_bridge() {
++    for (channel, body) in [
++        ("other:task", vec![0]),
++        ("horizon:payloads", vec![0]),
++        ("c:version", vec![0; MAX_BODY + 1]),
++        ("neoforge:BAD", vec![0]),
++    ] {
++        let observed = Arc::new(Observed::default());
++        let profile = profile(&observed);
++        assert!(profile.begin().unwrap().receive(channel, &body).is_err());
++        assert!(observed.received.lock().unwrap().is_empty());
++    }
++}
++
++#[test]
++fn finish_refuses_pending_tasks_and_drop_resets_before_next_epoch() {
++    let observed = Arc::new(Observed::default());
++    let profile = profile(&observed);
++    {
++        let mut endpoint = profile.begin().unwrap();
++        assert_eq!(endpoint.finish(), Err(Failure("pending_required_tasks")));
++    }
++    assert_eq!(observed.resets.load(Ordering::Relaxed), 1);
++    {
++        let mut next = profile.begin().unwrap();
++        assert!(next.receive("c:version", &[1, 1]).is_ok());
++    }
++    assert_eq!(observed.created.load(Ordering::Relaxed), 2);
++    assert_eq!(observed.resets.load(Ordering::Relaxed), 2);
++}
++
++struct InvalidBridge {
++    reply_channel: &'static str,
++    complete: bool,
++}
++impl Bridge for InvalidBridge {
++    fn receive(&mut self, _: &str, _: &[u8]) -> Result<Vec<Reply>> {
++        // Only adversarial tests instantiate this deliberately invalid bridge.
++        Ok(vec![
++            Reply {
++                channel: "c:version".into(),
++                body: vec![1, 1],
++            },
++            Reply {
++                channel: self.reply_channel.into(),
++                body: vec![0],
++            },
++        ])
++    }
++    fn finish(&mut self) -> Result<()> {
++        if self.complete {
++            Ok(())
++        } else {
++            Err(Failure("incomplete"))
++        }
++    }
++    fn reset(&mut self) {
++        self.complete = false;
++    }
++}
++#[test]
++fn invalid_batch_is_rejected_whole_and_even_optimistic_bridge_cannot_enter_play() {
++    let observed = Arc::new(Observed::default());
++    let profile = profile(&observed);
++    let mut endpoint = Endpoint {
++        profile: &profile,
++        bridge: Box::new(InvalidBridge {
++            reply_channel: "horizon:payloads",
++            complete: true,
++        }),
++        failed: false,
++    };
++    assert_eq!(
++        endpoint.receive("c:version", &[1, 1]).err(),
++        Some(Failure("invalid_reply_batch"))
++    );
++    assert!(endpoint.finish().is_err());
++    let mut endpoint = Endpoint {
++        profile: &profile,
++        bridge: Box::new(InvalidBridge {
++            reply_channel: "c:version",
++            complete: true,
++        }),
++        failed: false,
++    };
++    assert_eq!(
++        endpoint.finish(),
++        Err(Failure("modded_play_boundary_not_implemented"))
++    );
++}
++
++#[test]
++fn profile_rejects_wrong_baselines_and_reserved_or_duplicate_adapters() {
++    let observed = Arc::new(Observed::default());
++    let factory: Arc<dyn Factory> = Arc::new(observed);
++    for (mc, protocol, nf) in [
++        ("1.21", 767, "21.1.248"),
++        ("1.21.1", 777, "21.1.248"),
++        ("1.21.1", 767, "21.1.249"),
++    ] {
++        assert!(Profile::neoforge(mc, protocol, nf, [7; 32], vec![], factory.clone()).is_err());
++    }
++    for channels in [
++        vec!["neoforge:task"],
++        vec!["horizon:task"],
++        vec!["demo:a", "demo:a"],
++        vec!["BAD:task"],
++        vec!["minecraft:brand"],
++    ] {
++        assert!(
++            Profile::neoforge(
++                "1.21.1",
++                767,
++                "21.1.248",
++                [7; 32],
++                channels.into_iter().map(str::to_owned).collect(),
++                factory.clone()
++            )
++            .is_err()
++        );
++    }
++}
++
++#[test]
++fn payload_refusal_diagnostics_do_not_reflect_invalid_or_unbounded_identifiers() {
++    let failure = Failure("unowned_configuration_payload");
++    assert_eq!(
++        failure.at_payload("neoforge:network"),
++        "configuration/neoforge:network: Failure(\"unowned_configuration_payload\")"
++    );
++    for channel in ["x:".to_owned() + &"a".repeat(32_765), "bad:\nsecret".into()] {
++        assert_eq!(
++            failure.at_payload(&channel),
++            "configuration/<invalid-channel>: Failure(\"unowned_configuration_payload\")"
++        );
++    }
++}
++
++#[test]
++fn unwinding_external_bridge_panic_poisoned_epoch_cannot_resume_or_finish() {
++    struct PanickingBridge(Arc<Observed>);
++    impl Bridge for PanickingBridge {
++        fn receive(&mut self, _: &str, _: &[u8]) -> Result<Vec<Reply>> {
++            panic!("test-only external bridge panic")
++        }
++        fn finish(&mut self) -> Result<()> {
++            self.0.finishes.fetch_add(1, Ordering::Relaxed);
++            Ok(())
++        }
++        fn reset(&mut self) {
++            self.0.resets.fetch_add(1, Ordering::Relaxed);
++        }
++    }
++    let observed = Arc::new(Observed::default());
++    let profile = profile(&observed);
++    let mut endpoint = Endpoint {
++        profile: &profile,
++        bridge: Box::new(PanickingBridge(observed.clone())),
++        failed: false,
++    };
++    assert!(
++        std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
++            let _ = endpoint.receive("c:version", &[1, 1]);
++        }))
++        .is_err()
++    );
++    assert_eq!(
++        endpoint.receive("c:version", &[1, 1]).err(),
++        Some(Failure("failed_epoch"))
++    );
++    assert_eq!(endpoint.finish(), Err(Failure("failed_epoch")));
++    assert_eq!(observed.finishes.load(Ordering::Relaxed), 0);
++    drop(endpoint);
++    assert_eq!(observed.resets.load(Ordering::Relaxed), 1);
++}
++
++#[test]
++fn configuration_policy_can_only_tighten_bounded_defaults() {
++    let observed = Arc::new(Observed::default());
++    for (packets, bytes, lifetime) in [
++        (0, 1, Duration::from_secs(1)),
++        (1, 0, Duration::from_secs(1)),
++        (1, 1, Duration::ZERO),
++        (16_385, 1, Duration::from_secs(1)),
++        (1, 64 * 1_048_576 + 1, Duration::from_secs(1)),
++        (1, 1, Duration::from_secs(121)),
++    ] {
++        assert!(
++            profile(&observed)
++                .with_configuration_limits(packets, bytes, lifetime)
++                .is_err()
++        );
++    }
++    assert!(
++        profile(&observed)
++            .with_configuration_limits(1, 1, Duration::from_nanos(1))
++            .is_ok()
++    );
++    assert_eq!(observed.created.load(Ordering::Relaxed), 0);
++}
+diff --git a/crates/horizon-client/src/net/early_configuration_net_tests.rs b/crates/horizon-client/src/net/early_configuration_net_tests.rs
+new file mode 100644
+--- /dev/null
++++ b/crates/horizon-client/src/net/early_configuration_net_tests.rs
+@@ -0,0 +1,179 @@
++// SPDX-License-Identifier: LGPL-3.0-or-later
++//! Engine integration test; requires the full horizon-client-lib dependency graph.
++use super::*;
++use early_configuration::{Bridge, Factory, Failure, Profile, Reply};
++use std::sync::atomic::AtomicUsize;
++
++#[derive(Default)]
++struct Observed {
++    starts: AtomicUsize,
++    resets: AtomicUsize,
++    received: Mutex<Vec<(String, Vec<u8>)>>,
++}
++struct VersionOnly(Arc<Observed>);
++impl Bridge for VersionOnly {
++    fn receive(&mut self, channel: &str, body: &[u8]) -> early_configuration::Result<Vec<Reply>> {
++        self.0
++            .received
++            .lock()
++            .unwrap()
++            .push((channel.into(), body.to_vec()));
++        if channel != "c:version" || body != [1, 1] {
++            return Err(Failure("unsupported_test_task"));
++        }
++        Ok(vec![Reply {
++            channel: channel.into(),
++            body: vec![1, 1],
++        }])
++    }
++    fn finish(&mut self) -> early_configuration::Result<()> {
++        Err(Failure("required_tasks_pending"))
++    }
++    fn reset(&mut self) {
++        self.0.resets.fetch_add(1, Ordering::Relaxed);
++    }
++}
++impl Factory for Arc<Observed> {
++    fn create(&self, _: [u8; 32]) -> early_configuration::Result<Box<dyn Bridge>> {
++        self.starts.fetch_add(1, Ordering::Relaxed);
++        Ok(Box::new(VersionOnly(self.clone())))
++    }
++}
++
++#[test]
++fn explicit_neoforge_routes_before_horizon_and_refuses_finish_without_ack_or_epoch() {
++    use horizon_world::native_load_context::DataLoadOrigin;
++    let root = std::env::temp_dir().join(format!("horizon-early-{}", next_serial()));
++    std::fs::create_dir_all(&root).unwrap();
++    std::fs::write(root.join("items.json"), "{}").unwrap();
++    let resources = crate::test_resources::item_data(&root, DataLoadOrigin::ClientPreload).unwrap();
++    let observed = Arc::new(Observed::default());
++    let profile = Profile::neoforge(
++        "1.21.1",
++        767,
++        "21.1.248",
++        [7; 32],
++        vec![],
++        Arc::new(observed.clone()),
++    )
++    .unwrap();
++    let payloads =
++        crate::raw_payloads::Transport::capture(crate::raw_payloads::Side::Client).unwrap();
++    for initial in [true, false] {
++        let (client, server) = horizon_protocol::connection::Pipe::pair();
++        let mut client = Connection::local(client);
++        client.adapt(horizon_protocol::adapter::ServerVersion::V1_21_1);
++        let mut server = Connection::local(server);
++        server
++            .reader
++            .set_read_timeout(Some(Duration::from_millis(50)))
++            .unwrap();
++        client
++            .send(
++                &handshake::Serverbound::Intention(handshake::Intention {
++                    protocol: PROTOCOL_VERSION,
++                    host: "localhost".into(),
++                    port: 25565,
++                    intent: handshake::LOGIN,
++                })
++                .encode(),
++            )
++            .unwrap();
++        server.recv().unwrap();
++        server.send(&[2]).unwrap();
++        client.recv().unwrap();
++        client
++            .send(&login::Serverbound::LoginAcknowledged(Empty).encode())
++            .unwrap();
++        server.recv().unwrap();
++        let (mut reader, writer) = client.split();
++        let writer = Arc::new(Mutex::new(Some(QueuedWriter::new(writer).unwrap())));
++        let configuring = Arc::new(AtomicBool::new(true));
++        let (send, _events) = event_channel();
++        let mut brand = horizon_protocol::buf::Writer::new();
++        brand.string("horizon"); // MUST NOT activate any Horizon offers.
++        for (channel, data) in [("minecraft:brand", brand.data), ("c:version", vec![1, 1])] {
++            server
++                .send(
++                    &cfg::Clientbound::CustomPayload(cfg::CustomPayload {
++                        channel: channel.into(),
++                        data,
++                    })
++                    .encode(),
++                )
++                .unwrap();
++        }
++        server
++            .send(&cfg::Clientbound::KeepAlive(cfg::KeepAlive { id: 42 }).encode())
++            .unwrap();
++        server
++            .send(&cfg::Clientbound::Ping(cfg::Ping { id: 13 }).encode())
++            .unwrap();
++        server
++            .send(&cfg::Clientbound::FinishConfiguration(Empty).encode())
++            .unwrap();
++        // Queue a later packet; the refusing engine must never read it.
++        server.send(&[0]).unwrap();
++        let result = configure_with_profile(
++            &mut reader,
++            &writer,
++            &configuring,
++            &Language::new(),
++            &send,
++            &Cookies::default(),
++            &resources,
++            &payloads,
++            initial,
++            Some(&profile),
++        );
++        assert!(
++            result
++                .err()
++                .unwrap()
++                .text
++                .contains("required_tasks_pending")
++        );
++        assert!(configuring.load(Ordering::Acquire));
++        assert!(
++            payloads.epoch().is_none(),
++            "no fabricated Horizon acceptance"
++        );
++        let closed = writer.lock().unwrap().as_ref().unwrap().drain_and_take();
++        assert!(
++            closed.is_err(),
++            "terminal early path must close the actual writer"
++        );
++        let (id, bytes) = server.recv().unwrap();
++        assert_eq!(id, 2);
++        let cfg::Serverbound::CustomPayload(reply) = cfg::Serverbound::decode(id, &bytes).unwrap()
++        else {
++            panic!("only loader response expected");
++        };
++        assert_eq!(
++            (reply.channel.as_str(), reply.data.as_slice()),
++            ("c:version", &[1, 1][..])
++        );
++        let (id, bytes) = server.recv().unwrap();
++        assert_eq!(
++            cfg::Serverbound::decode(id, &bytes).unwrap(),
++            cfg::Serverbound::KeepAlive(cfg::KeepAlive { id: 42 })
++        );
++        let (id, bytes) = server.recv().unwrap();
++        assert_eq!(
++            cfg::Serverbound::decode(id, &bytes).unwrap(),
++            cfg::Serverbound::Pong(cfg::Ping { id: 13 })
++        );
++        assert!(server.recv().is_err(), "no Horizon offer or finish ack");
++        // The adapter read phase switched on FinishConfiguration already. The
++        // engine returned without consuming a following play/unknown packet.
++        assert_eq!(reader.counters.received.load(Ordering::Relaxed), 6);
++        assert!(
++            reader.recv().is_err(),
++            "terminal reader must discard later buffered bytes"
++        );
++    }
++    assert_eq!(observed.starts.load(Ordering::Relaxed), 2);
++    assert_eq!(observed.resets.load(Ordering::Relaxed), 2);
++    assert_eq!(observed.received.lock().unwrap().len(), 2);
++    std::fs::remove_dir_all(root).unwrap();
++}
+diff --git a/crates/horizon-client/src/net/ordered_owner.rs b/crates/horizon-client/src/net/ordered_owner.rs
+new file mode 100644
+--- /dev/null
++++ b/crates/horizon-client/src/net/ordered_owner.rs
+@@ -0,0 +1,272 @@
++// SPDX-License-Identifier: LGPL-3.0-or-later
++//! Partial ordered early-configuration owner, not a connection-wide actor.
++//!
++//! The configure loop serializes its socket ingress, bridge dispatch, bounded
++//! reply-batch completion and idle polling. The bridge and optional reassembler
++//! reset on terminal teardown. Adapter phase transitions/generated queues,
++//! stale prepared originals, negotiated bidirectional split authority and the
++//! complete profile lifecycle are NOT yet under one serialization domain.
++//!
++//! Production installs no split reassembler: only a genuine future negotiated
++//! grant plus installed host handlers could authorize one. The companion uses
++//! the bounded reassembler in selected tests, not in the default runtime route.
++//! Reconstructed originals use the actual protocol-767 decoder exactly once.
++//!
++//! Both finish refusals remain. Default vanilla/Horizon connections do not
++//! construct this owner or the early configuration resource policy.
++use std::{
++    cell::Cell,
++    time::{Duration, Instant},
++};
++
++use horizon_protocol::Error;
++
++use super::early_configuration::{Endpoint, Profile, Reply};
++
++/// The registered split transport channel. A local constant so the engine patch
++/// stays dependency-free; the compatibility crate uses the same literal.
++pub(crate) const SPLIT_CHANNEL: &str = "neoforge:split";
++
++/// A bounded inbound split reassembler, supplied by the compatibility layer. One
++/// instance per epoch/direction. `now_ms` is a host monotonic elapsed-millisecond
++/// clock, never wall time. An error is terminal for the epoch.
++pub trait Reassembly: Send {
++    /// Feed one split fragment body. Returns the whole original once the final
++    /// fragment arrives, else `None` for a partial fragment.
++    fn receive(&mut self, body: &[u8], now_ms: u64)
++    -> std::result::Result<Option<Vec<u8>>, String>;
++    /// Drive the absolute idle deadline even when no packet arrives.
++    fn check_deadline(&mut self, now_ms: u64) -> std::result::Result<(), String>;
++    /// Drop partial state. Called on terminal teardown.
++    fn close(&mut self);
++}
++
++/// The owner's monotonic epoch tag. A fresh value is minted for each
++/// configuration; stale callbacks, timers and prepared work carry an older tag
++/// and are refused by [`OrderedOwner::active`].
++#[derive(Clone, Copy, Debug, PartialEq, Eq)]
++pub(crate) struct Epoch(pub u64);
++
++/// What one inbound payload produced under the owner.
++pub(crate) enum Step {
++    /// A bridge reply batch the caller must emit atomically and in order.
++    Replies(Vec<Reply>),
++    /// A completed split assembly: the caller decodes this original exactly once
++    /// with the real decoder, then calls [`OrderedOwner::dispatch`] on the inner
++    /// custom payload.
++    Assembled(Vec<u8>),
++    /// A partial split fragment was accepted; no original is ready yet.
++    Partial,
++}
++
++/// One owner for one configuration epoch. It owns the early bridge endpoint and,
++/// when authority is installed, the inbound reassembler; both are released when
++/// the owner drops, resetting the bridge on every exit path.
++pub(crate) struct OrderedOwner<'a> {
++    epoch: Epoch,
++    endpoint: Option<Endpoint<'a>>,
++    reassembly: Option<Box<dyn Reassembly>>,
++    /// Owner creation instant, the base for the monotonic millisecond clock the
++    /// reassembler's absolute idle deadline is measured against.
++    base: Instant,
++    terminated: bool,
++}
++
++impl<'a> OrderedOwner<'a> {
++    /// Begin a new epoch. `reassembly` is `Some` only from a genuine negotiated
++    /// split grant; production passes `None`.
++    pub(crate) fn new(
++        epoch: Epoch,
++        profile: &'a Profile,
++        reassembly: Option<Box<dyn Reassembly>>,
++    ) -> horizon_protocol::Result<Self> {
++        Ok(Self {
++            epoch,
++            endpoint: Some(
++                profile.begin().map_err(|failure| {
++                    Error::new(format!("configuration/bootstrap: {failure:?}"))
++                })?,
++            ),
++            reassembly,
++            base: Instant::now(),
++            terminated: false,
++        })
++    }
++
++    pub(crate) fn epoch(&self) -> Epoch {
++        self.epoch
++    }
++
++    pub(crate) fn is_terminated(&self) -> bool {
++        self.terminated
++    }
++
++    /// Whether `tag` is this owner's live epoch. Stale work is refused.
++    pub(crate) fn active(&self, tag: Epoch) -> bool {
++        !self.terminated && tag == self.epoch
++    }
++
++    fn now_ms(&self) -> u64 {
++        // Monotonic elapsed milliseconds, never wall time. Saturating keeps a
++        // very long-lived owner from wrapping the reassembler's clock.
++        u64::try_from(self.base.elapsed().as_millis()).unwrap_or(u64::MAX)
++    }
++
++    /// Handle one inbound configuration custom payload under this epoch. With
++    /// split authority, a `neoforge:split` fragment is reassembled; every other
++    /// payload (and all payloads without authority) goes straight to the bridge.
++    pub(crate) fn receive(&mut self, channel: &str, body: &[u8]) -> horizon_protocol::Result<Step> {
++        if self.terminated {
++            return Err(Error::new("terminated owner epoch"));
++        }
++        // Ordinary traffic cannot postpone the absolute assembly deadline.
++        self.poll_idle()?;
++        if channel == SPLIT_CHANNEL && self.reassembly.is_some() {
++            let now = self.now_ms();
++            let reassembler = self.reassembly.as_mut().expect("checked");
++            let assembled = reassembler.receive(body, now);
++            let assembled = assembled.map_err(|error| self.fail(Error::new(error)))?;
++            return Ok(match assembled {
++                Some(original) => Step::Assembled(original),
++                None => Step::Partial,
++            });
++        }
++        let result = self
++            .endpoint
++            .as_mut()
++            .expect("live endpoint")
++            .receive(channel, body);
++        result
++            .map(Step::Replies)
++            .map_err(|error| self.fail(Error::new(format!("{:?}", error.0))))
++    }
++
++    /// Dispatch the inner custom payload of a reconstructed original the caller
++    /// decoded exactly once. Used only after [`Step::Assembled`].
++    pub(crate) fn dispatch(
++        &mut self,
++        channel: &str,
++        body: &[u8],
++    ) -> horizon_protocol::Result<Vec<Reply>> {
++        if self.terminated {
++            return Err(Error::new("terminated owner epoch"));
++        }
++        let result = self
++            .endpoint
++            .as_mut()
++            .expect("live endpoint")
++            .receive(channel, body);
++        result.map_err(|error| self.fail(Error::new(format!("{:?}", error.0))))
++    }
++
++    /// Drive the idle deadline for a partial split assembly. The caller invokes
++    /// this from its read-timeout path so a partial assembly expires even when no
++    /// further packet arrives. Ordinary traffic does not extend the absolute
++    /// deadline; the reassembler enforces that from its own start instant.
++    pub(crate) fn poll_idle(&mut self) -> horizon_protocol::Result<()> {
++        if self.terminated {
++            return Err(Error::new("terminated owner epoch"));
++        }
++        let Some(reassembler) = self.reassembly.as_mut() else {
++            return Ok(());
++        };
++        let now = u64::try_from(self.base.elapsed().as_millis()).unwrap_or(u64::MAX);
++        let result = reassembler.check_deadline(now);
++        result.map_err(|error| self.fail(Error::new(error)))
++    }
++
++    /// The finish barrier. Still a hard refusal at this milestone: the owner has
++    /// no bidirectional modded content conversion or play route, so it can never
++    /// acknowledge configuration completion.
++    pub(crate) fn finish(&mut self) -> horizon_protocol::Result<()> {
++        if self.terminated {
++            return Err(Error::new("terminated owner epoch"));
++        }
++        let result = self.endpoint.as_mut().expect("live endpoint").finish();
++        result.map_err(|error| self.fail(Error::new(format!("{:?}", error.0))))
++    }
++
++    /// Terminal teardown: poison the epoch, drop partial assembly and reset the
++    /// bridge. Idempotent; also runs on Drop so every exit path cleans up.
++    pub(crate) fn terminate(&mut self) {
++        self.terminated = true;
++        // Reset the bridge now, not only when a caller eventually drops us.
++        // Taking it also makes repeated terminate/Drop exactly-once.
++        self.endpoint.take();
++        if let Some(mut reassembler) = self.reassembly.take() {
++            reassembler.close();
++        }
++    }
++
++    fn fail(&mut self, error: Error) -> Error {
++        self.terminate();
++        error
++    }
++}
++
++impl Drop for OrderedOwner<'_> {
++    fn drop(&mut self) {
++        self.terminate();
++    }
++}
++
++/// An epoch-local cumulative policy, shared by ingress and every early reply.
++/// Not a connection-wide or pending-allocation budget. Refusal is sticky and
++/// whole-batch charging publishes neither a partial debit nor any output.
++pub(crate) struct ConfigurationBudget {
++    limits: super::early_configuration::ConfigurationLimits,
++    used: Cell<(usize, usize)>,
++    failed: Cell<bool>,
++    base: Instant,
++}
++impl ConfigurationBudget {
++    pub(crate) fn new(limits: super::early_configuration::ConfigurationLimits) -> Self {
++        Self {
++            limits,
++            used: Cell::new((0, 0)),
++            failed: Cell::new(false),
++            base: Instant::now(),
++        }
++    }
++    pub(crate) fn poll(&self) -> horizon_protocol::Result<()> {
++        if self.failed.get() {
++            return Err(Error::new("configuration budget terminated"));
++        }
++        if self.base.elapsed() >= self.limits.lifetime {
++            self.failed.set(true);
++            return Err(Error::new("configuration lifetime exceeded"));
++        }
++        Ok(())
++    }
++    pub(crate) fn deadline(&self) -> Instant {
++        self.base + self.limits.lifetime
++    }
++    pub(crate) fn remaining(&self) -> horizon_protocol::Result<Duration> {
++        self.poll()?;
++        Ok(self.limits.lifetime.saturating_sub(self.base.elapsed()))
++    }
++    pub(crate) fn charge(&self, packets: usize, bytes: usize) -> horizon_protocol::Result<()> {
++        self.poll()?;
++        let used = self.used.get();
++        let next = used.0.checked_add(packets).zip(used.1.checked_add(bytes));
++        if let Some((packets, bytes)) = next
++            && packets <= self.limits.packets
++            && bytes <= self.limits.bytes
++        {
++            self.used.set((packets, bytes));
++            return Ok(());
++        }
++        self.failed.set(true);
++        Err(Error::new("configuration cumulative traffic limit"))
++    }
++    pub(crate) fn outbound(&self, bodies: &[Vec<u8>]) -> horizon_protocol::Result<()> {
++        let bytes = bodies
++            .iter()
++            .try_fold(0usize, |sum, body| sum.checked_add(body.len()));
++        let Some(bytes) = bytes else {
++            self.failed.set(true);
++            return Err(Error::new("configuration cumulative traffic overflow"));
++        };
++        self.charge(bodies.len(), bytes)
++    }
++}
+diff --git a/crates/horizon-client/src/net/ordered_owner_tests.rs b/crates/horizon-client/src/net/ordered_owner_tests.rs
+new file mode 100644
+--- /dev/null
++++ b/crates/horizon-client/src/net/ordered_owner_tests.rs
+@@ -0,0 +1,773 @@
++// SPDX-License-Identifier: LGPL-3.0-or-later
++//! Engine tests for the ordered connection owner. These drive the actual
++//! `configure_with_profile` entry point and the real `Connection`/`QueuedWriter`
++//! with synthetic transports; they are NOT a live NeoForge join. The owner's hard
++//! finish latch and default-off split authority are asserted throughout.
++//!
++//! The configure-entry test needs no companion. The owner-direct split tests use
++//! the real compatibility reassembler and are compiled only when the companion is
++//! wired (`compat_isolated` is NOT set), matching the existing companion tests.
++use super::*;
++use early_configuration::{Bridge, Factory, Failure, Profile, Reply};
++use std::sync::atomic::AtomicUsize;
++
++#[derive(Default)]
++struct Observed {
++    starts: AtomicUsize,
++    resets: AtomicUsize,
++    received: Mutex<Vec<(String, Vec<u8>)>>,
++}
++struct VersionOnly(Arc<Observed>);
++impl Bridge for VersionOnly {
++    fn receive(&mut self, channel: &str, body: &[u8]) -> early_configuration::Result<Vec<Reply>> {
++        self.0
++            .received
++            .lock()
++            .unwrap()
++            .push((channel.into(), body.to_vec()));
++        if channel != "c:version" || body != [1, 1] {
++            return Err(Failure("unsupported_test_task"));
++        }
++        Ok(vec![Reply {
++            channel: channel.into(),
++            body: vec![1, 1],
++        }])
++    }
++    fn finish(&mut self) -> early_configuration::Result<()> {
++        Err(Failure("required_tasks_pending"))
++    }
++    fn reset(&mut self) {
++        self.0.resets.fetch_add(1, Ordering::Relaxed);
++    }
++}
++impl Factory for Arc<Observed> {
++    fn create(&self, _: [u8; 32]) -> early_configuration::Result<Box<dyn Bridge>> {
++        self.starts.fetch_add(1, Ordering::Relaxed);
++        Ok(Box::new(VersionOnly(self.clone())))
++    }
++}
++
++fn profile(observed: &Arc<Observed>) -> Profile {
++    Profile::neoforge(
++        "1.21.1",
++        767,
++        "21.1.248",
++        [7; 32],
++        vec![],
++        Arc::new(observed.clone()),
++    )
++    .unwrap()
++}
++
++/// Drive the real configure entry point with an owner and assert the owner's
++/// serialization, batch emission, finish refusal and epoch reset on exit.
++
++fn ordered_configured_pair() -> (Connection, Connection) {
++    let (a, b) = horizon_protocol::connection::Pipe::pair();
++    let mut client = Connection::local(a);
++    let mut peer = Connection::local(b);
++    client.adapt(horizon_protocol::adapter::ServerVersion::V1_21_1);
++    client
++        .send(
++            &handshake::Serverbound::Intention(handshake::Intention {
++                protocol: PROTOCOL_VERSION,
++                host: "localhost".into(),
++                port: 25565,
++                intent: handshake::LOGIN,
++            })
++            .encode(),
++        )
++        .unwrap();
++    peer.recv().unwrap();
++    peer.send(&[2]).unwrap();
++    client.recv().unwrap();
++    client
++        .send(&login::Serverbound::LoginAcknowledged(Empty).encode())
++        .unwrap();
++    peer.recv().unwrap();
++    (client, peer)
++}
++
++#[test]
++fn owner_drives_real_configure_with_batch_reply_refusal_and_reset() {
++    use horizon_world::native_load_context::DataLoadOrigin;
++    let root = std::env::temp_dir().join(format!("horizon-owner-{}", next_serial()));
++    std::fs::create_dir_all(&root).unwrap();
++    std::fs::write(root.join("items.json"), "{}").unwrap();
++    let resources = crate::test_resources::item_data(&root, DataLoadOrigin::ClientPreload).unwrap();
++    let observed = Arc::new(Observed::default());
++    let profile = profile(&observed);
++    let payloads =
++        crate::raw_payloads::Transport::capture(crate::raw_payloads::Side::Client).unwrap();
++    let (client, server) = horizon_protocol::connection::Pipe::pair();
++    let mut client = Connection::local(client);
++    client.adapt(horizon_protocol::adapter::ServerVersion::V1_21_1);
++    let mut server = Connection::local(server);
++    server
++        .reader
++        .set_read_timeout(Some(Duration::from_millis(50)))
++        .unwrap();
++    client
++        .send(
++            &handshake::Serverbound::Intention(handshake::Intention {
++                protocol: PROTOCOL_VERSION,
++                host: "localhost".into(),
++                port: 25565,
++                intent: handshake::LOGIN,
++            })
++            .encode(),
++        )
++        .unwrap();
++    server.recv().unwrap();
++    server.send(&[2]).unwrap();
++    client.recv().unwrap();
++    client
++        .send(&login::Serverbound::LoginAcknowledged(Empty).encode())
++        .unwrap();
++    server.recv().unwrap();
++    let (mut reader, writer) = client.split();
++    let writer = Arc::new(Mutex::new(Some(QueuedWriter::new(writer).unwrap())));
++    let configuring = Arc::new(AtomicBool::new(true));
++    let (send, _events) = event_channel();
++    // Brand must not activate Horizon offers; c:version is the only supported task.
++    let mut brand = horizon_protocol::buf::Writer::new();
++    brand.string("horizon");
++    for (channel, data) in [("minecraft:brand", brand.data), ("c:version", vec![1, 1])] {
++        server
++            .send(
++                &cfg::Clientbound::CustomPayload(cfg::CustomPayload {
++                    channel: channel.into(),
++                    data,
++                })
++                .encode(),
++            )
++            .unwrap();
++    }
++    server
++        .send(&cfg::Clientbound::FinishConfiguration(Empty).encode())
++        .unwrap();
++    // A later packet the refusing engine must never read.
++    server.send(&[0]).unwrap();
++    let result = configure_with_profile(
++        &mut reader,
++        &writer,
++        &configuring,
++        &Language::new(),
++        &send,
++        &Cookies::default(),
++        &resources,
++        &payloads,
++        true,
++        Some(&profile),
++    );
++    assert!(
++        result
++            .err()
++            .unwrap()
++            .text
++            .contains("required_tasks_pending"),
++        "owner finish must still refuse"
++    );
++    assert!(configuring.load(Ordering::Acquire));
++    assert!(
++        payloads.epoch().is_none(),
++        "no fabricated Horizon acceptance"
++    );
++    let closed = writer.lock().unwrap().as_ref().unwrap().drain_and_take();
++    assert!(
++        closed.is_err(),
++        "terminal early path must close the actual writer"
++    );
++    // The c:version reply crossed the real queued writer as one batch.
++    let (id, bytes) = server.recv().unwrap();
++    assert_eq!(id, 2);
++    let cfg::Serverbound::CustomPayload(reply) = cfg::Serverbound::decode(id, &bytes).unwrap()
++    else {
++        panic!("expected loader reply");
++    };
++    assert_eq!(
++        (reply.channel.as_str(), reply.data.as_slice()),
++        ("c:version", &[1, 1][..])
++    );
++    assert!(server.recv().is_err(), "no finish ack or Horizon offer");
++    // The engine returned without consuming the following packet.
++    assert_eq!(reader.counters.received.load(Ordering::Relaxed), 4);
++    assert!(
++        reader.recv().is_err(),
++        "terminal reader must discard later buffered bytes"
++    );
++
++    // A fresh owner epoch was created and reset exactly once on exit.
++    assert_eq!(observed.starts.load(Ordering::Relaxed), 1);
++    assert_eq!(observed.resets.load(Ordering::Relaxed), 1);
++    std::fs::remove_dir_all(root).unwrap();
++}
++
++// Owner-direct split tests require the real compatibility reassembler, supplied
++// only when the companion is wired (not in the isolated dependency-free run).
++#[allow(unexpected_cfgs)]
++#[cfg(not(compat_isolated))]
++mod companion {
++    use super::*;
++    use horizon_neoforge_compat::{
++        modded::{ConnectionProtocol, Flow},
++        split::{OutboundPacket, OutboundSplitter, Reassembler},
++    };
++
++    /// Adapt the compatibility reassembler to the engine's local trait.
++    struct CompatReassembly(Reassembler);
++    impl ordered_owner::Reassembly for CompatReassembly {
++        fn receive(
++            &mut self,
++            body: &[u8],
++            now_ms: u64,
++        ) -> std::result::Result<Option<Vec<u8>>, String> {
++            self.0.receive(body, now_ms).map_err(|e| e.to_string())
++        }
++        fn check_deadline(&mut self, now_ms: u64) -> std::result::Result<(), String> {
++            self.0.check_deadline(now_ms).map_err(|e| e.to_string())
++        }
++        fn close(&mut self) {
++            self.0.close();
++        }
++    }
++
++    fn configured_pair() -> (Connection, Connection) {
++        let (client, server) = horizon_protocol::connection::Pipe::pair();
++        let mut client = Connection::local(client);
++        let mut server = Connection::local(server);
++        client.adapt(horizon_protocol::adapter::ServerVersion::V1_21_1);
++        client
++            .send(
++                &handshake::Serverbound::Intention(handshake::Intention {
++                    protocol: PROTOCOL_VERSION,
++                    host: "localhost".into(),
++                    port: 25565,
++                    intent: handshake::LOGIN,
++                })
++                .encode(),
++            )
++            .unwrap();
++        server.recv().unwrap();
++        server.send(&[2]).unwrap();
++        client.recv().unwrap();
++        client
++            .send(&login::Serverbound::LoginAcknowledged(Empty).encode())
++            .unwrap();
++        server.recv().unwrap();
++        (client, server)
++    }
++
++    fn fragment(marker: u8, content: &[u8]) -> Vec<u8> {
++        let mut w = horizon_protocol::buf::Writer::new();
++        w.varint((content.len() + 1) as i32);
++        w.bytes(&[marker]);
++        w.bytes(content);
++        w.data
++    }
++
++    fn owner_with_authority<'a>(
++        epoch: ordered_owner::Epoch,
++        profile: &'a Profile,
++    ) -> ordered_owner::OrderedOwner<'a> {
++        ordered_owner::OrderedOwner::new(
++            epoch,
++            profile,
++            Some(Box::new(CompatReassembly(Reassembler::new()))),
++        )
++        .unwrap()
++    }
++
++    /// With genuine (test-granted) split authority, the owner reassembles a
++    /// fragmented original, the caller decodes it exactly once, and the inner
++    /// payload is dispatched.
++    #[test]
++    fn owner_reassembles_split_then_dispatches_exactly_once() {
++        let (mut client, mut server) = configured_pair();
++        let observed = Arc::new(Observed::default());
++        let profile = profile(&observed);
++        let epoch = ordered_owner::Epoch(7);
++        let mut owner = owner_with_authority(epoch, &profile);
++        let packet = cfg::Clientbound::CustomPayload(cfg::CustomPayload {
++            channel: "c:version".into(),
++            data: vec![1, 1],
++        })
++        .encode();
++        // Queue a real socket packet that must NOT be consumed while reassembling.
++        server.send(&[14, 0]).unwrap();
++        let mut assembled = None;
++        for (index, part) in [fragment(1, &packet[..1]), fragment(2, &packet[1..])]
++            .into_iter()
++            .enumerate()
++        {
++            match owner.receive(ordered_owner::SPLIT_CHANNEL, &part).unwrap() {
++                ordered_owner::Step::Partial => assert_eq!(index, 0),
++                ordered_owner::Step::Assembled(original) => {
++                    assert_eq!(index, 1);
++                    assembled = Some(original);
++                }
++                ordered_owner::Step::Replies(_) => panic!("split fragment is not a reply"),
++            }
++        }
++        let (id, body) = client
++            .reader
++            .decode_reassembled_configuration(assembled.unwrap())
++            .unwrap();
++        let cfg::Clientbound::CustomPayload(inner) = cfg::Clientbound::decode(id, &body).unwrap()
++        else {
++            panic!("expected reconstructed custom payload");
++        };
++        let replies = owner.dispatch(&inner.channel, &inner.data).unwrap();
++        assert_eq!(replies.len(), 1);
++        assert_eq!(replies[0].body, [1, 1]);
++        // The queued socket packet is still independent and unread.
++        assert_eq!(client.recv().unwrap(), (15, vec![0]));
++        // Epoch is live and finish still refuses.
++        assert!(owner.active(epoch));
++        assert!(!owner.active(ordered_owner::Epoch(8)));
++        assert!(owner.finish().is_err());
++    }
++
++    /// The owner's idle poll is wired and terminal: once the epoch is terminated
++    /// the poll and any further work refuse. The absolute 30s deadline arithmetic
++    /// itself is covered by the core `split` reassembler tests.
++    #[test]
++    fn owner_idle_poll_is_terminal_after_teardown() {
++        let (_client, _server) = configured_pair();
++        let observed = Arc::new(Observed::default());
++        let profile = profile(&observed);
++        let mut owner = owner_with_authority(ordered_owner::Epoch(1), &profile);
++        assert!(matches!(
++            owner
++                .receive(ordered_owner::SPLIT_CHANNEL, &fragment(1, &[14]))
++                .unwrap(),
++            ordered_owner::Step::Partial
++        ));
++        owner.poll_idle().unwrap(); // before teardown, a pending assembly polls clean
++        owner.terminate();
++        assert!(owner.is_terminated());
++        assert!(owner.receive("c:version", &[1, 1]).is_err());
++        assert!(owner.poll_idle().is_err());
++        owner.terminate(); // idempotent
++        assert_eq!(observed.resets.load(Ordering::Relaxed), 1);
++    }
++
++    /// Without authority the owner never reassembles a split payload: it is an
++    /// ordinary (unsupported) bridge task. The outbound splitter is a separate,
++    /// opt-in primitive and is not wired by default.
++    #[test]
++    fn owner_without_authority_never_reassembles_split() {
++        let (_client, _server) = configured_pair();
++        let observed = Arc::new(Observed::default());
++        let profile = profile(&observed);
++        let mut owner =
++            ordered_owner::OrderedOwner::new(ordered_owner::Epoch(1), &profile, None).unwrap();
++        assert!(
++            owner
++                .receive(ordered_owner::SPLIT_CHANNEL, &fragment(1, &[14]))
++                .is_err()
++        );
++        let splitter =
++            OutboundSplitter::new(Flow::Serverbound, ConnectionProtocol::Configuration, 128)
++                .unwrap();
++        assert!(matches!(
++            splitter.encode(&[7, 0]).unwrap(),
++            OutboundPacket::Unsplit(_)
++        ));
++    }
++}
++
++/// No compiler-only façade: these exercise the actual bounded worker/transport.
++fn unadapted_local_writer() -> (QueuedWriter, Connection) {
++    let (client, peer) = horizon_protocol::connection::Pipe::pair();
++    let (_, writer) = Connection::local(client).split();
++    (QueuedWriter::new(writer).unwrap(), Connection::local(peer))
++}
++
++#[test]
++fn owner_batch_completion_waits_for_real_pipe_write_and_preserves_order() {
++    let (writer, mut peer) = unadapted_local_writer();
++    let receipt = writer
++        .send_batch(vec![vec![0; 70_000], vec![1, 42]])
++        .unwrap();
++    // A pending completion must prevent transferring the physical socket to a
++    // successor whose lifetime the old receipt could otherwise cancel.
++    assert!(writer.drain_and_take().is_err());
++    let worker = std::thread::spawn(move || receipt.wait(Duration::from_secs(2)));
++    assert_eq!(peer.recv().unwrap(), (0, vec![0; 69_999]));
++    assert_eq!(peer.recv().unwrap(), (1, vec![42]));
++    worker.join().unwrap().unwrap();
++    writer.drain_and_take().unwrap().shutdown();
++}
++
++#[test]
++fn owner_batch_timeout_closes_blocked_transport_and_cancels_later_jobs() {
++    let (writer, mut peer) = unadapted_local_writer();
++    // >64KiB cannot finish while the peer is idle. No sleep/racy scheduler
++    // assumption: even a fully scheduled worker must block inside write_all.
++    let receipt = writer
++        .send_batch(vec![vec![0; 70_000], vec![1, 99]])
++        .unwrap();
++    writer.send(&[2, 88]).unwrap();
++    let error = receipt.wait(Duration::from_millis(10)).unwrap_err();
++    assert!(error.to_string().contains("deadline"));
++    assert!(writer.send(&[3]).is_err());
++    assert!(writer.drain_and_take().is_err()); // joins: blocked write was closed
++    peer.reader
++        .set_read_timeout(Some(Duration::from_millis(20)))
++        .unwrap();
++    assert!(
++        peer.recv().is_err(),
++        "partial original must not become a success"
++    );
++}
++
++#[test]
++fn owner_batch_dropped_receipt_cancels_without_waiting_or_replay() {
++    let (writer, mut peer) = unadapted_local_writer();
++    let receipt = writer
++        .send_batch(vec![vec![0; 70_000], vec![1, 99]])
++        .unwrap();
++    drop(receipt);
++    assert!(writer.send(&[2, 88]).is_err());
++    assert!(writer.drain_and_take().is_err());
++    assert!(peer.recv().is_err());
++    // Independent successor stays usable; old cancellation has no global effect.
++    let (next, mut peer) = unadapted_local_writer();
++    next.send_batch(vec![vec![7, 8]])
++        .unwrap()
++        .wait(Duration::from_secs(1))
++        .unwrap();
++    assert_eq!(peer.recv().unwrap(), (7, vec![8]));
++    next.drain_and_take().unwrap().shutdown();
++}
++
++#[test]
++fn owner_batch_admission_counts_packet_count_outer_and_inner_capacity() {
++    let (writer, mut peer) = unadapted_local_writer();
++    assert!(writer.send_batch(vec![vec![]; 1_025]).is_err());
++    // Length alone is insufficient: a small body may retain huge capacity.
++    let mut oversized = Vec::with_capacity(16 * 1024 * 1024);
++    oversized.push(0);
++    assert!(writer.send_batch(vec![oversized]).is_err());
++    let mut outer = Vec::with_capacity(16 * 1024 * 1024 / std::mem::size_of::<Vec<u8>>() + 1);
++    outer.push(vec![0]);
++    assert!(writer.send_batch(outer).is_err());
++    assert!(writer.send_batch(vec![]).is_err());
++    // Refusals exposed zero packets and did not poison an otherwise live writer.
++    writer
++        .send_batch(vec![vec![4, 5]])
++        .unwrap()
++        .wait(Duration::from_secs(1))
++        .unwrap();
++    assert_eq!(peer.recv().unwrap(), (4, vec![5]));
++    writer.drain_and_take().unwrap().shutdown();
++}
++
++#[test]
++fn owner_batch_tcp_completion_compression_encryption_matrix() {
++    for compressed in [false, true] {
++        for encrypted in [false, true] {
++            let listener = std::net::TcpListener::bind(("127.0.0.1", 0)).unwrap();
++            let client = std::net::TcpStream::connect(listener.local_addr().unwrap()).unwrap();
++            let (server, _) = listener.accept().unwrap();
++            let mut client = Connection::from_stream(client).unwrap();
++            let mut peer = Connection::from_stream(server).unwrap();
++            if compressed {
++                client.set_compression(8);
++                peer.set_compression(8);
++            }
++            if encrypted {
++                client.enable_encryption(&[7; 16]);
++                peer.enable_encryption(&[7; 16]);
++            }
++            peer.reader
++                .set_read_timeout(Some(Duration::from_secs(2)))
++                .unwrap();
++            let (_, writer) = client.split();
++            let writer = QueuedWriter::new(writer).unwrap();
++            // Different ids and bodies expose duplicated framing/translation and
++            // cipher advancement; these are synthetic packets, not a join.
++            let bodies = vec![vec![1, 2], vec![2; 20_000], vec![3, 4, 5]];
++            writer
++                .send_batch(bodies.clone())
++                .unwrap()
++                .wait(Duration::from_secs(2))
++                .unwrap();
++            for body in bodies {
++                assert_eq!(peer.recv().unwrap(), (body[0] as i32, body[1..].to_vec()));
++            }
++            writer.drain_and_take().unwrap().shutdown();
++        }
++    }
++}
++
++#[test]
++fn owner_batch_peer_failure_is_not_reported_as_queue_success() {
++    let (writer, peer) = unadapted_local_writer();
++    peer.reader.closer().unwrap().close();
++    let receipt = writer.send_batch(vec![vec![0, 1]]).unwrap();
++    assert!(receipt.wait(Duration::from_secs(1)).is_err());
++    assert!(writer.send(&[2]).is_err());
++    assert!(writer.drain_and_take().is_err());
++}
++
++#[test]
++fn owner_bootstrap_failure_closes_transport_without_loader_or_ack() {
++    use horizon_world::native_load_context::DataLoadOrigin;
++    struct Refuse;
++    impl Factory for Refuse {
++        fn create(&self, _: [u8; 32]) -> early_configuration::Result<Box<dyn Bridge>> {
++            Err(Failure("host_profile_revoked"))
++        }
++    }
++    let root = std::env::temp_dir().join(format!("horizon-owner-fail-{}", next_serial()));
++    std::fs::create_dir_all(&root).unwrap();
++    std::fs::write(root.join("items.json"), "{}").unwrap();
++    let resources = crate::test_resources::item_data(&root, DataLoadOrigin::ClientPreload).unwrap();
++    let profile =
++        Profile::neoforge("1.21.1", 767, "21.1.248", [7; 32], vec![], Arc::new(Refuse)).unwrap();
++    let payloads =
++        crate::raw_payloads::Transport::capture(crate::raw_payloads::Side::Client).unwrap();
++    let (client, mut peer) = ordered_configured_pair();
++    let (mut reader, writer) = client.split();
++    let writer = Arc::new(Mutex::new(Some(QueuedWriter::new(writer).unwrap())));
++    peer.reader
++        .set_read_timeout(Some(Duration::from_millis(50)))
++        .unwrap();
++    let (send, _events) = event_channel();
++    let error = configure_with_profile(
++        &mut reader,
++        &writer,
++        &Arc::new(AtomicBool::new(true)),
++        &Language::new(),
++        &send,
++        &Cookies::default(),
++        &resources,
++        &payloads,
++        true,
++        Some(&profile),
++    )
++    .err()
++    .unwrap();
++    assert!(error.text.contains("host_profile_revoked"));
++    assert!(peer.recv().is_err(), "no speculative offer or ack");
++    let error = peer.send(&[0]).unwrap_err();
++    assert!(
++        !error.is_timed_out(),
++        "socket physically closed, not merely idle"
++    );
++    assert!(writer.lock().unwrap().as_ref().unwrap().send(&[0]).is_err());
++    assert!(payloads.epoch().is_none());
++    std::fs::remove_dir_all(root).unwrap();
++}
++
++#[test]
++fn owner_missing_shared_writer_still_closes_reader_and_discards_old_epoch() {
++    use horizon_world::native_load_context::DataLoadOrigin;
++    let root = std::env::temp_dir().join(format!("horizon-owner-missing-{}", next_serial()));
++    std::fs::create_dir_all(&root).unwrap();
++    std::fs::write(root.join("items.json"), "{}").unwrap();
++    let resources = crate::test_resources::item_data(&root, DataLoadOrigin::ClientPreload).unwrap();
++    let observed = Arc::new(Observed::default());
++    let profile = profile(&observed);
++    let payloads =
++        crate::raw_payloads::Transport::capture(crate::raw_payloads::Side::Client).unwrap();
++    let (client, peer) = horizon_protocol::connection::Pipe::pair();
++    let (mut reader, writer) = Connection::local(client).split();
++    // The missing shared writer alone must not imply that the socket was closed.
++    let mut peer = Connection::local(peer);
++    peer.send(&[0]).unwrap();
++    let (send, _events) = event_channel();
++    let error = configure_with_profile(
++        &mut reader,
++        &Arc::new(Mutex::new(None)),
++        &Arc::new(AtomicBool::new(true)),
++        &Language::new(),
++        &send,
++        &Cookies::default(),
++        &resources,
++        &payloads,
++        true,
++        Some(&profile),
++    )
++    .err()
++    .unwrap();
++    assert!(error.text.contains("Disconnected"));
++    assert_eq!(observed.starts.load(Ordering::Relaxed), 0);
++    assert!(
++        reader.recv().is_err(),
++        "old buffered/input work cannot be reused"
++    );
++    assert!(
++        reader.read_raw(0).is_err(),
++        "even an empty old-epoch raw read refuses"
++    );
++    assert!(
++        peer.send(&[1]).is_err(),
++        "reader must close the actual socket"
++    );
++    assert!(payloads.epoch().is_none());
++    drop(writer);
++    std::fs::remove_dir_all(root).unwrap();
++}
++
++/// Use the actual configure loop with its real queues and default adapter. The
++/// limits only tighten production policy, not substitute a test owner/clock.
++fn run_policy_case(
++    packets: Vec<cfg::Clientbound>,
++    limits: (usize, usize, Duration),
++    expected: &str,
++    expected_replies: usize,
++    expected_dispatches: usize,
++    initial: bool,
++) {
++    use horizon_world::native_load_context::DataLoadOrigin;
++    let root = std::env::temp_dir().join(format!("horizon-owner-policy-{}", next_serial()));
++    std::fs::create_dir_all(&root).unwrap();
++    std::fs::write(root.join("items.json"), "{}").unwrap();
++    let resources = crate::test_resources::item_data(&root, DataLoadOrigin::ClientPreload).unwrap();
++    let observed = Arc::new(Observed::default());
++    let profile = profile(&observed)
++        .with_configuration_limits(limits.0, limits.1, limits.2)
++        .unwrap();
++    let payloads =
++        crate::raw_payloads::Transport::capture(crate::raw_payloads::Side::Client).unwrap();
++    let (client, mut peer) = ordered_configured_pair();
++    let (mut reader, writer) = client.split();
++    let writer = Arc::new(Mutex::new(Some(QueuedWriter::new(writer).unwrap())));
++    peer.reader
++        .set_read_timeout(Some(Duration::from_secs(2)))
++        .unwrap();
++    for packet in packets {
++        peer.send(&packet.encode()).unwrap();
++    }
++    let (send, events) = event_channel();
++    let error = configure_with_profile(
++        &mut reader,
++        &writer,
++        &Arc::new(AtomicBool::new(true)),
++        &Language::new(),
++        &send,
++        &Cookies::default(),
++        &resources,
++        &payloads,
++        initial,
++        Some(&profile),
++    )
++    .err()
++    .unwrap();
++    assert!(
++        error.text.contains(expected),
++        "unexpected refusal: {}",
++        error.text
++    );
++    assert_eq!(observed.starts.load(Ordering::Relaxed), 1);
++    assert_eq!(observed.resets.load(Ordering::Relaxed), 1);
++    assert_eq!(observed.received.lock().unwrap().len(), expected_dispatches);
++    for _ in 0..expected_replies {
++        peer.recv().unwrap();
++    }
++    assert!(
++        peer.recv().is_err(),
++        "no refused batch/finish acknowledgement exposed"
++    );
++    assert!(
++        peer.send(&[0]).is_err(),
++        "terminal transport, not just a read timeout"
++    );
++    assert!(reader.recv().is_err());
++    assert!(writer.lock().unwrap().as_ref().unwrap().send(&[0]).is_err());
++    assert!(payloads.epoch().is_none());
++    while let Ok(receipt) = events.try_recv_owned() {
++        let (event, _lease) = receipt.into_parts();
++        assert!(
++            !matches!(event, Event::Transfer { .. }),
++            "cannot reconnect without explicit profile"
++        );
++    }
++    std::fs::remove_dir_all(root).unwrap();
++}
++
++#[test]
++fn owner_configuration_cumulative_budget_counts_ordinary_ingress_and_egress() {
++    run_policy_case(
++        vec![
++            cfg::Clientbound::KeepAlive(cfg::KeepAlive { id: 1 }),
++            cfg::Clientbound::Ping(cfg::Ping { id: 2 }),
++            cfg::Clientbound::FinishConfiguration(Empty),
++        ],
++        (3, 1024, Duration::from_secs(2)),
++        "cumulative traffic",
++        1,
++        0,
++        true,
++    );
++}
++
++#[test]
++fn owner_configuration_byte_budget_refuses_reply_before_any_admission() {
++    // Ping ingress is 4 payload bytes + conservative 5-byte id charge. Pong is
++    // 5 bytes: a 13-byte total policy accepts ingress but refuses the whole reply.
++    run_policy_case(
++        vec![cfg::Clientbound::Ping(cfg::Ping { id: 2 })],
++        (8, 13, Duration::from_secs(2)),
++        "cumulative traffic",
++        0,
++        0,
++        true,
++    );
++}
++
++#[test]
++fn owner_configuration_lifetime_expires_without_another_incoming_packet() {
++    run_policy_case(
++        vec![],
++        (8, 1024, Duration::from_millis(1)),
++        "lifetime",
++        0,
++        0,
++        true,
++    );
++}
++
++#[test]
++fn owner_configuration_transfer_requires_profile_reselection_in_both_entries() {
++    for initial in [true, false] {
++        run_policy_case(
++            vec![cfg::Clientbound::Transfer(cfg::Transfer {
++                host: "example.invalid".into(),
++                port: 25565,
++            })],
++            (8, 1024, Duration::from_secs(2)),
++            "profile must be reselected",
++            0,
++            0,
++            initial,
++        );
++    }
++}
++
++#[test]
++fn owner_cumulative_batch_charge_is_checked_atomic_sticky_and_epoch_local() {
++    use early_configuration::ConfigurationLimits;
++    use ordered_owner::ConfigurationBudget;
++    let limits = ConfigurationLimits {
++        packets: 3,
++        bytes: 8,
++        lifetime: Duration::from_secs(2),
++    };
++    let budget = ConfigurationBudget::new(limits);
++    budget.charge(1, 3).unwrap();
++    budget.outbound(&[vec![0, 1], vec![2, 3, 4]]).unwrap(); // exact boundary
++    assert!(budget.charge(1, 0).is_err());
++    assert!(budget.poll().is_err());
++    let next = ConfigurationBudget::new(limits);
++    assert!(next.charge(usize::MAX, usize::MAX).is_err());
++    assert!(next.charge(0, 0).is_err());
++    let next = ConfigurationBudget::new(limits);
++    next.charge(1, 1).unwrap();
++    assert!(next.charge(usize::MAX, 0).is_err()); // checked overflow
++    let next = ConfigurationBudget::new(limits);
++    next.outbound(&[vec![0; 8]]).unwrap(); // independent successor still live
++}
+diff --git a/crates/horizon-client/src/net/queued_writer.rs b/crates/horizon-client/src/net/queued_writer.rs
+--- a/crates/horizon-client/src/net/queued_writer.rs
++++ b/crates/horizon-client/src/net/queued_writer.rs
+@@ -5,7 +5,7 @@
+ use horizon_protocol::{
+     Error, Result,
+     adapter::ServerVersion,
+-    connection::{Closer, ConnWriter, Framing},
++    connection::{Closer, ConfigurationFence, ConfigurationOrder, ConnWriter, Framing},
+     frame::FrameSize,
+ };
+ use mod_api::{PayloadFrameStage, PayloadId, PayloadSendError, SendPacketError};
+@@ -14,7 +14,64 @@
+     atomic::{AtomicBool, Ordering},
+ };
+
++use std::sync::mpsc::{self, Receiver, RecvTimeoutError, SyncSender};
+ use std::thread::JoinHandle;
++use std::time::Duration;
++
++const MAX_BATCH_PACKETS: usize = 1_024;
++type Completion = std::result::Result<(), String>;
++
++/// Actual worker completion, not merely successful queue insertion. Dropping a
++/// receipt cancels the physical connection: partially emitted work cannot replay.
++/// This is a write_all barrier, NOT peer receipt, flush, or host-task completion.
++pub(crate) struct WriteReceipt {
++    completion: Receiver<Completion>,
++    writer: QueuedWriter,
++    completed: bool,
++}
++impl WriteReceipt {
++    pub(crate) fn wait(mut self, timeout: Duration) -> Result<()> {
++        let result = match self.completion.recv_timeout(timeout) {
++            Ok(Ok(())) if self.writer.alive.load(Ordering::Acquire) => Ok(()),
++            Ok(Ok(())) => Err(Error::new("client writer disconnected")),
++            Ok(Err(error)) => Err(Error::new(error)),
++            Err(RecvTimeoutError::Timeout) => {
++                Err(Error::new("configuration write deadline exceeded"))
++            }
++            Err(RecvTimeoutError::Disconnected) => Err(Error::new("configuration write cancelled")),
++        };
++        if result.is_err() {
++            self.writer.shutdown();
++        }
++        self.completed = true;
++        result
++    }
++}
++impl Drop for WriteReceipt {
++    fn drop(&mut self) {
++        if !self.completed {
++            self.writer.shutdown();
++        }
++        self.writer.receipts.fetch_sub(1, Ordering::AcqRel);
++    }
++}
++
++fn batch_charge(bodies: &Vec<Vec<u8>>) -> Result<usize> {
++    if bodies.is_empty() || bodies.len() > MAX_BATCH_PACKETS {
++        return Err(Error::new("configuration batch packet limit"));
++    }
++    let outer = bodies
++        .capacity()
++        .checked_mul(std::mem::size_of::<Vec<u8>>())
++        .and_then(|bytes| bytes.checked_add(PUBLICATION_OVERHEAD))
++        .ok_or_else(|| Error::new("configuration batch byte limit"))?;
++    bodies.iter().try_fold(outer, |bytes, body| {
++        bytes
++            .checked_add(body.capacity())
++            .filter(|bytes| *bytes <= CAPACITY)
++            .ok_or_else(|| Error::new("configuration batch byte limit"))
++    })
++}
+
+ const CAPACITY: usize = 16 * 1024 * 1024;
+ // Covers the pending transaction journal record as well as the queue's own node.
+@@ -22,6 +79,14 @@
+ enum WriteJob {
+     Packet(Vec<u8>),
+     Contents(Vec<u8>),
++    /// A whole reply batch admitted under one reservation: framed and written in
++    /// order within this single job, so nothing interleaves and a mid-batch write
++    /// failure tears the connection down rather than acknowledging a partial batch.
++    Batch {
++        bodies: Vec<Vec<u8>>,
++        fence: Option<ConfigurationFence>,
++        complete: SyncSender<Completion>,
++    },
+     Disconnect(Vec<u8>),
+ }
+
+@@ -33,8 +98,10 @@
+     // ConnWriter::send_contents returns after write_all; it does not flush.
+     probe: Arc<[std::sync::atomic::AtomicUsize; 4]>,
+     sender: Mutex<Option<Sender<WriteJob>>>,
++    receipts: std::sync::atomic::AtomicUsize,
+     worker: Mutex<Option<JoinHandle<ConnWriter>>>,
+     framing: Framing,
++    configuration_order: ConfigurationOrder,
+     closer: Arc<Closer>,
+     alive: Arc<AtomicBool>,
+     retired: AtomicBool,
+@@ -155,6 +222,7 @@
+     }
+     pub(crate) fn new(mut writer: ConnWriter) -> Result<Self> {
+         let framing = writer.framing();
++        let configuration_order = writer.configuration_order();
+         let closer = Arc::new(writer.closer()?);
+         let alive = Arc::new(AtomicBool::new(true));
+         let version = writer.server_version();
+@@ -171,6 +239,11 @@
+             .name("horizon-net-write".into())
+             .spawn(move || {
+                 while let Ok(job) = receiver.recv() {
++                    // A cancelled/dead epoch must not drain queued success/acks.
++                    if !running.load(Ordering::Acquire) {
++                        writer.shutdown();
++                        break;
++                    }
+                     let disconnect = matches!(&job, WriteJob::Disconnect(_));
+                     #[cfg(any(test, feature = "test-payload-probe"))]
+                     {
+@@ -178,6 +251,7 @@
+                             WriteJob::Packet(b)
+                             | WriteJob::Contents(b)
+                             | WriteJob::Disconnect(b) => b.len(),
++                            WriteJob::Batch { bodies, .. } => bodies.iter().map(Vec::len).sum(),
+                         };
+                         writing[0].fetch_add(1, Ordering::Relaxed);
+                         writing[2].store(bytes, Ordering::Relaxed);
+@@ -186,6 +260,19 @@
+                     let result = match job {
+                         WriteJob::Packet(body) | WriteJob::Disconnect(body) => writer.send(&body),
+                         WriteJob::Contents(contents) => writer.send_contents(&contents),
++                        WriteJob::Batch {
++                            bodies,
++                            fence,
++                            complete,
++                        } => {
++                            let outcome = writer.send_configuration_batch(&bodies, fence);
++                            // A capacity-one receipt cannot block this worker.
++                            // Failure or cancellation remains terminal below.
++                            let reported =
++                                outcome.as_ref().map(|_| ()).map_err(ToString::to_string);
++                            let _ = complete.try_send(reported);
++                            outcome
++                        }
+                     };
+                     #[cfg(any(test, feature = "test-payload-probe"))]
+                     {
+@@ -208,10 +295,12 @@
+             #[cfg(any(test, feature = "test-payload-probe"))]
+             probe,
+             sender: Mutex::new(Some(sender)),
++            receipts: std::sync::atomic::AtomicUsize::new(0),
+             worker: Mutex::new(Some(worker)),
+             retired: AtomicBool::new(false),
+             terminal: AtomicBool::new(false),
+             framing,
++            configuration_order,
+             closer,
+             alive,
+             version,
+@@ -222,6 +311,11 @@
+     /// Stop acceptance, cancel unpublished reservations and drain published writes.
+     pub(crate) fn drain_and_take(&self) -> Result<ConnWriter> {
+         let mut sender = self.sender.lock().unwrap();
++        // Never transfer the physical writer while cancellation can still close
++        // its old epoch. Receipt Drop and retirement share this admission gate.
++        if self.receipts.load(Ordering::Acquire) != 0 {
++            return Err(Error::new("configuration writes still awaiting completion"));
++        }
+         self.retired.store(true, Ordering::Release);
+         sender.take();
+         drop(sender);
+@@ -274,6 +368,45 @@
+         };
+         match sender.try_send(WriteJob::Packet(owned), capacity) {
+             Ok(()) => Ok(()),
++            Err(TrySendError::Full(_)) => {
++                self.alive.store(false, Ordering::Release);
++                self.closer.close();
++                Err(Error::new("client writer backpressure"))
++            }
++            Err(TrySendError::Disconnected(_)) => Err(Error::new("client writer disconnected")),
++        }
++    }
++    /// Reserve one bounded job for the WHOLE batch, including retained outer
++    /// vector capacity. Admission exposes zero packets on failure. The returned
++    /// receipt must be awaited outside all engine/shared-writer locks. This does
++    /// not grant split authority or bypass ordinary adapter translation.
++    pub(crate) fn send_batch(&self, bodies: Vec<Vec<u8>>) -> Result<WriteReceipt> {
++        if !self.alive.load(Ordering::Acquire) || self.terminal.load(Ordering::Acquire) {
++            return Err(Error::new("client writer disconnected"));
++        }
++        let capacity = batch_charge(&bodies)?;
++        let fence = self.configuration_order.capture()?;
++        let (complete, completion) = mpsc::sync_channel(1);
++        let sender = self.sender.lock().unwrap();
++        let Some(sender) = sender.as_ref() else {
++            return Err(Error::new("writer retired"));
++        };
++        match sender.try_send(
++            WriteJob::Batch {
++                bodies,
++                fence,
++                complete,
++            },
++            capacity,
++        ) {
++            Ok(()) => {
++                self.receipts.fetch_add(1, Ordering::AcqRel);
++                Ok(WriteReceipt {
++                    completion,
++                    writer: self.clone(),
++                    completed: false,
++                })
++            }
+             Err(TrySendError::Full(_)) => {
+                 self.alive.store(false, Ordering::Release);
+                 self.closer.close();
+@@ -340,6 +473,9 @@
+             WriteJob::Packet(bytes) | WriteJob::Contents(bytes) | WriteJob::Disconnect(bytes) => {
+                 bytes.capacity()
+             }
++            WriteJob::Batch { bodies, .. } => {
++                batch_charge(bodies).map_err(PrepareFailure::Encode)?
++            }
+         };
+         let sender = self.sender.lock().unwrap();
+         let permit = sender
+diff --git a/crates/horizon-protocol/src/adapter/session.rs b/crates/horizon-protocol/src/adapter/session.rs
+--- a/crates/horizon-protocol/src/adapter/session.rs
++++ b/crates/horizon-protocol/src/adapter/session.rs
+@@ -8,8 +8,8 @@
+ use std::{
+     collections::{HashMap, VecDeque},
+     sync::{
+-        Arc, Mutex,
+-        atomic::{AtomicBool, AtomicU8, Ordering},
++        Arc, Mutex, MutexGuard,
++        atomic::{AtomicBool, AtomicU8, AtomicU64, Ordering},
+     },
+ };
+
+@@ -42,6 +42,9 @@
+
+ /// Shared by a connection's reader and writer.
+ pub struct Session {
++    order: Mutex<()>,
++    generation: AtomicU64,
++    ordered_configuration: AtomicBool,
+     pub version: ServerVersion,
+     /// Dimension of the last play login or respawn, for older packets with only a local block position.
+     pub(super) dimension: Mutex<String>,
+@@ -71,9 +74,63 @@
+     pub(super) outgoing: Mutex<Vec<Vec<u8>>>,
+ }
+
++/// A transaction over BOTH phases, translation and the queues translation creates.
++/// Never acquire this while holding a queue mutex. Socket cancellation is lock-free.
++/// Callers must not recursively call Session's public translation/queue methods.
++pub(crate) struct SessionOrder<'a> {
++    session: &'a Session,
++    _guard: MutexGuard<'a, ()>,
++}
++impl SessionOrder<'_> {
++    pub(crate) fn generation(&self) -> u64 {
++        self.session.generation.load(Ordering::Acquire)
++    }
++    pub(crate) fn configuration(&self) -> bool {
++        self.session.reading() == State::Configuration
++            && self.session.writing() == State::Configuration
++            && self.generation() != u64::MAX
++    }
++    pub(crate) fn clientbound(&self, id: i32, payload: Vec<u8>) -> Result<Option<(i32, Vec<u8>)>> {
++        self.session.clientbound_ordered(id, payload)
++    }
++    pub(crate) fn serverbound(&self, body: &[u8]) -> Result<Option<Vec<u8>>> {
++        self.session.serverbound_ordered(body)
++    }
++    pub(crate) fn next_incoming(&self) -> Option<(i32, Vec<u8>)> {
++        self.session.next_incoming_ordered()
++    }
++    pub(crate) fn take_outgoing(&self) -> Vec<Vec<u8>> {
++        self.session.take_outgoing_ordered()
++    }
++    pub(crate) fn enable_configuration(&self) -> Result<()> {
++        if self.session.version != ServerVersion::V1_21_1 || !self.configuration() {
++            return Err(crate::Error::new(
++                "ordered configuration requires both protocol 767 phases",
++            ));
++        }
++        self.session
++            .ordered_configuration
++            .store(true, Ordering::Release);
++        Ok(())
++    }
++}
++
+ impl Session {
++    pub(crate) fn ordered(&self) -> SessionOrder<'_> {
++        SessionOrder {
++            session: self,
++            _guard: self.order.lock().unwrap(),
++        }
++    }
++    pub(crate) fn configuration_is_ordered(&self) -> bool {
++        self.ordered_configuration.load(Ordering::Acquire)
++    }
++
+     pub fn new(version: ServerVersion) -> Self {
+         Self {
++            order: Mutex::new(()),
++            generation: AtomicU64::new(0),
++            ordered_configuration: AtomicBool::new(false),
+             version,
+             dimension: Mutex::new("minecraft:overworld".into()),
+             local_player: Mutex::new(None),
+@@ -103,9 +160,25 @@
+         from_u8(self.writing.load(Ordering::Acquire))
+     }
+     fn set_reading(&self, state: State) {
++        if self.reading() != state {
++            // Saturation is terminal for new fences; never recycle an epoch.
++            let _ = self
++                .generation
++                .fetch_update(Ordering::AcqRel, Ordering::Acquire, |value| {
++                    Some(value.saturating_add(1))
++                });
++        }
+         self.reading.store(to_u8(state), Ordering::Release);
+     }
+     fn set_writing(&self, state: State) {
++        if self.writing() != state {
++            // Saturation is terminal for new fences; never recycle an epoch.
++            let _ = self
++                .generation
++                .fetch_update(Ordering::AcqRel, Ordering::Acquire, |value| {
++                    Some(value.saturating_add(1))
++                });
++        }
+         self.writing.store(to_u8(state), Ordering::Release);
+     }
+
+@@ -143,6 +216,9 @@
+     /// A packet the server sent, as the pinned version numbers and lays it out. `None` drops it: Horizon
+     /// knows no such packet.
+     pub fn clientbound(&self, id: i32, payload: Vec<u8>) -> Result<Option<(i32, Vec<u8>)>> {
++        self.ordered().clientbound(id, payload)
++    }
++    fn clientbound_ordered(&self, id: i32, payload: Vec<u8>) -> Result<Option<(i32, Vec<u8>)>> {
+         let state = self.reading();
+         let recipe_book = if self.version.at_most(ServerVersion::V1_20_3) {
+             63
+@@ -210,6 +286,9 @@
+     /// A packet body (VarInt id + payload) Horizon sends, as this server numbers and lays it out. `None`:
+     /// the server has no such packet, so nothing is sent.
+     pub fn serverbound(&self, body: &[u8]) -> Result<Option<Vec<u8>>> {
++        self.ordered().serverbound(body)
++    }
++    fn serverbound_ordered(&self, body: &[u8]) -> Result<Option<Vec<u8>>> {
+         let state = self.writing();
+         let mut r = Reader::new(body);
+         let id = r.varint()?;
+@@ -240,10 +319,16 @@
+
+     /// A packet the translation made that Horizon reads next, already in the pinned version's numbering.
+     pub fn next_incoming(&self) -> Option<(i32, Vec<u8>)> {
++        self.ordered().next_incoming()
++    }
++    fn next_incoming_ordered(&self) -> Option<(i32, Vec<u8>)> {
+         self.incoming.lock().unwrap().pop_front()
+     }
+     /// Bodies the translation added after the packet just sent, in the server's numbering.
+     pub fn take_outgoing(&self) -> Vec<Vec<u8>> {
++        self.ordered().take_outgoing()
++    }
++    fn take_outgoing_ordered(&self) -> Vec<Vec<u8>> {
+         std::mem::take(&mut *self.outgoing.lock().unwrap())
+     }
+
+@@ -545,3 +630,90 @@
+         assert_eq!(sent, vec![49, 7]);
+     }
+ }
++
++#[cfg(test)]
++mod neoforge_configuration_framing_tests {
++    use super::*;
++    use crate::{
++        connection::Connection,
++        packets::{Empty, configuration as cfg, login},
++    };
++
++    #[test]
++    fn protocol_767_configuration_payload_bodies_cross_tcp_in_both_directions() {
++        // Synthetic opaque bytes, NOT a valid loader negotiation transcript.
++        // Real TCP exercises VarInt framing; Pipe uses a different private frame.
++        let listener = std::net::TcpListener::bind(("127.0.0.1", 0)).unwrap();
++        let stream = std::net::TcpStream::connect(listener.local_addr().unwrap()).unwrap();
++        let (peer, _) = listener.accept().unwrap();
++        let mut client = Connection::from_stream(stream).unwrap();
++        let mut server = Connection::from_stream(peer).unwrap();
++        client
++            .reader
++            .set_read_timeout(Some(std::time::Duration::from_secs(2)))
++            .unwrap();
++        server
++            .reader
++            .set_read_timeout(Some(std::time::Duration::from_secs(2)))
++            .unwrap();
++        client.adapt(ServerVersion::V1_21_1);
++        client
++            .send(
++                &handshake::Serverbound::Intention(handshake::Intention {
++                    protocol: crate::PROTOCOL_VERSION,
++                    host: "localhost".into(),
++                    port: 25565,
++                    intent: handshake::LOGIN,
++                })
++                .encode(),
++            )
++            .unwrap();
++        let (id, bytes) = server.recv().unwrap();
++        let intention = handshake::decode_intention(id, &bytes, 255).unwrap();
++        assert_eq!(intention.protocol, 767);
++        // State tracking only: Session does not decode the profile at this point.
++        server.send(&[2]).unwrap();
++        assert_eq!(
++            client.recv().unwrap().0,
++            crate::ids::login::clientbound::LOGIN_FINISHED
++        );
++        client
++            .send(&login::Serverbound::LoginAcknowledged(Empty).encode())
++            .unwrap();
++        assert_eq!(server.recv().unwrap(), (3, vec![]));
++        let mut old_clientbound = vec![1, 17];
++        old_clientbound.extend_from_slice(b"neoforge:register");
++        old_clientbound.extend_from_slice(&[0, 128, 255, 0]);
++        server.send(&old_clientbound).unwrap();
++        let (id, payload) = client.recv().unwrap();
++        assert_eq!(id, 1); // 767 clientbound configuration custom_payload
++        assert_eq!(payload, old_clientbound[1..]);
++        let cfg::Clientbound::CustomPayload(received) =
++            cfg::Clientbound::decode(id, &payload).unwrap()
++        else {
++            panic!("expected custom payload");
++        };
++        assert_eq!(received.channel, "neoforge:register");
++        assert_eq!(received.data, [0, 128, 255, 0]);
++        client
++            .send(
++                &cfg::Serverbound::CustomPayload(received)
++                    .try_encode()
++                    .unwrap(),
++            )
++            .unwrap();
++        let (id, payload) = server.recv().unwrap();
++        assert_eq!(id, 2); // 767 serverbound configuration custom_payload
++        assert_eq!(payload, old_clientbound[1..]);
++        // Non-identity packet-id evidence: 767 known packs is 14, not pinned 15.
++        server.send(&[14, 0]).unwrap();
++        assert_eq!(client.recv().unwrap(), (15, vec![0]));
++        client
++            .send(
++                &cfg::Serverbound::SelectKnownPacks(cfg::SelectKnownPacks { packs: vec![] })
++                    .encode(),
++            )
++            .unwrap();
++        assert_eq!(server.recv().unwrap(), (7, vec![0]));
++    }
++}
+diff --git a/crates/horizon-protocol/src/connection.rs b/crates/horizon-protocol/src/connection.rs
+--- a/crates/horizon-protocol/src/connection.rs
++++ b/crates/horizon-protocol/src/connection.rs
+@@ -12,10 +12,18 @@
+     net::{Shutdown, SocketAddr, TcpStream, ToSocketAddrs},
+     sync::{
+         Arc,
+-        atomic::{AtomicI64, Ordering},
++        atomic::{AtomicBool, AtomicI64, Ordering},
+     },
+     time::{Duration, Instant},
+ };
++
++/// Shared packet-id boundary for socket bodies and reconstructed originals.
++/// Does not frame, decompress, translate, or dispatch the packet.
++fn packet_id(body: &[u8]) -> Result<(i32, usize)> {
++    let mut reader = Reader::new(body);
++    let id = reader.varint()?;
++    Ok((id, reader.position()))
++}
+
+ mod memory;
+ pub use memory::Pipe;
+@@ -100,6 +108,12 @@
+ }
+
+ pub struct ConnReader {
++    /// A rejected reconstructed packet permanently invalidates this reader.
++    reassembly_failed: bool,
++    read_deadline: Option<Instant>,
++    /// Shared terminal state survives split and detach; no successor reuses it.
++    terminal: Arc<AtomicBool>,
++    detached_closer: Option<Closer>,
+     memory: bool,
+     stream: Stream,
+     /// Bytes read: `buffer[start..end]` are not consumed yet, and reads go
+@@ -117,14 +131,21 @@
+     older_client: Option<Arc<crate::adapter::ClientSession>>,
+ }
+ /// Closes a connection from another thread: a read or a write blocked on it fails.
+-pub struct Closer(Stream);
++#[derive(Clone)]
++pub struct Closer {
++    stream: Arc<Stream>,
++    terminal: Arc<AtomicBool>,
++}
+ impl Closer {
+     pub fn close(&self) {
+-        self.0.shutdown();
++        self.terminal.store(true, Ordering::Release);
++        self.stream.shutdown();
+     }
+ }
+
+ pub struct ConnWriter {
++    terminal: Arc<AtomicBool>,
++    detached_closer: Option<Closer>,
+     memory: bool,
+     stream: Stream,
+     encrypt: Option<Cfb8>,
+@@ -135,6 +156,48 @@
+     /// Set on a server for a client of an older release: what is sent is renumbered.
+     older_client: Option<Arc<crate::adapter::ClientSession>>,
+ }
++/// A physical connection's adapter fence source, shared with the queued writer.
++#[derive(Clone)]
++pub struct ConfigurationOrder {
++    adapter: Option<Arc<crate::adapter::Session>>,
++    terminal: Arc<AtomicBool>,
++}
++/// Non-forgeable, connection-specific incarnation. Never authorizes split traffic.
++pub struct ConfigurationFence {
++    adapter: Arc<crate::adapter::Session>,
++    generation: u64,
++}
++impl ConfigurationOrder {
++    /// Capture at admission, not later when a queued job happens to execute.
++    /// Ordinary vanilla/Horizon routes deliberately have no configuration fence.
++    pub fn capture(&self) -> Result<Option<ConfigurationFence>> {
++        if self.terminal.load(Ordering::Acquire) {
++            return Err(Error::new("closed configuration order"));
++        }
++        let Some(adapter) = self
++            .adapter
++            .as_ref()
++            .filter(|a| a.configuration_is_ordered())
++        else {
++            return Ok(None);
++        };
++        let order = adapter.ordered();
++        if self.terminal.load(Ordering::Acquire) || !order.configuration() {
++            return Err(Error::new("configuration admission outside its epoch"));
++        }
++        Ok(Some(ConfigurationFence {
++            adapter: adapter.clone(),
++            generation: order.generation(),
++        }))
++    }
++}
++/// A mapped original plus its exact physical adapter and phase incarnation.
++/// The bytes cannot be extracted and accidentally passed through translation twice.
++pub struct PreparedConfiguration {
++    body: Vec<u8>,
++    fence: ConfigurationFence,
++}
++
+ /// `InetAddress.getByName` under Java's default `java.net.preferIPv6Addresses=false`: IPv4
+ /// addresses first, whatever order the system resolver gives (macOS lists IPv6 first). Vanilla
+ /// connects to that first address only; the rest stay here as fallbacks.
+@@ -278,10 +341,15 @@
+     }
+     fn over(stream: Stream) -> Result<Self> {
+         let counters = Arc::new(Counters::default());
++        let terminal = Arc::new(AtomicBool::new(false));
+         let write = stream.try_clone()?;
+         let memory = matches!(stream, Stream::Memory(_));
+         Ok(Self {
+             reader: ConnReader {
++                reassembly_failed: false,
++                read_deadline: None,
++                terminal: terminal.clone(),
++                detached_closer: None,
+                 memory,
+                 stream,
+                 buffer: Vec::new(),
+@@ -295,6 +363,8 @@
+                 older_client: None,
+             },
+             writer: ConnWriter {
++                terminal,
++                detached_closer: None,
+                 memory,
+                 stream: write,
+                 encrypt: None,
+@@ -359,7 +429,14 @@
+     /// goes in through [`ConnReader::read_from`]; [`ConnWriter::frame_into`]
+     /// makes what is to be sent. Their own reads and writes fail from now on.
+     pub fn detach(mut self) -> (Socket, ConnReader, ConnWriter) {
+-        self.writer.stream = Stream::Detached;
++        // Retain the writer's existing handle as a cancellation capability.
++        // No fallible clone or API-signature change at the ownership handoff.
++        let closer = Closer {
++            stream: Arc::new(std::mem::replace(&mut self.writer.stream, Stream::Detached)),
++            terminal: self.reader.terminal.clone(),
++        };
++        self.reader.detached_closer = Some(closer.clone());
++        self.writer.detached_closer = Some(closer);
+         let socket = match std::mem::replace(&mut self.reader.stream, Stream::Detached) {
+             Stream::Tcp(s) => Socket::Tcp(s),
+             Stream::Memory(p) => Socket::Memory(p),
+@@ -394,17 +471,133 @@
+     }
+     /// Read exactly `len` bytes as they are, with no framing.
+     pub fn read_raw(&mut self, len: usize) -> Result<Vec<u8>> {
++        self.check_read_deadline()?;
++        // Refuse before allocation, even for a zero-length raw read.
++        if self.reassembly_failed || self.terminal.load(Ordering::Acquire) {
++            return Err(Error::new("invalid reconstructed configuration epoch"));
++        }
+         let mut out = vec![0u8; len];
+         self.stream.read_exact(&mut out)?;
+         Ok(out)
+     }
++    /// Opt in the exact early NeoForge adapter before admitting configuration work.
++    /// Both adapter transitions and generated queues share its transaction domain.
++    pub fn order_configuration(&self) -> Result<()> {
++        if self.terminal.load(Ordering::Acquire) {
++            return Err(Error::new("closed configuration transport"));
++        }
++        self.adapter
++            .as_ref()
++            .ok_or_else(|| Error::new("ordered configuration requires adapter"))?
++            .ordered()
++            .enable_configuration()
++    }
++
+     /// Whether this reader uses the engine's in-memory transport.
+     pub fn is_memory(&self) -> bool {
+         self.memory
+     }
+
++    /// Terminally close this reader's physical connection and discard buffered
++    /// packets. A configuration failure must not leave old bytes reusable even
++    /// when its queued writer has already been removed. Detached halves retain
++    /// the original transport's shutdown capability, never a successor's socket.
++    pub fn shutdown(&mut self) {
++        self.reassembly_failed = true;
++        self.terminal.store(true, Ordering::Release);
++        if let Some(closer) = &self.detached_closer {
++            closer.close();
++        }
++        self.stream.shutdown();
++        self.stream = Stream::Detached;
++        self.buffer.clear();
++        self.start = 0;
++        self.end = 0;
++    }
++
++    /// Decode ONE complete reconstructed NeoForge configuration packet. The input
++    /// is the original unframed packet (VarInt wire id + payload), NOT a socket
++    /// frame, custom-payload body, or already adapted packet. Never feed its
++    /// result back through recv/the adapter. No socket bytes are consumed here.
++    ///
++    /// This concrete decoder seam does NOT enable/advertise split transport. Its
++    /// future caller must own negotiated authority, bounded reassembly/deadlines,
++    /// serialization with socket reads, and awaited dispatch before further input.
++    /// Only exact protocol 767 configuration is supported. State-changing finish,
++    /// unknown/content packets and recursively split payloads fail BEFORE adaptation.
++    /// The narrow allowlist is opaque custom payloads, keepalive, ping and known
++    /// packs. This is NOT a path for vanilla translation of modded registries.
++    /// Every failure closes the transport and terminally invalidates this reader.
++    pub fn decode_reassembled_configuration(&mut self, body: Vec<u8>) -> Result<(i32, Vec<u8>)> {
++        self.check_read_deadline()?;
++        let result = self.decode_reassembled_configuration_inner(body);
++        if result.is_err() {
++            self.shutdown();
++        }
++        result
++    }
++
++    fn decode_reassembled_configuration_inner(&self, body: Vec<u8>) -> Result<(i32, Vec<u8>)> {
++        use crate::{State, adapter::ServerVersion, packets::configuration as cfg};
++        if self.reassembly_failed
++            || self.terminal.load(Ordering::Acquire)
++            || self.older_client.is_some()
++        {
++            return Err(Error::new("invalid reconstructed configuration epoch"));
++        }
++        let session = self
++            .adapter
++            .as_ref()
++            .ok_or_else(|| Error::new("reconstructed packet requires protocol 767 adapter"))?;
++        let order = session.ordered();
++        if self.terminal.load(Ordering::Acquire)
++            || session.version != ServerVersion::V1_21_1
++            || !order.configuration()
++        {
++            return Err(Error::new(
++                "reconstructed packet outside protocol 767 configuration",
++            ));
++        }
++        if body.is_empty() || body.len() > 8 * 1_048_576 {
++            return Err(Error::new("reconstructed configuration packet size"));
++        }
++        let (id, at) = packet_id(&body)?;
++        let pinned = session
++            .version
++            .clientbound_id(State::Configuration, id)
++            .ok_or_else(|| Error::new("unknown reconstructed configuration packet"))?;
++        use crate::ids::configuration::clientbound as cb;
++        if !matches!(
++            pinned,
++            cb::CUSTOM_PAYLOAD | cb::KEEP_ALIVE | cb::PING | cb::SELECT_KNOWN_PACKS
++        ) {
++            return Err(Error::new("unsupported reconstructed configuration packet"));
++        }
++        // Real dependency codec and wire-id table, not a second guessed codec.
++        // Inspect BEFORE Session::clientbound can change its read phase.
++        match cfg::Clientbound::decode(pinned, &body[at..])? {
++            cfg::Clientbound::CustomPayload(p) if p.channel == "neoforge:split" => {
++                return Err(Error::new("recursive reconstructed split packet"));
++            }
++            cfg::Clientbound::CustomPayload(_)
++            | cfg::Clientbound::KeepAlive(_)
++            | cfg::Clientbound::Ping(_)
++            | cfg::Clientbound::SelectKnownPacks(_) => {}
++            // In particular: no vanilla numeric/content translation of modded
++            // registries/tags, no phase transition, and no unknown passthrough.
++            _ => return Err(Error::new("unsupported reconstructed configuration packet")),
++        }
++        order
++            .clientbound(id, body[at..].to_vec())?
++            .ok_or_else(|| Error::new("reconstructed configuration packet was dropped"))
++    }
++
+     /// Block until a whole packet arrives: (id, payload).
+     pub fn recv(&mut self) -> Result<(i32, Vec<u8>)> {
++        self.check_read_deadline()?;
++        if self.reassembly_failed || self.terminal.load(Ordering::Acquire) {
++            return Err(Error::new("invalid reconstructed configuration epoch"));
++        }
+         if let Some(packet) = self.adapter.as_ref().and_then(|a| a.next_incoming()) {
+             return Ok(packet);
+         }
+@@ -416,6 +609,7 @@
+             return Ok(packet);
+         }
+         loop {
++            self.check_read_deadline()?;
+             match self.next()? {
+                 Next::Packet((id, payload)) if self.older_client.is_some() => {
+                     let client = self.older_client.as_ref().expect("checked");
+@@ -426,10 +620,14 @@
+                 Next::Packet(packet) => match &self.adapter {
+                     None => return Ok(packet),
+                     Some(a) => {
+-                        if let Some(packet) = a.clientbound(packet.0, packet.1)? {
++                        let order = a.ordered();
++                        if self.terminal.load(Ordering::Acquire) {
++                            return Err(Error::new("closed connection transport"));
++                        }
++                        if let Some(packet) = order.clientbound(packet.0, packet.1)? {
+                             return Ok(packet);
+                         }
+-                        if let Some(packet) = a.next_incoming() {
++                        if let Some(packet) = order.next_incoming() {
+                             return Ok(packet);
+                         }
+                     }
+@@ -443,6 +641,10 @@
+     /// more: for a detached reader, after [`Self::read_from`]. Only an older
+     /// client's renumbering applies (a server's connection has no other).
+     pub fn buffered(&mut self) -> Result<Option<(i32, Vec<u8>)>> {
++        self.check_read_deadline()?;
++        if self.reassembly_failed || self.terminal.load(Ordering::Acquire) {
++            return Err(Error::new("invalid reconstructed configuration epoch"));
++        }
+         if let Some(packet) = self
+             .older_client
+             .as_ref()
+@@ -451,6 +653,7 @@
+             return Ok(Some(packet));
+         }
+         loop {
++            self.check_read_deadline()?;
+             match self.next()? {
+                 Next::Packet((id, payload)) if self.older_client.is_some() => {
+                     let client = self.older_client.as_ref().expect("checked");
+@@ -468,6 +671,14 @@
+     /// buffer: the bytes read, 0 at the end of the stream, or its error
+     /// (`WouldBlock` when nothing waits).
+     pub fn read_from(&mut self, source: &mut impl Read) -> std::io::Result<usize> {
++        if self.check_read_deadline().is_err() {
++            return Err(std::io::ErrorKind::TimedOut.into());
++        }
++        // A detached source is caller-owned: do not consume it or refill the
++        // cleared buffer after a reconstructed packet poisoned this reader.
++        if self.reassembly_failed || self.terminal.load(Ordering::Acquire) {
++            return Err(detached());
++        }
+         let wanted = match self.next_header() {
+             Ok(Some((prefix, len))) => prefix + len,
+             _ => 0,
+@@ -514,14 +725,11 @@
+                 if body.is_empty() {
+                     return Ok(None);
+                 }
+-                let mut r = Reader::new(body);
+-                let id = r.varint()?;
+-                Ok(Some((id, body[r.position()..].to_vec())))
++                let (id, at) = packet_id(body)?;
++                Ok(Some((id, body[at..].to_vec())))
+             }
+             frame::Body::Inflated(mut body) => {
+-                let mut r = Reader::new(&body);
+-                let id = r.varint()?;
+-                let at = r.position();
++                let (id, at) = packet_id(&body)?;
+                 body.drain(..at);
+                 Ok(Some((id, body)))
+             }
+@@ -530,6 +738,16 @@
+     /// Read once from the stream into the buffer, with room for at least
+     /// `frame` bytes of unconsumed data (a whole frame, once its length is known).
+     fn fill(&mut self, frame: usize) -> Result<()> {
++        self.check_read_deadline()?;
++        if let Some(deadline) = self.read_deadline {
++            // Bound EACH blocking read by the remaining absolute lifetime. A
++            // peer sending one byte per idle timeout cannot refresh that clock.
++            let left = deadline.saturating_duration_since(Instant::now());
++            self.stream.set_read_timeout(Some(
++                left.max(Duration::from_nanos(1))
++                    .min(Duration::from_millis(500)),
++            ))?;
++        }
+         let mut stream = std::mem::replace(&mut self.stream, Stream::Detached);
+         let read = self.fill_from(&mut stream, frame);
+         self.stream = stream;
+@@ -581,7 +799,29 @@
+     }
+     /// A [`Closer`] for this connection.
+     pub fn closer(&self) -> Result<Closer> {
+-        Ok(Closer(self.stream.try_clone()?))
++        if let Some(closer) = &self.detached_closer {
++            return Ok(closer.clone());
++        }
++        Ok(Closer {
++            stream: Arc::new(self.stream.try_clone()?),
++            terminal: self.terminal.clone(),
++        })
++    }
++    /// Absolute monotonic read deadline, independent of per-read idle timeouts.
++    /// Only explicit early configuration installs it; ordinary routes keep None.
++    /// Detached pollers must still bound their own external blocking I/O.
++    pub fn set_read_deadline(&mut self, deadline: Option<Instant>) {
++        self.read_deadline = deadline;
++    }
++    fn check_read_deadline(&mut self) -> Result<()> {
++        if self
++            .read_deadline
++            .is_some_and(|deadline| Instant::now() >= deadline)
++        {
++            self.shutdown();
++            return Err(Error::new("configuration lifetime exceeded"));
++        }
++        Ok(())
+     }
+     pub fn set_read_timeout(&self, timeout: Option<Duration>) -> Result<()> {
+         Ok(self.stream.set_read_timeout(timeout)?)
+@@ -615,6 +855,9 @@
+     /// Remove this exact writer, leaving an explicitly disconnected placeholder.
+     pub fn take(&mut self) -> Self {
+         let placeholder = Self {
++            // An inert placeholder must not retain the old socket's capability.
++            terminal: Arc::new(AtomicBool::new(true)),
++            detached_closer: None,
+             memory: self.memory,
+             stream: Stream::Detached,
+             encrypt: None,
+@@ -628,7 +871,13 @@
+
+     /// An independent shutdown handle for this writer.
+     pub fn closer(&self) -> Result<Closer> {
+-        Ok(Closer(self.stream.try_clone()?))
++        if let Some(closer) = &self.detached_closer {
++            return Ok(closer.clone());
++        }
++        Ok(Closer {
++            stream: Arc::new(self.stream.try_clone()?),
++            terminal: self.terminal.clone(),
++        })
+     }
+     /// Encode frame contents for this transport. Memory packets bypass network
+     /// compression and its size limits; use this before `frame_into` when detached.
+@@ -671,6 +920,9 @@
+     /// Write bytes as they are, with no framing: the legacy server list ping
+     /// (`LegacyServerPinger`) is not a framed protocol.
+     pub fn write_raw(&mut self, data: &[u8]) -> Result<()> {
++        if self.terminal.load(Ordering::Acquire) {
++            return Err(Error::new("closed connection transport"));
++        }
+         self.stream.write_all(data)?;
+         self.stream.flush()?;
+         Ok(())
+@@ -697,8 +949,195 @@
+     pub fn for_client_is_plain(&self) -> bool {
+         self.older_client.is_none()
+     }
++    /// Prepare ONE pinned-version serverbound configuration original for an
++    /// external splitter: VarInt wire id + unchanged payload, with no framing,
++    /// compression, encryption, counters, socket I/O or adapter queue changes.
++    /// Input must be a complete original, not fragments or an already mapped body.
++    ///
++    /// This does NOT enable split transport or grant channel/task authority. The
++    /// caller must serialize preparation, queueing and actual writes with BOTH
++    /// adapter phase changes, and supply negotiated authority and queue budgets.
++    /// Feed the result to the splitter exactly once. Neither its unsplit original
++    /// nor encoded fragment envelopes may go through `send`/the adapter again;
++    /// they need the wire-body framing path, in order, under that same ownership.
++    /// Detached network writers are supported; private memory framing is not.
++    /// Errors leave this writer/session untouched; the caller owns close/reset.
++    pub fn prepare_serverbound_configuration(&self, body: &[u8]) -> Result<Vec<u8>> {
++        if self.terminal.load(Ordering::Acquire) {
++            return Err(Error::new("closed outbound configuration transport"));
++        }
++        if self.memory || self.older_client.is_some() {
++            return Err(Error::new("unsupported outbound configuration transport"));
++        }
++        let session = self
++            .adapter
++            .as_ref()
++            .ok_or_else(|| Error::new("outbound original requires protocol 767 adapter"))?;
++        let order = session.ordered();
++        self.prepare_configuration_body(body, session, order.configuration())
++    }
++
++    fn prepare_configuration_body(
++        &self,
++        body: &[u8],
++        session: &crate::adapter::Session,
++        configuration: bool,
++    ) -> Result<Vec<u8>> {
++        use crate::{State, adapter::ServerVersion, packets::configuration as cfg};
++        if self.terminal.load(Ordering::Acquire) {
++            return Err(Error::new("closed outbound configuration transport"));
++        }
++        if session.version != ServerVersion::V1_21_1 || !configuration {
++            return Err(Error::new(
++                "outbound original outside protocol 767 configuration",
++            ));
++        }
++        if body.is_empty() || body.len() > 8 * 1_048_576 {
++            return Err(Error::new("outbound configuration original size"));
++        }
++        let (id, at) = packet_id(body)?;
++        use crate::ids::configuration::serverbound as sb;
++        if !matches!(
++            id,
++            sb::CUSTOM_PAYLOAD | sb::KEEP_ALIVE | sb::PONG | sb::SELECT_KNOWN_PACKS
++        ) {
++            return Err(Error::new("unsupported outbound configuration original"));
++        }
++        // Decode with the actual directional codec, including full consumption.
++        // Only opaque payloads: engine/control channels have their own semantics.
++        match cfg::Serverbound::decode(id, &body[at..])? {
++            cfg::Serverbound::CustomPayload(p) => {
++                if p.channel == "neoforge:split" {
++                    return Err(Error::new("recursive outbound split packet"));
++                }
++                if crate::packets::custom_payload::is_reserved_channel(&p.channel) {
++                    return Err(Error::new("non-opaque outbound configuration payload"));
++                }
++            }
++            cfg::Serverbound::KeepAlive(_)
++            | cfg::Serverbound::Pong(_)
++            | cfg::Serverbound::SelectKnownPacks(_) => {}
++            _ => return Err(Error::new("unsupported outbound configuration original")),
++        }
++        // At this exact pin these four configuration payloads pass unchanged in
++        // translate::serverbound. Use its SAME public id mapping, not Session's
++        // stateful serverbound (which re-reads writing and can change phases).
++        // No cloned/reconstructed Session, alternate translation, or queue drain.
++        let mapped = session
++            .version
++            .serverbound_id(State::Configuration, id)
++            .ok_or_else(|| Error::new("unmapped outbound configuration original"))?;
++        let mut out = Vec::new();
++        out.try_reserve_exact(body.len())
++            .map_err(|_| Error::new("outbound configuration allocation failed"))?;
++        // The exact allowlisted table entries are single-byte ids (2, 4, 5, 7),
++        // so even a noncanonical input id never needs more than body.len() bytes.
++        crate::buf::write_varint(&mut out, mapped);
++        out.extend_from_slice(&body[at..]);
++        Ok(out)
++    }
++
++    pub fn configuration_order(&self) -> ConfigurationOrder {
++        ConfigurationOrder {
++            adapter: self.adapter.clone(),
++            terminal: self.terminal.clone(),
++        }
++    }
++    /// Prepare without losing identity or phase incarnation. No socket/counter effects.
++    pub fn prepare_ordered_configuration(&self, body: &[u8]) -> Result<PreparedConfiguration> {
++        if self.memory || self.older_client.is_some() || self.terminal.load(Ordering::Acquire) {
++            return Err(Error::new("unsupported ordered configuration transport"));
++        }
++        let session = self
++            .adapter
++            .as_ref()
++            .ok_or_else(|| Error::new("missing configuration adapter"))?;
++        let order = session.ordered();
++        if !session.configuration_is_ordered() {
++            return Err(Error::new("configuration ordering not enabled"));
++        }
++        let body = self.prepare_configuration_body(body, session, order.configuration())?;
++        Ok(PreparedConfiguration {
++            body,
++            fence: ConfigurationFence {
++                adapter: session.clone(),
++                generation: order.generation(),
++            },
++        })
++    }
++    /// Emit a prepared original directly: never map an already mapped id again.
++    pub fn send_prepared_configuration(&mut self, prepared: PreparedConfiguration) -> Result<()> {
++        let session = self
++            .adapter
++            .clone()
++            .ok_or_else(|| Error::new("missing configuration adapter"))?;
++        let order = session.ordered();
++        if !Arc::ptr_eq(&session, &prepared.fence.adapter)
++            || !order.configuration()
++            || order.generation() != prepared.fence.generation
++            || self.terminal.load(Ordering::Acquire)
++        {
++            return Err(Error::new("stale prepared configuration original"));
++        }
++        self.send_contents(&self.contents(&prepared.body)?)
++    }
++    /// One admitted batch, one adapter transaction through actual write_all completion.
++    /// Cancellation never needs this mutex, so it can unblock a stalled socket write.
++    pub fn send_configuration_batch(
++        &mut self,
++        bodies: &[Vec<u8>],
++        fence: Option<ConfigurationFence>,
++    ) -> Result<()> {
++        let Some(fence) = fence else {
++            // A job captured before opt-in must not gain authority at execution.
++            if self
++                .adapter
++                .as_ref()
++                .is_some_and(|a| a.configuration_is_ordered())
++            {
++                return Err(Error::new("unfenced configuration batch"));
++            }
++            for body in bodies {
++                self.send(body)?;
++            }
++            return Ok(());
++        };
++        let session = self
++            .adapter
++            .clone()
++            .ok_or_else(|| Error::new("missing configuration adapter"))?;
++        let order = session.ordered();
++        if !Arc::ptr_eq(&session, &fence.adapter)
++            || !order.configuration()
++            || order.generation() != fence.generation
++            || self.terminal.load(Ordering::Acquire)
++        {
++            return Err(Error::new("stale configuration batch"));
++        }
++        for body in bodies {
++            // Early reply batches cannot contain a phase transition. Validate
++            // before any packet escapes, not halfway through a batch.
++            let (id, _) = packet_id(body)?;
++            if id == crate::ids::configuration::serverbound::FINISH_CONFIGURATION {
++                return Err(Error::new("configuration batch cannot finish"));
++            }
++        }
++        for body in bodies {
++            if let Some(body) = order.serverbound(body)? {
++                self.send_contents(&self.contents(&body)?)?;
++            }
++            for body in order.take_outgoing() {
++                self.send_contents(&self.contents(&body)?)?;
++            }
++        }
++        Ok(())
++    }
++
+     /// Send one packet body (VarInt id + payload).
+     pub fn send(&mut self, body: &[u8]) -> Result<()> {
++        if self.terminal.load(Ordering::Acquire) {
++            return Err(Error::new("closed connection transport"));
++        }
+         if self.older_client.is_some() {
+             for body in self.for_client(body)? {
+                 self.send_contents(&self.contents(&body)?)?;
+@@ -706,6 +1145,19 @@
+             return Ok(());
+         }
+         if let Some(a) = self.adapter.clone() {
++            if a.configuration_is_ordered() {
++                let order = a.ordered();
++                if self.terminal.load(Ordering::Acquire) {
++                    return Err(Error::new("closed connection transport"));
++                }
++                if let Some(body) = order.serverbound(body)? {
++                    self.send_contents(&self.contents(&body)?)?;
++                }
++                for body in order.take_outgoing() {
++                    self.send_contents(&self.contents(&body)?)?;
++                }
++                return Ok(());
++            }
+             if let Some(body) = a.serverbound(body)? {
+                 self.send_contents(&self.contents(&body)?)?;
+             }
+@@ -718,6 +1170,9 @@
+     }
+     /// Send a frame whose contents [`Self::contents`] made for this transport.
+     pub fn send_contents(&mut self, contents: &[u8]) -> Result<()> {
++        if self.terminal.load(Ordering::Acquire) {
++            return Err(Error::new("closed connection transport"));
++        }
+         let mut framed = Vec::with_capacity(contents.len() + 3);
+         self.frame_into(contents, &mut framed);
+         self.stream.write_all(&framed)?;
+@@ -786,6 +1241,10 @@
+             .fetch_add((out.len() - at) as i64, Ordering::Relaxed);
+     }
+     pub fn shutdown(&self) {
++        self.terminal.store(true, Ordering::Release);
++        if let Some(closer) = &self.detached_closer {
++            closer.close();
++        }
+         self.stream.shutdown();
+     }
+ }
+@@ -818,6 +1277,8 @@
+
+     fn writer(encrypted: bool) -> ConnWriter {
+         ConnWriter {
++            terminal: Arc::new(AtomicBool::new(false)),
++            detached_closer: None,
+             memory: false,
+             stream: Stream::Detached,
+             encrypt: encrypted.then(|| Cfb8::new(&[7; 16], &[9; 16])),
+@@ -1315,3 +1776,947 @@
+         assert!(Connection::from_stream(stream).is_ok());
+     }
+ }
++
++#[cfg(test)]
++mod neoforge_configuration_framing_tests {
++    use super::*;
++    use crate::{
++        State,
++        adapter::ServerVersion,
++        packets::{Empty, configuration as cfg, handshake, login},
++    };
++
++    fn configured() -> (Connection, Connection) {
++        let (a, b) = Pipe::pair();
++        let mut client = Connection::local(a);
++        let mut peer = Connection::local(b);
++        client.adapt(ServerVersion::V1_21_1);
++        client
++            .send(
++                &handshake::Serverbound::Intention(handshake::Intention {
++                    protocol: crate::PROTOCOL_VERSION,
++                    host: "localhost".into(),
++                    port: 25565,
++                    intent: handshake::LOGIN,
++                })
++                .encode(),
++            )
++            .unwrap();
++        peer.recv().unwrap();
++        peer.send(&[2]).unwrap();
++        client.recv().unwrap();
++        client
++            .send(&login::Serverbound::LoginAcknowledged(Empty).encode())
++            .unwrap();
++        peer.recv().unwrap();
++        (client, peer)
++    }
++
++    #[test]
++    fn reassembled_finish_refuses_before_phase_change_and_without_ack() {
++        let (mut client, mut peer) = configured();
++        peer.reader
++            .set_read_timeout(Some(Duration::from_millis(50)))
++            .unwrap();
++        let session = client.reader.adapter.as_ref().unwrap().clone();
++        assert!(
++            client
++                .reader
++                .decode_reassembled_configuration(vec![3])
++                .is_err()
++        );
++        assert_eq!(session.reading(), State::Configuration);
++        assert_eq!(session.writing(), State::Configuration);
++        assert!(peer.recv().is_err(), "no finish ack fabricated");
++        assert!(client.reader.recv().is_err());
++    }
++
++    #[test]
++    fn reassembled_failure_refuses_external_and_raw_reads_before_side_effects() {
++        let (client, _peer) = configured();
++        let (_socket, mut reader, _writer) = client.detach();
++        assert!(reader.decode_reassembled_configuration(vec![]).is_err());
++        let mut source = std::io::Cursor::new(vec![0; 32]);
++        let bytes_in = reader.counters.bytes_in.load(Ordering::Relaxed);
++        assert_eq!(
++            reader.read_from(&mut source).unwrap_err().kind(),
++            std::io::ErrorKind::NotConnected
++        );
++        assert_eq!(source.position(), 0, "poison must precede external I/O");
++        assert_eq!(reader.counters.bytes_in.load(Ordering::Relaxed), bytes_in);
++        assert!(reader.buffer.is_empty());
++        assert_eq!((reader.start, reader.end), (0, 0));
++        assert!(
++            reader.read_raw(0).is_err(),
++            "zero bytes cannot bypass poison"
++        );
++        // Vec allocation would panic for this size if attempted before refusal.
++        assert!(reader.read_raw(usize::MAX).is_err());
++        assert!(reader.buffered().is_err());
++        assert!(reader.recv().is_err());
++    }
++
++    #[test]
++    fn reassembled_success_preserves_prefetched_socket_bytes_and_counters() {
++        let (mut client, mut peer) = configured();
++        peer.send(&[14, 0]).unwrap();
++        client.reader.fill(0).unwrap();
++        let pending = client.reader.buffer[client.reader.start..client.reader.end].to_vec();
++        let bytes_in = client.reader.counters.bytes_in.load(Ordering::Relaxed);
++        let received = client.reader.counters.received.load(Ordering::Relaxed);
++        let sent = client.reader.counters.sent.load(Ordering::Relaxed);
++        assert_eq!(
++            client
++                .reader
++                .decode_reassembled_configuration(vec![14, 0])
++                .unwrap(),
++            (15, vec![0])
++        );
++        assert_eq!(
++            &client.reader.buffer[client.reader.start..client.reader.end],
++            pending
++        );
++        assert_eq!(
++            client.reader.counters.bytes_in.load(Ordering::Relaxed),
++            bytes_in
++        );
++        assert_eq!(
++            client.reader.counters.received.load(Ordering::Relaxed),
++            received
++        );
++        assert_eq!(client.reader.counters.sent.load(Ordering::Relaxed), sent);
++        assert_eq!(client.recv().unwrap(), (15, vec![0]));
++        assert_eq!(
++            client.reader.counters.received.load(Ordering::Relaxed),
++            received + 1
++        );
++        // No bytes read or response fabricated by decoding the reconstructed original.
++        assert_eq!(
++            client.reader.counters.bytes_in.load(Ordering::Relaxed),
++            bytes_in
++        );
++    }
++
++    #[test]
++    fn reassembled_real_codecs_reject_trailing_and_malformed_bodies() {
++        let mut trailing_keepalive = cfg::Clientbound::KeepAlive(cfg::KeepAlive { id: 7 }).encode();
++        trailing_keepalive.push(0);
++        let mut trailing_ping = cfg::Clientbound::Ping(cfg::Ping { id: 7 }).encode();
++        trailing_ping.push(0);
++        for body in [
++            trailing_keepalive,
++            trailing_ping,
++            vec![14, 0, 0], // zero known packs followed by junk
++            vec![14, 1],    // missing pack strings
++            vec![14, 0xff, 0xff, 0xff, 0xff, 0x07], // count exceeds remaining bytes
++            vec![14, 0xff, 0xff, 0xff, 0xff, 0x0f], // negative count
++            vec![1, 0x80],  // incomplete custom-payload channel length
++        ] {
++            let (mut client, mut peer) = configured();
++            peer.reader
++                .set_read_timeout(Some(Duration::from_millis(50)))
++                .unwrap();
++            let session = client.reader.adapter.as_ref().unwrap().clone();
++            assert!(
++                client
++                    .reader
++                    .decode_reassembled_configuration(body)
++                    .is_err()
++            );
++            assert_eq!(session.reading(), State::Configuration);
++            assert_eq!(session.writing(), State::Configuration);
++            assert!(session.next_incoming().is_none());
++            assert!(client.reader.recv().is_err());
++            assert!(
++                client
++                    .send(&cfg::Serverbound::KeepAlive(cfg::KeepAlive { id: 7 }).encode())
++                    .is_err(),
++                "attached writer shares transport shutdown"
++            );
++            // EOF, not a timeout or a fabricated acknowledgement. The timeout
++            // bounds the regression test if transport shutdown stops working.
++            assert_eq!(peer.reader.stream.read(&mut [0]).unwrap(), 0);
++        }
++    }
++
++    #[test]
++    fn reassembled_content_never_enters_vanilla_numeric_translation() {
++        let (mut client, _peer) = configured();
++        // Wire registry_data is 7 in protocol 767 as in the pinned codec.
++        let body = cfg::Clientbound::RegistryData(cfg::RegistryData {
++            registry: "example:unimplemented".into(),
++            entries: vec![],
++        })
++        .encode();
++        assert_eq!(body[0], 7);
++        let session = client.reader.adapter.as_ref().unwrap().clone();
++        assert!(
++            client
++                .reader
++                .decode_reassembled_configuration(body)
++                .is_err()
++        );
++        assert_eq!(session.reading(), State::Configuration);
++        assert!(session.next_incoming().is_none());
++    }
++
++    #[test]
++    fn absolute_read_deadline_refuses_prefetched_work_and_external_io() {
++        let (mut client, mut peer) = configured();
++        peer.send(&[14, 0]).unwrap();
++        client.reader.fill(0).unwrap();
++        client.reader.set_read_deadline(Some(Instant::now()));
++        assert!(
++            client
++                .reader
++                .recv()
++                .unwrap_err()
++                .to_string()
++                .contains("lifetime")
++        );
++        let mut source = std::io::Cursor::new(vec![0; 32]);
++        assert!(client.reader.read_from(&mut source).is_err());
++        assert_eq!(source.position(), 0);
++        assert!(client.reader.buffered().is_err());
++        assert!(client.writer.send(&[7, 0]).is_err());
++        assert!(peer.send(&[0]).is_err());
++    }
++
++    #[test]
++    fn detached_rejection_closes_actual_socket_and_stale_writer_tcp_matrix() {
++        for compressed in [false, true] {
++            for encrypted in [false, true] {
++                let (mut client, mut peer) = outbound_configured();
++                if compressed {
++                    client.set_compression(8);
++                    peer.set_compression(8);
++                }
++                if encrypted {
++                    client.enable_encryption(&[7; 16]);
++                    peer.enable_encryption(&[7; 16]);
++                }
++                let counters = outbound_counters(&client);
++                let (socket, mut reader, mut writer) = client.detach();
++                assert!(writer.prepare_serverbound_configuration(&[7, 0]).is_ok());
++                // Rejection must revoke the writer and shut down the externally
++                // held socket even though neither half owns its data I/O now.
++                assert!(reader.decode_reassembled_configuration(vec![]).is_err());
++                assert!(writer.prepare_serverbound_configuration(&[7, 0]).is_err());
++                assert!(writer.send(&[7, 0]).is_err());
++                assert!(writer.send_contents(&[7, 0]).is_err());
++                assert!(writer.write_raw(&[]).is_err());
++                let Socket::Tcp(mut socket) = socket else {
++                    panic!("TCP expected")
++                };
++                let error = socket.write_all(&[0]).unwrap_err();
++                assert_ne!(error.kind(), std::io::ErrorKind::TimedOut);
++                assert_eq!(socket.read(&mut [0]).unwrap(), 0);
++                assert_eq!(peer.reader.stream.read(&mut [0]).unwrap(), 0);
++                assert_eq!(
++                    reader.counters.received.load(Ordering::Relaxed),
++                    counters[0]
++                );
++                assert_eq!(reader.counters.sent.load(Ordering::Relaxed), counters[1]);
++                assert_eq!(
++                    reader.counters.bytes_in.load(Ordering::Relaxed),
++                    counters[2]
++                );
++                assert_eq!(
++                    reader.counters.bytes_out.load(Ordering::Relaxed),
++                    counters[3]
++                );
++            }
++        }
++    }
++
++    #[test]
++    fn detached_writer_and_closer_revoke_prefetched_reader_before_io() {
++        for close_by_handle in [false, true] {
++            let (mut client, mut peer) = configured();
++            peer.send(&[14, 0]).unwrap();
++            client.reader.fill(0).unwrap(); // a complete old packet already buffered
++            let (_socket, mut reader, mut writer) = client.detach();
++            let closer = writer.closer().unwrap(); // acquired AFTER detach
++            if close_by_handle {
++                closer.close();
++            } else {
++                writer.shutdown();
++            }
++            assert!(reader.buffered().is_err());
++            assert!(reader.recv().is_err());
++            assert!(reader.read_raw(0).is_err());
++            let mut source = std::io::Cursor::new(vec![0; 32]);
++            assert!(reader.read_from(&mut source).is_err());
++            assert_eq!(source.position(), 0);
++            assert!(writer.send(&[7, 0]).is_err());
++            let error = peer.send(&[0]).unwrap_err();
++            assert!(!error.is_timed_out());
++            // Idempotent old cancellation must not affect an independent epoch.
++            let (mut next, mut peer) = configured();
++            closer.close();
++            next.send(&[7, 0]).unwrap();
++            assert_eq!(peer.recv().unwrap(), (7, vec![0]));
++        }
++    }
++
++    #[test]
++    fn taken_writer_placeholder_cannot_close_the_transferred_transport() {
++        let (mut client, mut peer) = configured();
++        let mut taken = client.writer.take();
++        client.writer.shutdown();
++        client.writer.closer().unwrap().close();
++        assert!(client.writer.send(&[7, 0]).is_err());
++        taken.send(&[7, 0]).unwrap();
++        assert_eq!(peer.recv().unwrap(), (7, vec![0]));
++        taken.shutdown();
++        assert!(client.reader.recv().is_err());
++    }
++
++    fn outbound_configured() -> (Connection, Connection) {
++        outbound_configured_version(ServerVersion::V1_21_1)
++    }
++
++    fn outbound_configured_version(version: ServerVersion) -> (Connection, Connection) {
++        let listener = std::net::TcpListener::bind(("127.0.0.1", 0)).unwrap();
++        let stream = TcpStream::connect(listener.local_addr().unwrap()).unwrap();
++        let (peer, _) = listener.accept().unwrap();
++        let mut client = Connection::from_stream(stream).unwrap();
++        let mut peer = Connection::from_stream(peer).unwrap();
++        for c in [&mut client, &mut peer] {
++            c.reader
++                .set_read_timeout(Some(Duration::from_secs(2)))
++                .unwrap();
++        }
++        client.adapt(version);
++        client
++            .send(
++                &handshake::Serverbound::Intention(handshake::Intention {
++                    protocol: crate::PROTOCOL_VERSION,
++                    host: "localhost".into(),
++                    port: 25565,
++                    intent: handshake::LOGIN,
++                })
++                .encode(),
++            )
++            .unwrap();
++        peer.recv().unwrap();
++        // Actual Session phase tracking; not a successful login/profile claim.
++        peer.send(&[2]).unwrap();
++        client.recv().unwrap();
++        client
++            .send(&login::Serverbound::LoginAcknowledged(Empty).encode())
++            .unwrap();
++        peer.recv().unwrap();
++        (client, peer)
++    }
++
++    fn outbound_counters(c: &Connection) -> [i64; 4] {
++        let counters = &c.writer.counters;
++        [
++            counters.received.load(Ordering::Relaxed),
++            counters.sent.load(Ordering::Relaxed),
++            counters.bytes_in.load(Ordering::Relaxed),
++            counters.bytes_out.load(Ordering::Relaxed),
++        ]
++    }
++
++    #[test]
++    fn outbound_preparation_matches_literal_wire_and_actual_adapter_for_allowlist() {
++        let (client, _peer) = outbound_configured();
++        let cases = [
++            (
++                cfg::Serverbound::CustomPayload(cfg::CustomPayload {
++                    channel: "test:opaque".into(),
++                    data: vec![0, 128, 255],
++                }),
++                b"\x02\x0btest:opaque\x00\x80\xff".to_vec(),
++            ),
++            (
++                cfg::Serverbound::KeepAlive(cfg::KeepAlive {
++                    id: 0x0102030405060708,
++                }),
++                vec![4, 1, 2, 3, 4, 5, 6, 7, 8],
++            ),
++            (
++                cfg::Serverbound::Pong(cfg::Ping { id: -3 }),
++                vec![5, 255, 255, 255, 253],
++            ),
++            (
++                cfg::Serverbound::SelectKnownPacks(cfg::SelectKnownPacks {
++                    packs: vec![cfg::KnownPack {
++                        namespace: "minecraft".into(),
++                        id: "core".into(),
++                        version: "1.21.1".into(),
++                    }],
++                }),
++                b"\x07\x01\x09minecraft\x04core\x061.21.1".to_vec(),
++            ),
++        ];
++        for (packet, expected) in cases {
++            let input = packet.try_encode().unwrap();
++            let original = input.clone();
++            let prepared = client
++                .writer
++                .prepare_serverbound_configuration(&input)
++                .unwrap();
++            assert_eq!(prepared, expected);
++            assert_eq!(input, original, "borrowed input must not be changed");
++            // Test-only comparison with the real ordinary adapter path. The
++            // production seam never calls this stateful method.
++            assert_eq!(
++                client
++                    .writer
++                    .adapter
++                    .as_ref()
++                    .unwrap()
++                    .serverbound(&input)
++                    .unwrap(),
++                Some(expected)
++            );
++            let (id, at) = packet_id(&prepared).unwrap();
++            assert_eq!(
++                cfg::Serverbound::decode(id, &prepared[at..]).unwrap(),
++                packet
++            );
++        }
++    }
++
++    #[test]
++    fn outbound_preparation_enforces_directional_opaque_payload_policy() {
++        let (client, _peer) = outbound_configured();
++        for size in [0, 32_767, 32_768] {
++            let input = cfg::Serverbound::CustomPayload(cfg::CustomPayload {
++                channel: "test:opaque".into(),
++                data: vec![0x83; size],
++            })
++            .encode();
++            let result = client.writer.prepare_serverbound_configuration(&input);
++            if size <= 32_767 {
++                assert_eq!(result.unwrap(), input);
++            } else {
++                assert!(result.is_err());
++            }
++        }
++        for channel in [
++            "neoforge:split",
++            "minecraft:brand",
++            "horizon:block_registry",
++        ] {
++            let input = cfg::Serverbound::CustomPayload(cfg::CustomPayload {
++                channel: channel.into(),
++                // Valid brand string, also deliberately opaque bytes elsewhere.
++                data: vec![1, b'x'],
++            })
++            .encode();
++            assert!(
++                client
++                    .writer
++                    .prepare_serverbound_configuration(&input)
++                    .is_err()
++            );
++        }
++        // Ident normalizes the omitted minecraft namespace before classification.
++        assert!(
++            client
++                .writer
++                .prepare_serverbound_configuration(b"\x02\x05brand\x01x")
++                .is_err()
++        );
++    }
++
++    #[test]
++    fn outbound_preparation_rejects_malformed_originals_with_actual_codecs() {
++        let (client, _peer) = outbound_configured();
++        for body in [
++            vec![],
++            vec![0x80],
++            vec![0xff, 0xff, 0xff, 0xff, 0x0f], // negative id
++            vec![0x80; 6],
++            vec![4, 0],                            // short keepalive
++            vec![4, 0, 0, 0, 0, 0, 0, 0, 0, 0],    // trailing keepalive
++            vec![5, 0, 0, 0],                      // short pong
++            vec![5, 0, 0, 0, 0, 0],                // trailing pong
++            vec![7, 0, 0],                         // trailing known packs
++            vec![7, 1],                            // missing strings
++            vec![7, 0xff, 0xff, 0xff, 0xff, 0x07], // impossible count
++            vec![7, 0xff, 0xff, 0xff, 0xff, 0x0f], // negative count
++            vec![2, 0x80],                         // incomplete channel length
++            b"\x02\x0bTest:opaque".to_vec(),       // invalid identifier
++            vec![0; 8 * 1_048_576 + 1],
++        ] {
++            assert!(
++                client
++                    .writer
++                    .prepare_serverbound_configuration(&body)
++                    .is_err()
++            );
++        }
++        // A noncanonical packet id is accepted by the actual Reader. Only that
++        // id is canonicalized; the original known-pack payload stays unchanged.
++        assert_eq!(
++            client
++                .writer
++                .prepare_serverbound_configuration(&[0x87, 0, 0])
++                .unwrap(),
++            [7, 0]
++        );
++        assert_eq!(
++            client
++                .writer
++                .prepare_serverbound_configuration(&[7, 0x80, 0])
++                .unwrap(),
++            [7, 0x80, 0],
++            "validation must not re-encode the original payload"
++        );
++    }
++
++    #[test]
++    fn outbound_preparation_refuses_finish_and_all_other_configuration_kinds() {
++        let (client, mut peer) = outbound_configured();
++        let session = client.writer.adapter.as_ref().unwrap();
++        for packet in [
++            cfg::Serverbound::ClientInformation(cfg::ClientInformation::new(12)),
++            cfg::Serverbound::CookieResponse(cfg::CookieResponse {
++                key: "test:cookie".into(),
++                payload: None,
++            }),
++            cfg::Serverbound::FinishConfiguration(Empty),
++            cfg::Serverbound::ResourcePack(cfg::ResourcePackResponse { id: 5, action: 1 }),
++            cfg::Serverbound::AcceptCodeOfConduct(Empty),
++            cfg::Serverbound::CustomClickAction(cfg::CustomClickAction {
++                id: "test:action".into(),
++                payload: None,
++            }),
++            cfg::Serverbound::Unknown(127, vec![]),
++        ] {
++            assert!(
++                client
++                    .writer
++                    .prepare_serverbound_configuration(&packet.encode())
++                    .is_err()
++            );
++            assert_eq!(session.reading(), State::Configuration);
++            assert_eq!(session.writing(), State::Configuration);
++        }
++        // Failure is pure, not a hidden finish ack or transport shutdown.
++        let keepalive = cfg::Serverbound::KeepAlive(cfg::KeepAlive { id: 17 }).encode();
++        assert!(
++            client
++                .writer
++                .prepare_serverbound_configuration(&keepalive)
++                .is_ok()
++        );
++        let counters = outbound_counters(&client);
++        assert_eq!(counters[1], 2, "only handshake and login ack were sent");
++        peer.reader
++            .set_read_timeout(Some(Duration::from_millis(50)))
++            .unwrap();
++        assert!(peer.recv().is_err(), "no original or ack was written");
++    }
++
++    #[test]
++    fn outbound_preparation_requires_exact_network_adapter_and_both_phases() {
++        let body = [7, 0];
++        for mode in 0..8 {
++            let version = if mode == 1 {
++                ServerVersion::V1_21_3
++            } else {
++                ServerVersion::V1_21_1
++            };
++            let (mut client, _peer) = outbound_configured_version(version);
++            match mode {
++                0 => client.adapt(ServerVersion::Current),
++                1 => {
++                    // Wrong version, but both phases really are configuration.
++                    let session = client.writer.adapter.as_ref().unwrap();
++                    assert_eq!(session.reading(), State::Configuration);
++                    assert_eq!(session.writing(), State::Configuration);
++                }
++                2 => client.adapt(ServerVersion::V1_21_1), // fresh: handshake
++                3 => {
++                    // Only reading has left configuration. This queues actual
++                    // adapter packets; preparation must not deliver/drain them.
++                    client
++                        .reader
++                        .adapter
++                        .as_ref()
++                        .unwrap()
++                        .clientbound(3, vec![])
++                        .unwrap();
++                }
++                4 => {
++                    client
++                        .writer
++                        .adapter
++                        .as_ref()
++                        .unwrap()
++                        .serverbound(&cfg::Serverbound::FinishConfiguration(Empty).encode())
++                        .unwrap();
++                }
++                5 => client.serve_older(ServerVersion::V1_21_1),
++                6 => {
++                    client.writer.adapter = Some(Arc::new(crate::adapter::Session::new(
++                        ServerVersion::Current,
++                    )));
++                }
++                7 => {
++                    client.writer.adapter = Some(Arc::new(crate::adapter::Session::new(
++                        ServerVersion::V1_20_6,
++                    )));
++                }
++                _ => unreachable!(),
++            }
++            let counters = outbound_counters(&client);
++            assert!(
++                client
++                    .writer
++                    .prepare_serverbound_configuration(&body)
++                    .is_err()
++            );
++            assert_eq!(outbound_counters(&client), counters);
++        }
++        let (client, _peer) = configured();
++        assert!(
++            client
++                .writer
++                .prepare_serverbound_configuration(&body)
++                .is_err(),
++            "actual configured memory transport is not network transport"
++        );
++    }
++
++    #[test]
++    fn outbound_preparation_preserves_socket_counters_compression_and_cipher() {
++        for threshold in [None, Some(0), Some(256)] {
++            let (mut client, peer) = outbound_configured();
++            let (mut control, _control_peer) = outbound_configured();
++            for c in [&mut client, &mut control] {
++                c.enable_encryption(&[7; 16]);
++                c.writer.threshold = threshold;
++            }
++            let before = outbound_counters(&client);
++            for _ in 0..2 {
++                assert_eq!(
++                    client
++                        .writer
++                        .prepare_serverbound_configuration(&[7, 0])
++                        .unwrap(),
++                    [7, 0]
++                );
++                assert!(
++                    client
++                        .writer
++                        .prepare_serverbound_configuration(&[3])
++                        .is_err()
++                );
++            }
++            assert_eq!(outbound_counters(&client), before);
++            assert_eq!(client.writer.threshold, threshold);
++            let Stream::Tcp(stream) = &peer.reader.stream else {
++                panic!("network peer");
++            };
++            stream.set_nonblocking(true).unwrap();
++            assert_eq!(
++                stream.peek(&mut [0]).unwrap_err().kind(),
++                std::io::ErrorKind::WouldBlock
++            );
++            stream.set_nonblocking(false).unwrap();
++            // Subsequent real compression + cipher output must match an untouched
++            // writer, including the next packet's running cipher state.
++            for body in [&[7, 0][..], &[4, 0, 0, 0, 0, 0, 0, 0, 9][..]] {
++                let mut got = Vec::new();
++                let mut expected = Vec::new();
++                let contents = client.writer.contents(body).unwrap();
++                client.writer.frame_into(&contents, &mut got);
++                let contents = control.writer.contents(body).unwrap();
++                control.writer.frame_into(&contents, &mut expected);
++                assert_eq!(got, expected);
++            }
++        }
++    }
++
++    #[test]
++    fn outbound_preparation_supports_detached_network_without_sending() {
++        let (client, _peer) = outbound_configured();
++        let (_socket, _reader, writer) = client.detach();
++        assert!(matches!(writer.stream, Stream::Detached));
++        assert_eq!(
++            writer.prepare_serverbound_configuration(&[7, 0]).unwrap(),
++            [7, 0]
++        );
++        assert_eq!(writer.counters.sent.load(Ordering::Relaxed), 2);
++    }
++
++    #[test]
++    fn outbound_preparation_leaves_real_adapter_queued_packets_untouched() {
++        use crate::buf::{Codec, LpVec3, Writer};
++        use crate::ids::play;
++
++        // Queue packets via actual adapter translation, not private test setters
++        // or replacement Session APIs; return both phases to configuration.
++        fn seed(session: &crate::adapter::Session) {
++            session.clientbound(3, vec![]).unwrap();
++            session
++                .serverbound(&cfg::Serverbound::FinishConfiguration(Empty).encode())
++                .unwrap();
++            let mut interact = Writer::new();
++            interact.varint(play::serverbound::INTERACT);
++            interact.varint(7);
++            interact.varint(0);
++            LpVec3::write(&[0.0; 3], &mut interact);
++            interact.bool(false);
++            assert!(session.serverbound(&interact.data).unwrap().is_some());
++            let start = (0..256)
++                .find(|&id| {
++                    session.version.clientbound_id(State::Play, id)
++                        == Some(play::clientbound::START_CONFIGURATION)
++                })
++                .unwrap();
++            session.clientbound(start, vec![]).unwrap();
++            let mut ack = Writer::new();
++            ack.varint(play::serverbound::CONFIGURATION_ACKNOWLEDGED);
++            session.serverbound(&ack.data).unwrap();
++            assert_eq!(session.reading(), State::Configuration);
++            assert_eq!(session.writing(), State::Configuration);
++        }
++        let (client, _peer) = outbound_configured();
++        let (control, _control_peer) = outbound_configured();
++        let session = client.writer.adapter.as_ref().unwrap();
++        let baseline = control.writer.adapter.as_ref().unwrap();
++        seed(session);
++        seed(baseline);
++        let counters = outbound_counters(&client);
++        assert!(
++            client
++                .writer
++                .prepare_serverbound_configuration(&[7, 0])
++                .is_ok()
++        );
++        assert!(
++            client
++                .writer
++                .prepare_serverbound_configuration(&[3])
++                .is_err()
++        );
++        assert_eq!(outbound_counters(&client), counters);
++        assert_eq!(session.reading(), State::Configuration);
++        assert_eq!(session.writing(), State::Configuration);
++        let expected = baseline.take_outgoing();
++        assert!(
++            !expected.is_empty(),
++            "real interact translation must queue a followup"
++        );
++        assert_eq!(session.take_outgoing(), expected);
++        let drain = |s: &crate::adapter::Session| {
++            std::iter::from_fn(|| s.next_incoming()).collect::<Vec<_>>()
++        };
++        let expected = drain(baseline);
++        assert!(
++            !expected.is_empty(),
++            "real finish translation must queue incoming packets"
++        );
++        assert_eq!(drain(session), expected);
++    }
++
++    #[test]
++    fn ordered_prepared_original_is_physical_and_reentry_fenced() {
++        let (mut client, _peer) = outbound_configured();
++        let (mut successor, _next_peer) = outbound_configured();
++        client.reader.order_configuration().unwrap();
++        successor.reader.order_configuration().unwrap();
++        let prepared = client
++            .writer
++            .prepare_ordered_configuration(&[7, 0])
++            .unwrap();
++        let before = outbound_counters(&successor);
++        assert!(
++            successor
++                .writer
++                .send_prepared_configuration(prepared)
++                .is_err()
++        );
++        assert_eq!(outbound_counters(&successor), before);
++        let prepared = client
++            .writer
++            .prepare_ordered_configuration(&[7, 0])
++            .unwrap();
++        let session = client.writer.adapter.clone().unwrap();
++        configuration_reentry(&session);
++        let before = outbound_counters(&client);
++        assert!(client.writer.send_prepared_configuration(prepared).is_err());
++        assert_eq!(outbound_counters(&client), before);
++        // A newly prepared original in the new incarnation is usable.
++        let fresh = client
++            .writer
++            .prepare_ordered_configuration(&[7, 0])
++            .unwrap();
++        client.writer.send_prepared_configuration(fresh).unwrap();
++    }
++
++    fn configuration_reentry(session: &crate::adapter::Session) {
++        session.clientbound(3, vec![]).unwrap(); // wire finish -> reading Play
++        session.serverbound(&[3]).unwrap(); // pinned finish -> writing Play
++        let wire = (0..256)
++            .find(|id| {
++                session.version.clientbound_id(State::Play, *id)
++                    == Some(crate::ids::play::clientbound::START_CONFIGURATION)
++            })
++            .unwrap();
++        session.clientbound(wire, vec![]).unwrap();
++        let mut ack = crate::buf::Writer::new();
++        ack.varint(crate::ids::play::serverbound::CONFIGURATION_ACKNOWLEDGED);
++        session.serverbound(&ack.data).unwrap();
++        assert_eq!(session.reading(), State::Configuration);
++        assert_eq!(session.writing(), State::Configuration);
++    }
++
++    #[test]
++    fn ordered_batch_rejects_stale_unfenced_and_finish_before_any_output() {
++        let (mut client, _peer) = outbound_configured();
++        client.reader.order_configuration().unwrap();
++        let fence = client.writer.configuration_order().capture().unwrap();
++        let session = client.writer.adapter.clone().unwrap();
++        configuration_reentry(&session);
++        let before = outbound_counters(&client);
++        assert!(
++            client
++                .writer
++                .send_configuration_batch(&[vec![7, 0]], fence)
++                .is_err()
++        );
++        assert!(
++            client
++                .writer
++                .send_configuration_batch(&[vec![7, 0]], None)
++                .is_err()
++        );
++        let fence = client.writer.configuration_order().capture().unwrap();
++        assert!(
++            client
++                .writer
++                .send_configuration_batch(&[vec![7, 0], vec![3]], fence)
++                .is_err()
++        );
++        assert_eq!(outbound_counters(&client), before);
++    }
++
++    #[test]
++    fn ordered_adapter_domain_blocks_both_transitions_and_queue_drains() {
++        use std::sync::mpsc;
++        let (client, _peer) = outbound_configured();
++        client.reader.order_configuration().unwrap();
++        let session = client.writer.adapter.clone().unwrap();
++        // Hold the real shared domain; public adapter entry points on other
++        // executors must not cross it, even if their direction differs.
++        let order = session.ordered();
++        let mut threads = Vec::new();
++        let mut results = Vec::new();
++        for operation in 0..4 {
++            let session = session.clone();
++            let (started, ready) = mpsc::sync_channel(1);
++            let (done, result) = mpsc::sync_channel(1);
++            threads.push(std::thread::spawn(move || {
++                started.send(()).unwrap();
++                match operation {
++                    0 => {
++                        session.clientbound(3, vec![]).unwrap();
++                    }
++                    1 => {
++                        session.serverbound(&[3]).unwrap();
++                    }
++                    2 => {
++                        session.next_incoming();
++                    }
++                    _ => {
++                        session.take_outgoing();
++                    }
++                }
++                done.send(()).unwrap();
++            }));
++            ready.recv_timeout(Duration::from_secs(2)).unwrap();
++            assert!(result.recv_timeout(Duration::from_millis(25)).is_err());
++            results.push(result);
++        }
++        assert!(order.configuration());
++        drop(order);
++        for result in results {
++            result.recv_timeout(Duration::from_secs(2)).unwrap();
++        }
++        for thread in threads {
++            thread.join().unwrap();
++        }
++        assert_eq!(session.reading(), State::Play);
++        assert_eq!(session.writing(), State::Play);
++    }
++
++    #[test]
++    fn ordered_emission_and_preparation_wait_for_same_adapter_domain() {
++        use std::sync::mpsc;
++        let (client, mut peer) = outbound_configured();
++        client.reader.order_configuration().unwrap();
++        let session = client.writer.adapter.clone().unwrap();
++        let fence = client.writer.configuration_order().capture().unwrap();
++        let (reader, mut writer) = client.split();
++        let order = session.ordered();
++        let (started, ready) = mpsc::sync_channel(1);
++        let (done, result) = mpsc::sync_channel(1);
++        let thread = std::thread::spawn(move || {
++            started.send(()).unwrap();
++            writer
++                .send_configuration_batch(&[vec![7, 0], vec![7, 0]], fence)
++                .unwrap();
++            let prepared = writer.prepare_ordered_configuration(&[7, 0]).unwrap();
++            writer.send_prepared_configuration(prepared).unwrap();
++            done.send(()).unwrap();
++            writer
++        });
++        ready.recv_timeout(Duration::from_secs(2)).unwrap();
++        assert!(result.recv_timeout(Duration::from_millis(25)).is_err());
++        // Neither a queue drain nor the opposite phase can run during emission.
++        drop(order);
++        for _ in 0..3 {
++            assert_eq!(peer.recv().unwrap(), (7, vec![0]));
++        }
++        result.recv_timeout(Duration::from_secs(2)).unwrap();
++        drop(thread.join().unwrap());
++        drop(reader);
++    }
++
++    #[test]
++    fn ordered_configuration_tcp_batch_and_prepared_compression_encryption_matrix() {
++        for compression in [false, true] {
++            for encryption in [false, true] {
++                let (mut client, mut peer) = outbound_configured();
++                client.reader.order_configuration().unwrap();
++                if compression {
++                    client.set_compression(8);
++                    peer.set_compression(8);
++                }
++                if encryption {
++                    client.enable_encryption(&[11; 16]);
++                    peer.enable_encryption(&[11; 16]);
++                }
++                let payload = cfg::Serverbound::CustomPayload(cfg::CustomPayload {
++                    channel: "test:ordered".into(),
++                    data: vec![33; 128],
++                })
++                .encode();
++                let prepared = client
++                    .writer
++                    .prepare_ordered_configuration(&payload)
++                    .unwrap();
++                let before = outbound_counters(&client);
++                client.writer.send_prepared_configuration(prepared).unwrap();
++                assert_eq!(peer.recv().unwrap(), (2, payload[1..].to_vec()));
++                let fence = client.writer.configuration_order().capture().unwrap();
++                client
++                    .writer
++                    .send_configuration_batch(&[payload.clone(), vec![7, 0]], fence)
++                    .unwrap();
++                assert_eq!(peer.recv().unwrap(), (2, payload[1..].to_vec()));
++                assert_eq!(peer.recv().unwrap(), (7, vec![0]));
++                assert_eq!(outbound_counters(&client)[1] - before[1], 3);
++            }
++        }
++    }
++}

@@ -1,0 +1,17 @@
+{
+  "AGENTS.md": "f53a9696245932d75957a24a6a2ed9e97729991d0968faba0b02f77be8a75c36",
+  "CONTRIBUTING.md": "28212745f65e1b5d0f7aa922fee7b59062ab7ea9270b9807b40edc08340fe95d",
+  "docs/layers.md": "08bca00064f42c1780c98571ca5df927b2559a91778d7305de5a35bc5862fcbf",
+  "LICENSE": "e3a994d82e644b03a792a930f574002658412f62407f5fee083f2555c5f23118",
+  "LICENSES/GPL-3.0.txt": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986",
+  "Cargo.toml": "a24d2b1e28ef9df67d97f68518494092f8cf4c327c71c924ade6088956d514d3",
+  "crates/horizon-client-lib/Cargo.toml": "1b79b630d8006d674ed7b92850905845abdbcd23410b3b5a8d8f2e2fbfb571dc",
+  "crates/horizon-protocol/Cargo.toml": "7580411cd2323ccb0b0a0f5224299e39f718110d84741af5f6f7eb43233baba8",
+  "crates/horizon-protocol/src/ids.rs": "3d8d58c5de5e949aca9a0fe3bad6ade35432e6395006c738c48fe3eb3fa409d6",
+  "crates/horizon-protocol/src/packets/configuration.rs": "c5679fb31b59c9d5919b184f5ee02591d6d2e0fc54ed481b9a743a8a2f06f3f9",
+  "crates/horizon-protocol/src/packets/handshake.rs": "fe7154119d0fbdafa9c7a3dab98c6b92c1e627d7113980100597fc1f86bf4f1f",
+  "crates/horizon-client/src/net/known_packs.rs": "a94d898f50438751d1807215e683398e7cbe16f3095320f0952792a5e6d83c0b",
+  "crates/horizon-client/src/net/queued_writer.rs": "d0cad2382a80d0fb1600b937facc45b813d80089dba83634f2e37ea4b778410e",
+  "crates/horizon-protocol/src/buf.rs": "a96f3e0b59b0d7e1a468fd0f7e8be0d37d842e35767336cb58527d71212c2179",
+  "crates/horizon-protocol/src/packets/mod.rs": "8e2aeb0e7602b432267dbc2f126f82241692f0845c783919774769d89ccd39dc"
+}

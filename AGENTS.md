@@ -1,3 +1,229 @@
+# Active continuation — shared adapter domain and admission fences (hosted validation pending)
+
+Continues verified remote HEAD458ce6fcc552086f9bebd0bfbfd2e58142448201 without replacing newer work.
+The patch now gives both Session phase transitions, translation and generated-queue
+access one shared transaction domain. Explicit NeoForge configure opts into keeping
+that domain through each whole admitted reply batch and real socket write completion.
+Queued batches capture physical-adapter + monotonic phase-incarnation fences at
+admission, and refuse stale/wrong-connection/unfenced execution. New opaque prepared
+originals retain that same fence and use direct framing, not a second translation.
+Reconstructed-original phase checks and adaptation share a transaction as well.
+Ordinary vanilla/Horizon emission does not acquire the new domain across socket I/O.
+Cancellation retains its independent physical closer so blocked emission can unwind.
+
+Five new actual-protocol regressions cover both transitions/queue drains blocked by
+the same domain, emission/preparation ordering, re-entry/wrong-connection staleness,
+zero-output stale/unfenced/finish batch refusal, and TCP compression/encryption matrix.
+Existing policy/bootstrap entry tests now establish real protocol767 configuration
+instead of using unadapted memory connections. Driver minima require all17 owner /
+22 protocol-framing regressions (previous minima did not require all new a1 tests).
+Local patch/reverse/restoration+endpoint9/table1 and Python driver35/metadata28 pass.
+Full actual-client typecheck and these new socket/owner tests are PENDING until this
+new source's own standard hosted workflow finishes; do NOT infer they ran locally.
+
+Early inspection is no longer approval-blocked: prior a1fdf5c full run46163205119
+was observed IN_PROGRESS in its full engine step, not successful. Its metadata runs
+46163205043/46163209959 succeeded. Retain its exact-SHA artifact on completion.
+
+This is substantive central serialization work, NOT full owner completion. Dispatch,
+all generic prepared jobs/adapter-generated queues across epochs, negotiated split
+grants and routing, connection-wide login/play resource policy, asynchronous host
+completion and profile-safe reconnect still need completion/proof. Legacy Vec-returning
+preparation/detached framing seams remain caller-serialized and grant no authority.
+Both finish refusals and default split/flags opt-outs remain. **30/100; CANNOT JOIN.**
+No partial credit, rubric changes, mod rewrites, live tests, merge, force-push,
+visibility or schedule changes. Every published commit has required AI attribution.
+
+--- Prior checkpoint follows ---
+
+# Milestone attempt published — full-engine approval/evidence pending
+
+Runtime source: `a1fdf5c83a36f3035b94a12a9477c4cef19d097f`. Local checks rerun at that EXACT SHA pass;
+see docs/validation-owner-a1fdf5c-local.md. Full-engine inspection is blocked on
+approval to read GitHub workflow runs filtered by that SHA. No hosted run ID or
+success is inferred. Local engine build was safely refused by disk preflight.
+Do not award points or substitute earlier hosted evidence. **30/100, CANNOT JOIN**.
+The following implementation note describes this runtime source; the new commit
+above it is documentation/evidence only, not an additional runtime change.
+
+# Latest milestone attempt — new runtime source awaiting its own hosted validation
+
+Read NEXT_AGENT.md first. Detached cancellation, shared terminal state, bounded
+absolute configuration lifetime/cumulative traffic, and fail-closed explicit-
+profile Transfer are implemented with ten new regressions. Local isolated checks
+pass; full-engine evidence for this new source is PENDING. Do not substitute old
+run46161098482. Owner still incomplete: **30/100; CANNOT JOIN**; no points/gates,
+split/flag defaults, scope/weights, visibility or schedules changed.
+
+--- Previous checkpoints follow ---
+
+# Latest exact-SHA validation — awaited early writes PASSED
+
+See NEXT_AGENT.md first. Run 46161098482, source `d0c05270057bc69da8082a229dc265f5d4929bdf`:
+16 companion / 9 early configuration / 12 ordered-owner / 14 protocol framing /
+81 network-filter passed, 3 ignored; core172 EACH debug/release; strict core
+checks and full actual pinned client/companion typechecks/lock audit passed.
+Retained verified hosted evidence is in integration/hosted-46161098482-*.txt.
+Actual early reply batches now await write_all completion with bounded waits,
+whole-batch capacity admission, cancellation/terminal physical closure and immediate
+bridge reset. The inherited owner remains INCOMPLETE across adapter phases,
+prepared originals/queues, detached sockets, lifecycle and real split grants.
+No criterion awarded for partial work: **30/100; CANNOT JOIN; both finish gates
+and default split/flag opt-outs remain**. This is selected synthetic engine/TCP
+validation, NOT all upstream tests, host semantics, Java split interop or live join.
+Newer source supersedes prior documented7becb05; preserve exact-SHA distinctions.
+
+--- Earlier checkpoints below are historical ---
+
+# Completion tracking (read alongside NEXT_AGENT.md)
+
+Maintain `COMPATIBILITY_PROGRESS.md` from `progress/compatibility.json`. Run `python3 progress/report.py --check` and progress unittest discovery when updating it. Credit only evidenced complete criteria; changes in scope require a rubric-version change, not hidden exclusions. Tracker arithmetic never authorizes finish or mod rewrites. See `docs/ordered-connection-owner.md` for the next runtime gate.
+
+---
+
+# Latest exact-SHA hosted validation: focused fixes PASSED
+
+Run: https://github.com/horizon-rust-mod-rewrites/horizon-neoforge-compat/actions/runs/46137932076
+Tested compatibility SHA: `7becb053b2d75f4a8978decbd8ecf94fb9d0dd95`.
+Horizon pin: `ae632edf48f6cae3ba52a5c81523ec712488c9cc`.
+Downloaded artifact SHA-256 verified: `51e780c2b15dedfe656528ea6995f067b205b816eccb3d8cc14584146b259f27`.
+Retained `integration/hosted-46137932076-{core,full-check,full-driver,scope}.txt`.
+
+- Full actual patched client + companion typechecks, pinned lock audit and selected engine regressions passed.
+- **16 actual companion**, **9 early configuration**, **14 protocol framing**,
+  **81 network-filter passed / 3 ignored**. Selected suites, NOT all upstream tests.
+- **172 core tests EACH debug and release**, including **37 split tests**;
+  strict Clippy, fmt, warning-denied docs, 35 integration-driver tests and six fixtures passed.
+- Progress-metadata push/PR workflows passed with 28 validator tests. This checkpoint
+  adds malformed-metadata validation and exact-maximum split-boundary test coverage;
+  no production runtime routing changed.
+
+Default split/feature-flag opt-ins remain disabled. Both finish refusals remain.
+**The client STILL CANNOT JOIN.** No production split route, complete loader tasks,
+semantic content application, UI or live join is proven. See NEXT_AGENT.md for
+precise continuation priorities; historical counts below do not supersede this run.
+
+---
+
+# Current continuation checkpoint — NEXT_AGENT.md is authoritative
+
+Run 46137932076 validated exact SHA 7becb05 and supersedes the previously pending
+outbound validation note. It did not remove a finish gate or prove a server join.
+For source runtime priorities and the exact evidence interpretation, read
+NEXT_AGENT.md and docs/ordered-connection-owner.md first.
+
+--- Historical checkpoints below ---
+
+# Latest continuation truth — read NEXT_AGENT.md first
+
+Run 46084373021 PASSED at exact SHA 7d053a65902af967c053ab65c32c6d59c058d444:
+14 actual companion / 9 early configuration / 6 protocol framing / 81 network
+filter passed, 3 ignored; core 153 each debug/release, strict Clippy/fmt/docs.
+Retained own-SHA text is in integration/hosted-46084373021-*.txt. Selected suites,
+NOT all upstream tests, UI or live join. Newer outbound SHA 77e9cb5 FAILED its
+own run 46085995030 on two formatting differences; fix is recorded in NEXT_AGENT.
+That outbound work remains unvalidated until its own newer successful run.
+Both finish refusals remain. Default split/flags remain disabled. CANNOT JOIN.
+
+--- Historical checkpoints follow; newest NEXT_AGENT entry takes precedence ---
+
+# Full hosted validation PASSED — 2026-11-27
+
+Run: https://github.com/horizon-rust-mod-rewrites/horizon-neoforge-compat/actions/runs/46079113415
+Tested compatibility commit: `7d4e934327ff833ec8d57707e6d8f25962c07c61`.
+Upstream Horizon: `ae632edf48f6cae3ba52a5c81523ec712488c9cc`.
+Rust/Cargo 1.97.0, GNU x86_64, Ubuntu 24.04, no default client features.
+Downloaded artifact SHA256 verified:
+`2d89b8910bdcb7c04bb8413338b1601ac4150222ec5be9dd70a130df3f4b8770`.
+
+Retained transcript `integration/hosted-success-full-driver.txt` ends in PASS
+after source re-verification. `integration/hosted-success-full-check.txt` proves:
+
+- Complete pin: 12,354 blobs, zero missing; 27 provenance/integration hashes.
+- Full patched client typechecks before/after ACTUAL companion wiring, with
+  audited local-only core dependency addition; upstream locked graph unchanged.
+- Linked full client test binary: **4 actual companion contract tests pass**.
+- **9 early-configuration tests pass**, including real configure/queued-writer
+  integration and engine hard finish refusal without forged epoch/ack.
+- **1 protocol-767 bidirectional TCP payload-framing test passes**.
+- Network filter: **81 passed, 3 ignored, 0 failed**: 52 direct net tests pass,
+  3 direct net daily tests ignored, plus 29 datapack/LOD/perf tests pass.
+  The filter matches module substrings; not all 81 are direct net tests.
+- Core: **153 tests in EACH debug and release**, strict Clippy, fmt/docs pass.
+- 28 Python driver tests, six fixtures, patch/reverse/source-restoration and
+  isolated companion checks pass. Isolated endpoint tests overlap the above:
+  do not add them to full-engine counts as independent coverage.
+
+This is selected full-engine test execution, NOT all 4,624 client-library or all
+593 protocol tests. Five upstream horizon-mod-wasm unused-function warnings
+remain; upstream was not changed to hide them. No runtime UI, production server,
+full task completion, semantic registry/content conversion, split host wiring
+or NeoForge join is validated. **The client STILL CANNOT JOIN. Both finish gates
+remain.** Newer commits after the tested SHA are documentation/evidence only.
+
+Next: genuine host-owned capability/profile evidence before flag inventory
+opt-in (see `docs/horizon-host-inventory-audit.md`), remaining configuration tasks,
+split transport and atomic bidirectional semantic content application. Exact
+NeoForge 21.1.248 isolated server then fixture mod only after prerequisites;
+no production-first testing or individual mod rewrites. See NEXT_AGENT.md first.
+Older contradictory status below is historical. Same draft PR; attributed
+commits only, verify remote HEAD, never merge/force-push. The owner authorized
+public visibility for standard hosted CI; no further visibility change implied.
+
+---
+# Latest checkpoint: opt-in feature-flag task
+
+See `NEXT_AGENT.md` first for credit-conscious continuation priorities.
+Bounded feature-flag equality now has explicit opt-in Loader routing, negotiated
+data/ack pair authority and terminal mismatch/ordering cleanup. No default host
+inventory, flag-controlled game semantics or Horizon companion wiring is invented.
+**153 main/driver tests pass debug/release**, strict Clippy and isolated companion
+regressions pass. See `docs/FEATURE_FLAGS.md` and its validation transcript.
+Still cannot join; full-engine build, real content mapping and other tasks remain.
+
+---
+# Continuation evidence (2026-11-27)
+
+Continues existing draft PR #1 from verified remote head
+`3331751dc938ba2fdd430dd28ead49d343f612b2`, without rewriting individual mods.
+**Still cannot complete configuration or join.**
+
+- Loader now retains bounded, lossless setup-failure **NBT data**, never a
+  successful setup or safe-to-render Component. See `provenance/setup-failure.md`.
+  Component semantics/rendering remain incomplete; every failure is terminal.
+- Genuine source-extracted NeoForge query/setup codecs executed against actual
+  official MC 1.21.1 classfiles: 256 models, 1,024 cross-language semantic checks,
+  1,711 shared invalid/truncation cases, 9 classified policy differences and 6
+  writer-limit cases. See `docs/java-reference.md` and `tests/reference/results.json`.
+- Bounded split reassembly primitive, 18 tests; not yet advertised or wired to
+  Horizon packet decoding. See `docs/SPLIT.md`.
+- Horizon integration boundary hardening, executed endpoint/bridge tests and a
+  reproducible full-build driver; full-engine build/runtime remains unexecuted.
+  See `integration/README.md` and `docs/horizon-continuation.md`.
+- Main crate **128 tests pass debug and release** with Rust 1.95.0 / x86_64 musl.
+  Formatting, warning-denied docs, six fixtures and source verification pass.
+  Strict Clippy also passes in this run.
+  Current run: `docs/validation-continuation.txt`. Full engine, real content publication, remaining
+  task execution, split host integration and live joins remain outstanding.
+
+Earlier status below is historical where it conflicts with this continuation.
+No finish latch was removed and no full-handshake completion is claimed.
+
+---
+# Current continuation status (supersedes milestone 0.1 truth below)
+
+Read `docs/PROGRESS.md` and updated README along with the read order below.
+This branch adds modded query/setup codecs, an early Loader controller,
+handler-backed server selection validation, bounded registry task staging with
+mandatory semantic-host commit barrier, and an applicable Horizon early endpoint
+patch + companion. Main crate: 90 tests pass debug/release. Patch and companion
+contract tests pass in isolation. **Still cannot join.** Full Horizon typecheck,
+Java differential codecs, setup-failure NBT Component decoding, actual Horizon
+content application, remaining required loader tasks and live joins are missing.
+Both core and engine retain hard finish refusal. No individual mod rewrites.
+Exact baseline and mandatory AI commit footer policy below remain unchanged.
+
+---
 # Development handoff: read before changing this repository
 
 ## Goal and user decisions

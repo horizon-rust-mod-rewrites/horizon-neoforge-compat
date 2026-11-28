@@ -1,0 +1,20 @@
+   Compiling horizon-neoforge-compat v0.1.0 (<compat>)
+    Finished `dev` profile [unoptimized] target(s) in 0.76s
+
+running 12 tests
+test compat_bridge::tests::actual_wire_query_setup_common_then_finish_refusal ... ok
+test compat_bridge::tests::failure_payload_never_becomes_success ... ok
+test compat_bridge::tests::inventory_mismatch_never_constructs_loader_state ... ok
+test compat_bridge::tests::unknown_required_task_and_reconnect_cleanup ... ok
+test net::early_configuration::tests::finish_refuses_pending_tasks_and_drop_resets_before_next_epoch ... ok
+test net::early_configuration::tests::invalid_batch_is_rejected_whole_and_even_optimistic_bridge_cannot_enter_play ... ok
+test net::early_configuration::tests::early_loader_delivery_preserves_body_and_replies_without_an_accepted_horizon_epoch ... ok
+test net::early_configuration::tests::profile_rejects_wrong_baselines_and_reserved_or_duplicate_adapters ... ok
+test net::early_configuration::tests::payload_refusal_diagnostics_do_not_reflect_invalid_or_unbounded_identifiers ... ok
+test net::early_configuration::tests::unwinding_external_bridge_panic_poisoned_epoch_cannot_resume_or_finish ... ok
+test net::early_configuration::tests::undeclared_or_oversized_payloads_never_reach_bridge ... ok
+test net::early_configuration::tests::unsupported_neoforge_tasks_poison_the_epoch_and_cannot_finish ... ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+PASS: actual library/companion/patched-endpoint contract; NOT full Horizon or sockets

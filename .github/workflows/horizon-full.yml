@@ -1,0 +1,162 @@
+name: Pinned Horizon full integration
+
+on:
+  push:
+    branches: [feat/neoforge-21.1.248-early-handshake]
+    paths:
+      - '.github/workflows/horizon-full.yml'
+      - 'integration/**'
+      # Retained transcripts/docs do not change compiled code or the driver.
+      # Avoid rebuilding the full engine merely to publish exact-SHA evidence.
+      - '!integration/hosted-*.txt'
+      - '!integration/*.md'
+      - 'src/**'
+      - 'tests/**'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - 'fixtures/**'
+      - 'provenance/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pinned-horizon-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  companion-preflight:
+    # Catch core formatting and actual companion failures before the full job.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      CARGO_TERM_COLOR: never
+      CARGO_INCREMENTAL: '0'
+      CARGO_BUILD_JOBS: '2'
+      CARGO_PROFILE_DEV_DEBUG: '0'
+    steps:
+      - name: Check out without persistent credentials
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Install exact minimal compiler
+        run: |
+          rustup toolchain install 1.97.0 --profile minimal --component rustfmt
+          rustup default 1.97.0
+      - name: Validate formatting, driver and actual isolated companion contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo fmt --check
+          python3 -m unittest discover -s integration -p 'test_*.py' -v
+          python3 fixtures/generate.py --check
+          python3 integration/check_bridge.py --target x86_64-unknown-linux-gnu
+  full-integration:
+    needs: companion-preflight
+    # Standard public-repository runner only; no paid larger/self-hosted runners.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    env:
+      CARGO_TERM_COLOR: never
+      CARGO_INCREMENTAL: '0'
+      CARGO_BUILD_JOBS: '2'
+      CARGO_PROFILE_DEV_DEBUG: '0'
+      CARGO_PROFILE_TEST_DEBUG: '0'
+      CARGO_HOME: ${{ github.workspace }}/../neoforge-cargo
+      HORIZON_PIN: ${{ github.workspace }}/../horizon-pin
+      HORIZON_SCRATCH: ${{ github.workspace }}/../horizon-full
+      HORIZON_TELEMETRY_URL: 'off'
+      # Avoid inherited unstable parallel-front-end flags from upstream config.
+      RUSTFLAGS: '-C debuginfo=0'
+    steps:
+      - name: Check out compatibility checkpoint without persistent credentials
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Disk check before any large inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p ci-evidence
+          df -h "$RUNNER_TEMP" | tee ci-evidence/disk-before.txt
+          python3 integration/check_full.py --scratch "$HORIZON_SCRATCH" \
+            --minimum-build-free-gib 10 --disk-preflight-only | tee ci-evidence/disk-preflight.txt
+      - name: Install exact Rust and native test dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo timeout 300 apt-get update
+          sudo timeout 300 apt-get install -y --no-install-recommends \
+            build-essential pkg-config libasound2-dev libudev-dev
+          rustup toolchain install 1.97.0 --profile minimal --component rustfmt --component clippy
+          rustup default 1.97.0
+          rustc --version | tee ci-evidence/toolchain.txt
+          cargo --version | tee -a ci-evidence/toolchain.txt
+      - name: Revalidate core and driver safety
+        shell: bash
+        env:
+          CARGO_TARGET_DIR: ${{ runner.temp }}/compat-target
+          RUSTDOCFLAGS: '-D warnings'
+        run: |
+          set -euo pipefail
+          {
+            python3 -m unittest discover -s integration -p 'test_*.py' -v
+            python3 fixtures/generate.py --check
+            cargo fmt --check
+            cargo test --offline --locked
+            cargo test --offline --locked --release
+            cargo clippy --offline --locked --all-targets -- -D warnings
+            cargo doc --offline --locked --no-deps
+          } 2>&1 | tee ci-evidence/core.txt
+      - name: Obtain complete exact upstream pin
+        shell: bash
+        run: |
+          set -euo pipefail
+          git init "$HORIZON_PIN"
+          git -C "$HORIZON_PIN" remote add origin https://github.com/rdbtCVS/horizon.git
+          git -C "$HORIZON_PIN" fetch --depth 1 origin ae632edf48f6cae3ba52a5c81523ec712488c9cc
+          git -C "$HORIZON_PIN" checkout --detach FETCH_HEAD
+          test "$(git -C "$HORIZON_PIN" rev-parse HEAD)" = ae632edf48f6cae3ba52a5c81523ec712488c9cc
+          git -C "$HORIZON_PIN" status --porcelain | tee ci-evidence/source-status.txt
+      - name: Patch provenance and isolated companion checks
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 integration/check.py "$HORIZON_PIN" --rustc "$(command -v rustc)" \
+            2>&1 | tee ci-evidence/patch.txt
+          python3 integration/check_bridge.py --target x86_64-unknown-linux-gnu \
+            2>&1 | tee ci-evidence/companion-isolated.txt
+      - name: Fetch exact locked dependencies including test-only crates
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo fetch --manifest-path "$HORIZON_PIN/Cargo.toml" --locked \
+            --target x86_64-unknown-linux-gnu 2>&1 | tee ci-evidence/fetch.txt
+      - name: Full patched engine plus actual companion and TCP regressions
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 integration/check_full.py "$HORIZON_PIN" --scratch "$HORIZON_SCRATCH" \
+            --target x86_64-unknown-linux-gnu --minimum-build-free-gib 6 \
+            2>&1 | tee ci-evidence/full-driver.txt
+      - name: Collect diagnostics without game files or source archives
+        if: always()
+        shell: bash
+        run: |
+          mkdir -p ci-evidence
+          if [ -f "$HORIZON_SCRATCH/full-check.log" ]; then
+            cp "$HORIZON_SCRATCH/full-check.log" ci-evidence/full-check.txt
+          fi
+          df -h "$RUNNER_TEMP" > ci-evidence/disk-after.txt
+          printf '%s\n' "Commit: $GITHUB_SHA" "Run: $GITHUB_RUN_ID" \
+            'This job does not test a NeoForge server join or semantic content application.' \
+            > ci-evidence/scope.txt
+      - name: Retain executed evidence for seven days
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: horizon-full-${{ github.sha }}-${{ github.run_attempt }}
+          path: ci-evidence/*.txt
+          retention-days: 7
+          if-no-files-found: warn

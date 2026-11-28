@@ -1,0 +1,3 @@
+PASS: HEAD ae632edf48f6cae3ba52a5c81523ec712488c9cc, 14 provenance hashes + 13 integration hashes
+Preflight: 28 verified source blobs, 12326 missing; 43,405,312 free bytes; 1,074,794 materialized source bytes
+full build NOT STARTED: incomplete source or insufficient disk (reservation 3,221,225,472 bytes + source); first missing paths: ['.cargo/config.toml', '.claude/skills/vanilla-parity/SKILL.md', '.coderabbit.yaml']

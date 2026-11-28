@@ -1,0 +1,505 @@
+test_below_reservation_refuses (test_check_full.DiskPreflightTests.test_below_reservation_refuses) ... ok
+test_exact_reservation_passes (test_check_full.DiskPreflightTests.test_exact_reservation_passes) ... ok
+test_invalid_reservations_refuse_before_disk_access (test_check_full.DiskPreflightTests.test_invalid_reservations_refuse_before_disk_access) ... ok
+test_minimum_allowed_reservation (test_check_full.DiskPreflightTests.test_minimum_allowed_reservation) ... ok
+test_source_copy_is_additional (test_check_full.DiskPreflightTests.test_source_copy_is_additional) ... ok
+test_disk_only_ignores_optional_nonexistent_source (test_check_full.DriverPreflightTests.test_disk_only_ignores_optional_nonexistent_source) ... ok
+test_disk_only_low_space_refuses (test_check_full.DriverPreflightTests.test_disk_only_low_space_refuses) ... ok
+test_disk_only_success_does_not_claim_build_or_touch_inputs (test_check_full.DriverPreflightTests.test_disk_only_success_does_not_claim_build_or_touch_inputs) ... ok
+test_existing_scratch_refuses_without_modification (test_check_full.DriverPreflightTests.test_existing_scratch_refuses_without_modification) ... ok
+test_missing_parent_refuses_without_creation (test_check_full.DriverPreflightTests.test_missing_parent_refuses_without_creation) ... ok
+test_normal_mode_missing_source_blobs_refuse (test_check_full.DriverPreflightTests.test_normal_mode_missing_source_blobs_refuse) ... ok
+test_normal_mode_rechecks_disk_with_source_copy_size (test_check_full.DriverPreflightTests.test_normal_mode_rechecks_disk_with_source_copy_size) ... ok
+test_normal_mode_refuses_disk_before_reading_source (test_check_full.DriverPreflightTests.test_normal_mode_refuses_disk_before_reading_source) ... ok
+test_normal_mode_still_rejects_overlapping_trees (test_check_full.DriverPreflightTests.test_normal_mode_still_rejects_overlapping_trees) ... ok
+test_normal_mode_still_requires_source (test_check_full.DriverPreflightTests.test_normal_mode_still_requires_source) ... ok
+
+----------------------------------------------------------------------
+Ran 15 tests in 0.015s
+
+OK
+6 synthetic fixtures verified
+   Compiling horizon-neoforge-compat v0.1.0 (<compat>)
+    Finished `test` profile [unoptimized] target(s) in 2.11s
+     Running unittests src/lib.rs (<core-target>/debug/deps/horizon_neoforge_compat-e40f7b684ded20e8)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/bin/codec-reference.rs (<core-target>/debug/deps/codec_reference-6ee59b06c227d3bb)
+
+running 3 tests
+test tests::bad_envelopes_and_models_refuse ... ok
+test tests::envelope_empty_maps ... ok
+test tests::envelope_preserves_empty_phases_and_unicode ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/bin/compat-inspect.rs (<core-target>/debug/deps/compat_inspect-400804de393a428f)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/cli.rs (<core-target>/debug/deps/cli-0bc81f44210fbfb7)
+
+running 3 tests
+test bad_usage_has_nonzero_exit ... ok
+test demo_explicitly_does_not_join ... ok
+test fixture_inspection ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/core.rs (<core-target>/debug/deps/core-07389323123521ab)
+
+running 30 tests
+test baseline_is_exact_not_wildcard ... ok
+test body_limit ... ok
+test common_submachine_replies_without_join_claim ... ok
+test dinnerbone_golden ... ok
+test dinnerbone_shorthand_and_empty ... ok
+test dinnerbone_union_unregister_and_no_negotiation_side_effect ... ok
+test duplicate_register_fails ... ok
+test every_prefix_truncation_rejected ... ok
+test extension_cannot_reserve_core_namespaces_or_duplicate ... ok
+test extension_dispatch_enforces_phase_size_and_failure ... ok
+test invalid_dinnerbone_is_not_silently_skipped ... ok
+test malformed_string_utf8_and_count ... ok
+test maps_are_explicit_bidirectional_and_total ... ok
+test identifier_grammar ... ok
+test modded_and_unknown_tasks_never_acknowledged ... ok
+test negative_and_large_counts ... ok
+test no_compatible_version_poisoned ... ok
+test only_handler_backed_channels_advertised ... ok
+test overlong_varint_and_overflow ... ok
+test register_before_version_and_repeated_version_refused ... ok
+test register_golden ... ok
+test signed_varint_golden ... ok
+test snapshot_duplicate_names_negative_ids_and_alias_cycles ... ok
+test snapshot_duplicate_wire_id_refused ... ok
+test snapshot_golden ... ok
+test trailing_bytes_rejected ... ok
+test unsupported_common_phase_and_version_refused ... ok
+test version_golden ... ok
+test channel_count_and_writer_body_bounds ... ok
+test bounded_deterministic_malformed_corpus_no_panics ... ok
+
+test result: ok. 30 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+     Running tests/feature_flags.rs (<core-target>/debug/deps/feature_flags-af2c9974e78df757)
+
+running 12 tests
+test both_missing_local_and_missing_remote_refused ... ok
+test close_and_fresh_epoch ... ok
+test duplicate_delivery_is_terminal ... ok
+test duplicate_normalized_names_refused ... ok
+test every_prefix_and_trailing_refused ... ok
+test empty_equality_is_explicit_and_ack_has_no_count ... ok
+test literal_anchor_and_empty ... ok
+test malformed_input_poisons_task ... ok
+test populated_exact_equality ... ok
+test wire_order_does_not_change_set ... ok
+test constructor_checks_aggregate_bytes ... ok
+test count_budget_and_constructor_bound ... ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/feature_flags_loader.rs (<core-target>/debug/deps/feature_flags_loader-cc387c123509926c)
+
+running 13 tests
+test caller_cannot_replace_builtin_handlers ... ok
+test announced_channels_do_not_grant_task_pair ... ok
+test half_selected_pair_is_refused_atomically ... ok
+test no_default_inventory_or_advertisement ... ok
+test duplicate_and_close_revoke_check ... ok
+test mismatch_or_malformed_revokes_grants_and_never_retries ... ok
+test no_pre_setup_or_wrong_direction ... ok
+test nonempty_host_inventory_must_match ... ok
+test opt_in_offers_exact_real_handler_directions ... ok
+test optional_absence_does_not_enable_dispatch ... ok
+test only_selected_inbound_is_announced ... ok
+test sends_exact_empty_ack_after_real_equality_but_no_finish ... ok
+test unsupported_baseline_still_refused ... ok
+
+test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/loader.rs (<core-target>/debug/deps/loader-167a3b8a441e9f53)
+
+running 13 tests
+test baseline_and_close_are_strict ... ok
+test decoded_setup_failure_is_terminal_and_retains_only_untrusted_data ... ok
+test dinnerbone_cannot_grant_authority ... ok
+test invalid_phase_setup_is_not_silently_ignored ... ok
+test empty_setup_can_negotiate_but_never_join ... ok
+test no_setup_without_query ... ok
+test nonempty_server_query_refused ... ok
+test repeated_and_malformed_messages_poison ... ok
+test setup_failure_and_unknown_tasks_terminal ... ok
+test setup_failure_revokes_previously_accepted_handler_grants ... ok
+test malformed_failure_never_exposes_partial_reasons_or_retries ... ok
+test wire_offer_direction_version_and_callback_are_real ... ok
+test epoch_budget_limits_repeated_announcements ... ok
+
+test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/modded.rs (<core-target>/debug/deps/modded-a6f877a559447d5a)
+
+running 14 tests
+test audited_enum_ordinals_and_phase_conversion ... ok
+test bad_booleans_flows_strings_and_ids ... ok
+test duplicate_phases_and_ids_never_overwrite ... ok
+test every_query_and_setup_truncation_and_trailing_byte ... ok
+test failure_is_explicitly_unsupported_terminal_not_a_fake_string_codec ... ok
+test mismatched_redundant_ids_rejected_both_directions ... ok
+test literal_query_and_setup_vectors ... ok
+test negative_overlarge_and_overflow_counts ... ok
+test noncanonical_short_varints_accepted_but_writer_canonical ... ok
+test payload_names_and_empty_maps ... ok
+test required_empty_version_and_unicode_version_are_wire_values ... ok
+test string_and_body_budgets_apply_to_decoders_and_writers ... ok
+test deterministic_malformed_corpus_never_panics_or_escapes_terminal_failure ... ok
+test entry_budget_boundary_and_cross_phase_total ... ok
+
+test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+     Running tests/negotiation.rs (<core-target>/debug/deps/negotiation-0b9d96ea5e9e2805)
+
+running 10 tests
+test bootstrap_channel_cannot_be_replaced ... ok
+test close_revokes_capabilities ... ok
+test missing_callback_not_advertised ... ok
+test optional_absence_is_not_authority ... ok
+test optional_does_not_relax_matching_flow_or_version ... ok
+test ordering_is_terminal ... ok
+test mismatches_and_duplicates_do_not_partially_install ... ok
+test phase_direction_size_and_handler_failure_poison_epoch ... ok
+test required_absence_is_terminal ... ok
+test server_query_empty_is_not_server_offer ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/registry_sync.rs (<core-target>/debug/deps/registry_sync-e9f88e53832b81af)
+
+running 23 tests
+test aggregate_entry_budget_exact_boundary_and_cross_registry_overflow ... ok
+test aggregate_alias_budget_crosses_registries_and_accepts_exact_boundary ... ok
+test aggregate_wire_bytes_count_received_not_canonical_encoding ... ok
+test cross_registry_semantic_dependencies_must_be_validated ... ok
+test caught_host_panics_cannot_reopen_epoch ... ok
+test all_out_of_order_calls_poison_including_replays_after_commit ... ok
+test duplicate_start_names_rejected_on_wire_and_encode ... ok
+test empty_expected_set_still_requires_host_validation_and_commit ... ok
+test duplicate_unexpected_and_missing_snapshots_are_terminal ... ok
+test explicit_commit_failure_keeps_all_old_state_and_never_returns_ack ... ok
+test new_epoch_does_not_inherit_prior_staging_or_failure ... ok
+test malformed_lifecycle_bodies_poison_without_commit ... ok
+test no_publication_until_complete_atomic_barrier ... ok
+test semantic_unknown_entry_refused_without_partial_publication ... ok
+test per_snapshot_limits_not_relaxed_by_large_aggregate_budgets ... ok
+test registry_budget_is_separate_from_wire_codec_limit ... ok
+test start_every_truncation_trailing_and_malformed ... ok
+test structural_alias_failures_never_reach_semantic_host ... ok
+test start_literal_wire_order_and_empty_codec ... ok
+test unsupported_expected_registry_fails_at_start ... ok
+test unsupported_host_refuses_even_empty_task ... ok
+test start_count_and_body_boundaries ... ok
+test deterministic_malformed_smoke_corpus_has_no_panics ... ok
+
+test result: ok. 23 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.09s
+
+     Running tests/setup_failure.rs (<core-target>/debug/deps/setup_failure-d8997809d2859895)
+
+running 14 tests
+test all_prefix_truncations_of_populated_and_empty_maps_fail ... ok
+test duplicate_keys_compare_decoded_java_units_not_encoding ... ok
+test executed_java_component_vectors_preserve_wire_data_not_semantic_normalization ... ok
+test list_and_compound_component_envelopes ... ok
+test literal_network_nbt_string_not_json_or_named_root ... ok
+test malformed_nbt_types_lengths_and_terminators ... ok
+test depth_boundary_and_deep_attack_are_bounded ... ok
+test mutf8_preserves_null_supplementary_lone_surrogates_and_java_overlongs ... ok
+test every_nbt_payload_type_and_numeric_bits_are_preserved ... ok
+test node_and_array_budgets_are_aggregate ... ok
+test structured_data_is_not_rendered_or_semantically_validated ... ok
+test map_body_identifier_and_varint_limits ... ok
+test string_budgets_are_per_string_and_aggregate_across_reasons_and_names ... ok
+test deterministic_malformed_smoke_corpus_does_not_panic ... ok
+
+test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+     Running tests/split.rs (<core-target>/debug/deps/split-5eb6ff83d1c79278)
+
+running 18 tests
+test actual_array_prefix_not_raw_marker ... ok
+test aggregate_part_budget ... ok
+test close_is_terminal_and_fresh_instance_required ... ok
+test clock_backwards_fails_closed ... ok
+test consecutive_packets_do_not_share_bytes ... ok
+test decode_error_clears_pending_assembly ... ok
+test elapsed_clock_near_u64_limit_does_not_overflow ... ok
+test empty_fragments_rejected ... ok
+test every_truncation_rejected ... ok
+test flags_are_not_combinable ... ok
+test malformed_varints_and_trailing_bytes ... ok
+test more_parts_do_not_extend_deadline ... ok
+test new_first_cannot_silently_drop_previous_packet ... ok
+test orphan_middle_or_last_is_terminal ... ok
+test timeout_applies_without_incoming_packet ... ok
+test reconstructs_whole_packet_including_multibyte_id ... ok
+test per_part_budget ... ok
+test aggregate_byte_budget_and_no_partial_output ... ok
+
+test result: ok. 18 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+   Doc-tests horizon_neoforge_compat
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Compiling horizon-neoforge-compat v0.1.0 (<compat>)
+    Finished `release` profile [optimized] target(s) in 10.48s
+     Running unittests src/lib.rs (<core-target>/release/deps/horizon_neoforge_compat-927a9492d73f32ea)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/bin/codec-reference.rs (<core-target>/release/deps/codec_reference-fb2cc3aafbfb474f)
+
+running 3 tests
+test tests::bad_envelopes_and_models_refuse ... ok
+test tests::envelope_empty_maps ... ok
+test tests::envelope_preserves_empty_phases_and_unicode ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/bin/compat-inspect.rs (<core-target>/release/deps/compat_inspect-d2330da953b706ee)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/cli.rs (<core-target>/release/deps/cli-e930310f00a0e185)
+
+running 3 tests
+test demo_explicitly_does_not_join ... ok
+test bad_usage_has_nonzero_exit ... ok
+test fixture_inspection ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/core.rs (<core-target>/release/deps/core-dbb7af63e83d53ed)
+
+running 30 tests
+test baseline_is_exact_not_wildcard ... ok
+test body_limit ... ok
+test common_submachine_replies_without_join_claim ... ok
+test dinnerbone_golden ... ok
+test dinnerbone_shorthand_and_empty ... ok
+test dinnerbone_union_unregister_and_no_negotiation_side_effect ... ok
+test duplicate_register_fails ... ok
+test every_prefix_truncation_rejected ... ok
+test extension_cannot_reserve_core_namespaces_or_duplicate ... ok
+test extension_dispatch_enforces_phase_size_and_failure ... ok
+test identifier_grammar ... ok
+test invalid_dinnerbone_is_not_silently_skipped ... ok
+test malformed_string_utf8_and_count ... ok
+test modded_and_unknown_tasks_never_acknowledged ... ok
+test maps_are_explicit_bidirectional_and_total ... ok
+test negative_and_large_counts ... ok
+test no_compatible_version_poisoned ... ok
+test only_handler_backed_channels_advertised ... ok
+test overlong_varint_and_overflow ... ok
+test register_before_version_and_repeated_version_refused ... ok
+test register_golden ... ok
+test signed_varint_golden ... ok
+test snapshot_duplicate_names_negative_ids_and_alias_cycles ... ok
+test snapshot_duplicate_wire_id_refused ... ok
+test snapshot_golden ... ok
+test trailing_bytes_rejected ... ok
+test unsupported_common_phase_and_version_refused ... ok
+test version_golden ... ok
+test bounded_deterministic_malformed_corpus_no_panics ... ok
+test channel_count_and_writer_body_bounds ... ok
+
+test result: ok. 30 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/feature_flags.rs (<core-target>/release/deps/feature_flags-07f247d128caa238)
+
+running 12 tests
+test both_missing_local_and_missing_remote_refused ... ok
+test close_and_fresh_epoch ... ok
+test duplicate_delivery_is_terminal ... ok
+test duplicate_normalized_names_refused ... ok
+test empty_equality_is_explicit_and_ack_has_no_count ... ok
+test every_prefix_and_trailing_refused ... ok
+test literal_anchor_and_empty ... ok
+test constructor_checks_aggregate_bytes ... ok
+test populated_exact_equality ... ok
+test malformed_input_poisons_task ... ok
+test wire_order_does_not_change_set ... ok
+test count_budget_and_constructor_bound ... ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/feature_flags_loader.rs (<core-target>/release/deps/feature_flags_loader-8489fd5dc86abf28)
+
+running 13 tests
+test announced_channels_do_not_grant_task_pair ... ok
+test caller_cannot_replace_builtin_handlers ... ok
+test duplicate_and_close_revoke_check ... ok
+test half_selected_pair_is_refused_atomically ... ok
+test mismatch_or_malformed_revokes_grants_and_never_retries ... ok
+test no_pre_setup_or_wrong_direction ... ok
+test only_selected_inbound_is_announced ... ok
+test nonempty_host_inventory_must_match ... ok
+test no_default_inventory_or_advertisement ... ok
+test opt_in_offers_exact_real_handler_directions ... ok
+test sends_exact_empty_ack_after_real_equality_but_no_finish ... ok
+test unsupported_baseline_still_refused ... ok
+test optional_absence_does_not_enable_dispatch ... ok
+
+test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/loader.rs (<core-target>/release/deps/loader-aaed2e455c0ff4ed)
+
+running 13 tests
+test baseline_and_close_are_strict ... ok
+test dinnerbone_cannot_grant_authority ... ok
+test decoded_setup_failure_is_terminal_and_retains_only_untrusted_data ... ok
+test empty_setup_can_negotiate_but_never_join ... ok
+test malformed_failure_never_exposes_partial_reasons_or_retries ... ok
+test no_setup_without_query ... ok
+test nonempty_server_query_refused ... ok
+test repeated_and_malformed_messages_poison ... ok
+test setup_failure_and_unknown_tasks_terminal ... ok
+test setup_failure_revokes_previously_accepted_handler_grants ... ok
+test invalid_phase_setup_is_not_silently_ignored ... ok
+test epoch_budget_limits_repeated_announcements ... ok
+test wire_offer_direction_version_and_callback_are_real ... ok
+
+test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/modded.rs (<core-target>/release/deps/modded-c53e6cb806fd6fb8)
+
+running 14 tests
+test audited_enum_ordinals_and_phase_conversion ... ok
+test bad_booleans_flows_strings_and_ids ... ok
+test duplicate_phases_and_ids_never_overwrite ... ok
+test every_query_and_setup_truncation_and_trailing_byte ... ok
+test deterministic_malformed_corpus_never_panics_or_escapes_terminal_failure ... ok
+test failure_is_explicitly_unsupported_terminal_not_a_fake_string_codec ... ok
+test literal_query_and_setup_vectors ... ok
+test negative_overlarge_and_overflow_counts ... ok
+test noncanonical_short_varints_accepted_but_writer_canonical ... ok
+test payload_names_and_empty_maps ... ok
+test mismatched_redundant_ids_rejected_both_directions ... ok
+test required_empty_version_and_unicode_version_are_wire_values ... ok
+test string_and_body_budgets_apply_to_decoders_and_writers ... ok
+test entry_budget_boundary_and_cross_phase_total ... ok
+
+test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/negotiation.rs (<core-target>/release/deps/negotiation-7d5c764c764243b5)
+
+running 10 tests
+test bootstrap_channel_cannot_be_replaced ... ok
+test mismatches_and_duplicates_do_not_partially_install ... ok
+test missing_callback_not_advertised ... ok
+test close_revokes_capabilities ... ok
+test optional_absence_is_not_authority ... ok
+test ordering_is_terminal ... ok
+test required_absence_is_terminal ... ok
+test server_query_empty_is_not_server_offer ... ok
+test optional_does_not_relax_matching_flow_or_version ... ok
+test phase_direction_size_and_handler_failure_poison_epoch ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/registry_sync.rs (<core-target>/release/deps/registry_sync-4121d6f37fe13242)
+
+running 23 tests
+test aggregate_alias_budget_crosses_registries_and_accepts_exact_boundary ... ok
+test aggregate_entry_budget_exact_boundary_and_cross_registry_overflow ... ok
+test aggregate_wire_bytes_count_received_not_canonical_encoding ... ok
+test cross_registry_semantic_dependencies_must_be_validated ... ok
+test caught_host_panics_cannot_reopen_epoch ... ok
+test all_out_of_order_calls_poison_including_replays_after_commit ... ok
+test duplicate_start_names_rejected_on_wire_and_encode ... ok
+test duplicate_unexpected_and_missing_snapshots_are_terminal ... ok
+test empty_expected_set_still_requires_host_validation_and_commit ... ok
+test explicit_commit_failure_keeps_all_old_state_and_never_returns_ack ... ok
+test malformed_lifecycle_bodies_poison_without_commit ... ok
+test new_epoch_does_not_inherit_prior_staging_or_failure ... ok
+test no_publication_until_complete_atomic_barrier ... ok
+test per_snapshot_limits_not_relaxed_by_large_aggregate_budgets ... ok
+test registry_budget_is_separate_from_wire_codec_limit ... ok
+test semantic_unknown_entry_refused_without_partial_publication ... ok
+test start_every_truncation_trailing_and_malformed ... ok
+test start_literal_wire_order_and_empty_codec ... ok
+test unsupported_expected_registry_fails_at_start ... ok
+test structural_alias_failures_never_reach_semantic_host ... ok
+test unsupported_host_refuses_even_empty_task ... ok
+test start_count_and_body_boundaries ... ok
+test deterministic_malformed_smoke_corpus_has_no_panics ... ok
+
+test result: ok. 23 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+     Running tests/setup_failure.rs (<core-target>/release/deps/setup_failure-325c8871f576cee6)
+
+running 14 tests
+test all_prefix_truncations_of_populated_and_empty_maps_fail ... ok
+test duplicate_keys_compare_decoded_java_units_not_encoding ... ok
+test executed_java_component_vectors_preserve_wire_data_not_semantic_normalization ... ok
+test every_nbt_payload_type_and_numeric_bits_are_preserved ... ok
+test list_and_compound_component_envelopes ... ok
+test literal_network_nbt_string_not_json_or_named_root ... ok
+test malformed_nbt_types_lengths_and_terminators ... ok
+test mutf8_preserves_null_supplementary_lone_surrogates_and_java_overlongs ... ok
+test depth_boundary_and_deep_attack_are_bounded ... ok
+test map_body_identifier_and_varint_limits ... ok
+test structured_data_is_not_rendered_or_semantically_validated ... ok
+test string_budgets_are_per_string_and_aggregate_across_reasons_and_names ... ok
+test node_and_array_budgets_are_aggregate ... ok
+test deterministic_malformed_smoke_corpus_does_not_panic ... ok
+
+test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/split.rs (<core-target>/release/deps/split-109c68216b46caeb)
+
+running 18 tests
+test actual_array_prefix_not_raw_marker ... ok
+test aggregate_part_budget ... ok
+test clock_backwards_fails_closed ... ok
+test close_is_terminal_and_fresh_instance_required ... ok
+test consecutive_packets_do_not_share_bytes ... ok
+test decode_error_clears_pending_assembly ... ok
+test empty_fragments_rejected ... ok
+test every_truncation_rejected ... ok
+test flags_are_not_combinable ... ok
+test elapsed_clock_near_u64_limit_does_not_overflow ... ok
+test malformed_varints_and_trailing_bytes ... ok
+test more_parts_do_not_extend_deadline ... ok
+test new_first_cannot_silently_drop_previous_packet ... ok
+test orphan_middle_or_last_is_terminal ... ok
+test timeout_applies_without_incoming_packet ... ok
+test reconstructs_whole_packet_including_multibyte_id ... ok
+test per_part_budget ... ok
+test aggregate_byte_budget_and_no_partial_output ... ok
+
+test result: ok. 18 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+   Doc-tests horizon_neoforge_compat
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+    Checking horizon-neoforge-compat v0.1.0 (<compat>)
+    Finished `dev` profile [unoptimized] target(s) in 0.92s
+ Documenting horizon-neoforge-compat v0.1.0 (<compat>)
+    Checking horizon-neoforge-compat v0.1.0 (<compat>)
+    Finished `dev` profile [unoptimized] target(s) in 0.68s
+   Generated <core-target>/doc/horizon_neoforge_compat/index.html and 2 other files

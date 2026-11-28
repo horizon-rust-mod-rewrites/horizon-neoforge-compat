@@ -1,3 +1,43 @@
+# Continuation evidence (2026-11-27)
+
+Continues existing draft PR #1 from verified remote head
+`3331751dc938ba2fdd430dd28ead49d343f612b2`, without rewriting individual mods.
+**Still cannot complete configuration or join.**
+
+- Loader now retains bounded, lossless setup-failure **NBT data**, never a
+  successful setup or safe-to-render Component. See `provenance/setup-failure.md`.
+  Component semantics/rendering remain incomplete; every failure is terminal.
+- Genuine source-extracted NeoForge query/setup codecs executed against actual
+  official MC 1.21.1 classfiles: 256 models, 1,024 cross-language semantic checks,
+  1,711 shared invalid/truncation cases, 9 classified policy differences and 6
+  writer-limit cases. See `docs/java-reference.md` and `tests/reference/results.json`.
+- Bounded split reassembly primitive, 18 tests; not yet advertised or wired to
+  Horizon packet decoding. See `docs/SPLIT.md`.
+- Horizon integration boundary hardening, executed endpoint/bridge tests and a
+  reproducible full-build driver; full-engine build/runtime remains unexecuted.
+  See `integration/README.md` and `docs/horizon-continuation.md`.
+- Main crate **128 tests pass debug and release** with Rust 1.95.0 / x86_64 musl.
+  Formatting, warning-denied docs, six fixtures and source verification pass.
+  Strict Clippy also passes in this run.
+  Current run: `docs/validation-continuation.txt`. Full engine, real content publication, remaining
+  task execution, split host integration and live joins remain outstanding.
+
+Earlier status below is historical where it conflicts with this continuation.
+No finish latch was removed and no full-handshake completion is claimed.
+
+---
+# Current development handoff
+
+Start with `PROGRESS.md` and the updated README, then read the historical
+handoff below. Query/setup codecs, a handler-backed early Loader controller,
+registry task staging/host barriers, and a concrete Horizon patch now exist.
+No successful finish or join exists. Next: failure Component/NBT codec + genuine
+Java differential execution; full pinned Horizon + companion typecheck/runtime
+and TCP tests; real host semantic registry/content application; remaining
+config/data-map/enum/flag tasks and split transport; isolated baseline join.
+Do not remove finish latches as a shortcut and do not rewrite individual mods.
+
+---
 # Handoff for the next development chat
 
 ## Start here

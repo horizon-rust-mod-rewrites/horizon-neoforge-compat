@@ -1,0 +1,91 @@
+{
+  "baseline": {
+    "minecraft": "1.21.1",
+    "protocol": 767,
+    "neoforge": "21.1.248"
+  },
+  "seed": 211248,
+  "valid_models": 256,
+  "semantic_comparisons": 1024,
+  "literal_anchors": 2,
+  "writer_policy_boundaries": 6,
+  "shared_malformed": 1711,
+  "classified_policy_divergences": 9,
+  "bounded_smoke_inputs": 256,
+  "smoke_shared_acceptances": 0,
+  "java_version": "openjdk version \"21.0.13.1\" 2026-11-17 LTS\nOpenJDK Runtime Environment Zulu21.54+201-CA (build 21.0.13.1+2-LTS)\nOpenJDK 64-Bit Server VM Zulu21.54+201-CA (build 21.0.13.1+2-LTS, mixed mode)",
+  "rust_driver_sha256": "94269f889e5787b533be41e0f866da40d6d8cafe56414c6d9d2bfc0983c08122",
+  "source_adaptation": {
+    "baseline": {
+      "minecraft": "1.21.1",
+      "protocol": 767,
+      "neoforge": "21.1.248"
+    },
+    "transformations": {
+      "ConnectionProtocol": "vu",
+      "FriendlyByteBuf": "vw",
+      "ByteBufCodecs": "yv",
+      "StreamCodec": "yx",
+      "PacketFlow": "zh",
+      "ResourceLocation": "akr",
+      "yx.composite": "yx.a",
+      "yv.map": "yv.a",
+      "yv.idMapper": "yv.a",
+      "yv.collection": "yv.a",
+      "yv.optional": "yv.a",
+      "yv.STRING_UTF8": "yv.l",
+      "yv.BOOL": "yv.b",
+      "akr.STREAM_CODEC": "akr.b",
+      "buf.readEnum": "buf.b",
+      "buf.writeEnum": "buf.a"
+    },
+    "sources": {
+      "net/neoforged/neoforge/network/payload/ModdedNetworkQueryPayload.java": {
+        "upstream_sha256": "8a1d2a29e71e51265021b23cee42a9514de569d88e4e89ffadb134d0d5b8cfdc",
+        "adapted_sha256": "92380f0e67c3207edba10e8e3336322d12627f5aea1e88d5f304f97829a93009"
+      },
+      "net/neoforged/neoforge/network/payload/ModdedNetworkQueryComponent.java": {
+        "upstream_sha256": "708a18e6ebabc64012055c61a0fa40b4ffe0451760c9215b7314d691c5907ebc",
+        "adapted_sha256": "97487a805bb3020f3b71feffbe6a6b2f95284fd5de5bd2737f03ada730778950"
+      },
+      "net/neoforged/neoforge/network/payload/ModdedNetworkPayload.java": {
+        "upstream_sha256": "e3764b6d1766ab93a6a6c58e8b92ec08ef512b2f688e3f75aba2e820e6c9a54b",
+        "adapted_sha256": "152a134023ae4c98055ca7deb2f231ede72018de4c43c86722e05e1f765fbb52"
+      },
+      "net/neoforged/neoforge/network/registration/NetworkPayloadSetup.java": {
+        "upstream_sha256": "7ab5631215bb916c6ac69e46b7013a697a16eeb0b84a22f5d3939e144e406a22",
+        "adapted_sha256": "e526cb37da6cc4c42be099d036d605f14665c0b1b4d585a93deda20f6dd22fef"
+      },
+      "net/neoforged/neoforge/network/registration/NetworkChannel.java": {
+        "upstream_sha256": "5185cd8d7e44ae989543a986bdc787086dcdff43e1e00893318b55007969841c",
+        "adapted_sha256": "37ee735169fd2fee2054422e243db380cb9af0481e3fb701ee3138e44fa3a5a7"
+      },
+      "net/neoforged/neoforge/network/codec/NeoForgeStreamCodecs.java": {
+        "upstream_sha256": "a2de86a00f85a3be554b759c72716afdcbda5bfdd6f539b5fa81f846be46c616",
+        "adapted_sha256": "2f82413c2fb6d23d9cab17ad5f0b30ca8f9b8cd7e1762d774ff0ae87c9b84259"
+      }
+    }
+  },
+  "runtime_jar_sha256": "1a192c48d9a347bad8964be0b2a9ed5cccd61c049f6759ef9a492ceca18af2dc",
+  "unchanged_official_classfiles": 6148,
+  "official_codec_class_sha256": {
+    "vw.class": "6412f24ac18b1dcfbb4cec0d1e8e553f2eb631f492a777d3af8a1e7c324d5a09",
+    "yv.class": "39a150fb2ef2a95792b4315a5924c98a7e62b7b8ff7058cba3274caaff0cb223",
+    "yx.class": "a17f2856b9f296e1c338640f8428f6e3845b65fccb3eddf0195b174ce717357e",
+    "akr.class": "143a5767b02120e87c2aa8dd9b5f7452eaf2f9a97bd3a51c4aa5eb32569c4e74",
+    "vu.class": "1e2e860e0bf1462dc180f2be2de04a8f425e02ec2f9846f4e8241d41f5a58841",
+    "zh.class": "b8bebcd2cd710fa96b3305297047e5b7fcb17a0e84d17a9d21f8a340925a6d8f"
+  },
+  "test_driver_sha256": {
+    "tests/reference/differential.py": "0011eb3de065771d31f86c5250d4f9e64d304876de3d98af6dfd4f2c26640525",
+    "tests/reference/prepare.py": "bb4f4c8273bcd290c744bd577fb5f355f9a207e4dab0adea7e7434502d3cd0ab",
+    "tests/reference/CodecReference.java": "57c6ff0dc09c90e0c9d47c660a729b555c4bd3aa140f6fd711439a93c198ee00",
+    "src/bin/codec-reference.rs": "98d53332280f57ecb53fd33ac1b29b53bb11ca17b6eee2632336ca980fb98fb7"
+  },
+  "limitations": [
+    "Source-extracted NeoForge codec compositions, not a full NeoForge installation.",
+    "Query/setup only; no failure Component codec execution.",
+    "No server connection, framing, live join, game content or individual mods tested.",
+    "Bounded deterministic suite, not exhaustive or coverage-guided fuzzing."
+  ]
+}

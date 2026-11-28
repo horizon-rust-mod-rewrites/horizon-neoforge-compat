@@ -1,0 +1,10 @@
+{
+  "baseline": "NeoForge 21.1.248 / Minecraft 1.21.1 / protocol 767",
+  "artifact_sha256": "b4b912457549ff586873ce78b39b08af96f11a0e3a54c6b77576c6a25907083f",
+  "source_files": {
+    "net/neoforged/neoforge/network/payload/FeatureFlagDataPayload.java": "cf2d4ea13d17cde16d98b69ed638590868772c2982eea9a37bfe318cb66f7a5a",
+    "net/neoforged/neoforge/network/payload/FeatureFlagAcknowledgePayload.java": "20859b62c0c27a47d5f5aa89b23738e2c575a93337708e99866f842ea636860d",
+    "net/neoforged/neoforge/network/configuration/CheckFeatureFlags.java": "072f2fb927488e2b473dbe070457cb4dd5bfaa315b623324c9d4598008482fdd",
+    "net/neoforged/neoforge/network/NetworkInitialization.java": "b321425176641f7c90864055e3895919364f2397bf0284e00b9a13909750d570"
+  }
+}

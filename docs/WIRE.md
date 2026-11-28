@@ -1,3 +1,43 @@
+# Continuation evidence (2026-11-27)
+
+Continues existing draft PR #1 from verified remote head
+`3331751dc938ba2fdd430dd28ead49d343f612b2`, without rewriting individual mods.
+**Still cannot complete configuration or join.**
+
+- Loader now retains bounded, lossless setup-failure **NBT data**, never a
+  successful setup or safe-to-render Component. See `provenance/setup-failure.md`.
+  Component semantics/rendering remain incomplete; every failure is terminal.
+- Genuine source-extracted NeoForge query/setup codecs executed against actual
+  official MC 1.21.1 classfiles: 256 models, 1,024 cross-language semantic checks,
+  1,711 shared invalid/truncation cases, 9 classified policy differences and 6
+  writer-limit cases. See `docs/java-reference.md` and `tests/reference/results.json`.
+- Bounded split reassembly primitive, 18 tests; not yet advertised or wired to
+  Horizon packet decoding. See `docs/SPLIT.md`.
+- Horizon integration boundary hardening, executed endpoint/bridge tests and a
+  reproducible full-build driver; full-engine build/runtime remains unexecuted.
+  See `integration/README.md` and `docs/horizon-continuation.md`.
+- Main crate **128 tests pass debug and release** with Rust 1.95.0 / x86_64 musl.
+  Formatting, warning-denied docs, six fixtures and source verification pass.
+  Strict Clippy also passes in this run.
+  Current run: `docs/validation-continuation.txt`. Full engine, real content publication, remaining
+  task execution, split host integration and live joins remain outstanding.
+
+Earlier status below is historical where it conflicts with this continuation.
+No finish latch was removed and no full-handshake completion is claimed.
+
+---
+# Current modded codec additions
+
+The historical subset below is extended by `src/modded.rs` and
+`../provenance/modded-codecs.md` (exact field layouts and evidence). Query
+component versions are **required strings**, not optional values. Exact MC
+1.21.1 enum ordinals are audited. Query/setup are implemented; NBT Component
+setup-failure reasons are not and terminate the epoch. `registry_sync` adds
+bounded start/completed codecs and staging, but no Horizon semantic host.
+The old common-only Session remains conservative; use Loader for modded
+query/setup. Neither endpoint can finish configuration.
+
+---
 # Wire contract: verified subset, not a full loader handshake
 
 All functions consume or produce **only the custom-payload body**. The Minecraft

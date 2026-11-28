@@ -1,0 +1,380 @@
+Actual combined development validation. Synthetic/isolated only; NO live join or full Horizon compile.
+
+$ rustc --version
+rustc 1.85.1 (4eb161250 2025-03-15)
+
+EXIT 0
+
+$ cargo fmt --check
+
+EXIT 0
+
+$ cargo test --offline --locked --target x86_64-unknown-linux-musl
+   Compiling horizon-neoforge-compat v0.1.0 (<project>)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.22s
+     Running unittests src/lib.rs (target/x86_64-unknown-linux-musl/debug/deps/horizon_neoforge_compat-a37e6afdd655fbd3)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/bin/compat-inspect.rs (target/x86_64-unknown-linux-musl/debug/deps/compat_inspect-23bcc45a3be6a1a7)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/cli.rs (target/x86_64-unknown-linux-musl/debug/deps/cli-702cfeb6887d7143)
+
+running 3 tests
+test bad_usage_has_nonzero_exit ... ok
+test demo_explicitly_does_not_join ... ok
+test fixture_inspection ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/core.rs (target/x86_64-unknown-linux-musl/debug/deps/core-94832ffbe581d350)
+
+running 30 tests
+test baseline_is_exact_not_wildcard ... ok
+test body_limit ... ok
+test common_submachine_replies_without_join_claim ... ok
+test dinnerbone_golden ... ok
+test dinnerbone_shorthand_and_empty ... ok
+test duplicate_register_fails ... ok
+test dinnerbone_union_unregister_and_no_negotiation_side_effect ... ok
+test extension_cannot_reserve_core_namespaces_or_duplicate ... ok
+test extension_dispatch_enforces_phase_size_and_failure ... ok
+test identifier_grammar ... ok
+test invalid_dinnerbone_is_not_silently_skipped ... ok
+test malformed_string_utf8_and_count ... ok
+test every_prefix_truncation_rejected ... ok
+test maps_are_explicit_bidirectional_and_total ... ok
+test negative_and_large_counts ... ok
+test no_compatible_version_poisoned ... ok
+test modded_and_unknown_tasks_never_acknowledged ... ok
+test overlong_varint_and_overflow ... ok
+test only_handler_backed_channels_advertised ... ok
+test register_before_version_and_repeated_version_refused ... ok
+test signed_varint_golden ... ok
+test register_golden ... ok
+test snapshot_duplicate_wire_id_refused ... ok
+test snapshot_golden ... ok
+test snapshot_duplicate_names_negative_ids_and_alias_cycles ... ok
+test unsupported_common_phase_and_version_refused ... ok
+test trailing_bytes_rejected ... ok
+test version_golden ... ok
+test channel_count_and_writer_body_bounds ... ok
+test bounded_deterministic_malformed_corpus_no_panics ... ok
+
+test result: ok. 30 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+     Running tests/loader.rs (target/x86_64-unknown-linux-musl/debug/deps/loader-1b34c93f15691e65)
+
+running 10 tests
+test baseline_and_close_are_strict ... ok
+test empty_setup_can_negotiate_but_never_join ... ok
+test invalid_phase_setup_is_not_silently_ignored ... ok
+test no_setup_without_query ... ok
+test dinnerbone_cannot_grant_authority ... ok
+test nonempty_server_query_refused ... ok
+test repeated_and_malformed_messages_poison ... ok
+test wire_offer_direction_version_and_callback_are_real ... ok
+test setup_failure_and_unknown_tasks_terminal ... ok
+test epoch_budget_limits_repeated_announcements ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/modded.rs (target/x86_64-unknown-linux-musl/debug/deps/modded-7b7f0b3496c01cc0)
+
+running 14 tests
+test audited_enum_ordinals_and_phase_conversion ... ok
+test duplicate_phases_and_ids_never_overwrite ... ok
+test bad_booleans_flows_strings_and_ids ... ok
+test failure_is_explicitly_unsupported_terminal_not_a_fake_string_codec ... ok
+test every_query_and_setup_truncation_and_trailing_byte ... ok
+test mismatched_redundant_ids_rejected_both_directions ... ok
+test literal_query_and_setup_vectors ... ok
+test negative_overlarge_and_overflow_counts ... ok
+test noncanonical_short_varints_accepted_but_writer_canonical ... ok
+test payload_names_and_empty_maps ... ok
+test required_empty_version_and_unicode_version_are_wire_values ... ok
+test string_and_body_budgets_apply_to_decoders_and_writers ... ok
+test deterministic_malformed_corpus_never_panics_or_escapes_terminal_failure ... ok
+test entry_budget_boundary_and_cross_phase_total ... ok
+
+test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+     Running tests/negotiation.rs (target/x86_64-unknown-linux-musl/debug/deps/negotiation-a998b75016479719)
+
+running 10 tests
+test bootstrap_channel_cannot_be_replaced ... ok
+test missing_callback_not_advertised ... ok
+test close_revokes_capabilities ... ok
+test optional_absence_is_not_authority ... ok
+test mismatches_and_duplicates_do_not_partially_install ... ok
+test optional_does_not_relax_matching_flow_or_version ... ok
+test ordering_is_terminal ... ok
+test phase_direction_size_and_handler_failure_poison_epoch ... ok
+test server_query_empty_is_not_server_offer ... ok
+test required_absence_is_terminal ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/registry_sync.rs (target/x86_64-unknown-linux-musl/debug/deps/registry_sync-292e3c236ca25504)
+
+running 23 tests
+test aggregate_entry_budget_exact_boundary_and_cross_registry_overflow ... ok
+test aggregate_alias_budget_crosses_registries_and_accepts_exact_boundary ... ok
+test cross_registry_semantic_dependencies_must_be_validated ... ok
+test aggregate_wire_bytes_count_received_not_canonical_encoding ... ok
+test duplicate_start_names_rejected_on_wire_and_encode ... ok
+test all_out_of_order_calls_poison_including_replays_after_commit ... ok
+test caught_host_panics_cannot_reopen_epoch ... ok
+test empty_expected_set_still_requires_host_validation_and_commit ... ok
+test duplicate_unexpected_and_missing_snapshots_are_terminal ... ok
+test explicit_commit_failure_keeps_all_old_state_and_never_returns_ack ... ok
+test malformed_lifecycle_bodies_poison_without_commit ... ok
+test no_publication_until_complete_atomic_barrier ... ok
+test per_snapshot_limits_not_relaxed_by_large_aggregate_budgets ... ok
+test new_epoch_does_not_inherit_prior_staging_or_failure ... ok
+test registry_budget_is_separate_from_wire_codec_limit ... ok
+test semantic_unknown_entry_refused_without_partial_publication ... ok
+test start_every_truncation_trailing_and_malformed ... ok
+test start_literal_wire_order_and_empty_codec ... ok
+test unsupported_expected_registry_fails_at_start ... ok
+test unsupported_host_refuses_even_empty_task ... ok
+test structural_alias_failures_never_reach_semantic_host ... ok
+test start_count_and_body_boundaries ... ok
+test deterministic_malformed_smoke_corpus_has_no_panics ... ok
+
+test result: ok. 23 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.09s
+
+
+EXIT 0
+
+$ cargo test --offline --locked --release --target x86_64-unknown-linux-musl
+   Compiling horizon-neoforge-compat v0.1.0 (<project>)
+    Finished `release` profile [optimized] target(s) in 5.10s
+     Running unittests src/lib.rs (target/x86_64-unknown-linux-musl/release/deps/horizon_neoforge_compat-ff4e3792846b4ed4)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/bin/compat-inspect.rs (target/x86_64-unknown-linux-musl/release/deps/compat_inspect-0cf2fcca27121197)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/cli.rs (target/x86_64-unknown-linux-musl/release/deps/cli-df65ae762a293a3a)
+
+running 3 tests
+test bad_usage_has_nonzero_exit ... ok
+test demo_explicitly_does_not_join ... ok
+test fixture_inspection ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/core.rs (target/x86_64-unknown-linux-musl/release/deps/core-67e528db2baafbae)
+
+running 30 tests
+test baseline_is_exact_not_wildcard ... ok
+test body_limit ... ok
+test common_submachine_replies_without_join_claim ... ok
+test dinnerbone_golden ... ok
+test dinnerbone_shorthand_and_empty ... ok
+test dinnerbone_union_unregister_and_no_negotiation_side_effect ... ok
+test duplicate_register_fails ... ok
+test extension_cannot_reserve_core_namespaces_or_duplicate ... ok
+test extension_dispatch_enforces_phase_size_and_failure ... ok
+test identifier_grammar ... ok
+test invalid_dinnerbone_is_not_silently_skipped ... ok
+test every_prefix_truncation_rejected ... ok
+test malformed_string_utf8_and_count ... ok
+test maps_are_explicit_bidirectional_and_total ... ok
+test negative_and_large_counts ... ok
+test modded_and_unknown_tasks_never_acknowledged ... ok
+test no_compatible_version_poisoned ... ok
+test overlong_varint_and_overflow ... ok
+test only_handler_backed_channels_advertised ... ok
+test register_before_version_and_repeated_version_refused ... ok
+test register_golden ... ok
+test signed_varint_golden ... ok
+test snapshot_duplicate_wire_id_refused ... ok
+test snapshot_golden ... ok
+test snapshot_duplicate_names_negative_ids_and_alias_cycles ... ok
+test trailing_bytes_rejected ... ok
+test unsupported_common_phase_and_version_refused ... ok
+test version_golden ... ok
+test bounded_deterministic_malformed_corpus_no_panics ... ok
+test channel_count_and_writer_body_bounds ... ok
+
+test result: ok. 30 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/loader.rs (target/x86_64-unknown-linux-musl/release/deps/loader-f0462508155a36dc)
+
+running 10 tests
+test dinnerbone_cannot_grant_authority ... ok
+test empty_setup_can_negotiate_but_never_join ... ok
+test invalid_phase_setup_is_not_silently_ignored ... ok
+test baseline_and_close_are_strict ... ok
+test no_setup_without_query ... ok
+test nonempty_server_query_refused ... ok
+test repeated_and_malformed_messages_poison ... ok
+test wire_offer_direction_version_and_callback_are_real ... ok
+test setup_failure_and_unknown_tasks_terminal ... ok
+test epoch_budget_limits_repeated_announcements ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/modded.rs (target/x86_64-unknown-linux-musl/release/deps/modded-4461e712dce8fb24)
+
+running 14 tests
+test audited_enum_ordinals_and_phase_conversion ... ok
+test bad_booleans_flows_strings_and_ids ... ok
+test duplicate_phases_and_ids_never_overwrite ... ok
+test failure_is_explicitly_unsupported_terminal_not_a_fake_string_codec ... ok
+test every_query_and_setup_truncation_and_trailing_byte ... ok
+test mismatched_redundant_ids_rejected_both_directions ... ok
+test literal_query_and_setup_vectors ... ok
+test negative_overlarge_and_overflow_counts ... ok
+test noncanonical_short_varints_accepted_but_writer_canonical ... ok
+test payload_names_and_empty_maps ... ok
+test required_empty_version_and_unicode_version_are_wire_values ... ok
+test string_and_body_budgets_apply_to_decoders_and_writers ... ok
+test deterministic_malformed_corpus_never_panics_or_escapes_terminal_failure ... ok
+test entry_budget_boundary_and_cross_phase_total ... ok
+
+test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/negotiation.rs (target/x86_64-unknown-linux-musl/release/deps/negotiation-2060affe2fcd650b)
+
+running 10 tests
+test bootstrap_channel_cannot_be_replaced ... ok
+test close_revokes_capabilities ... ok
+test mismatches_and_duplicates_do_not_partially_install ... ok
+test missing_callback_not_advertised ... ok
+test optional_absence_is_not_authority ... ok
+test optional_does_not_relax_matching_flow_or_version ... ok
+test ordering_is_terminal ... ok
+test required_absence_is_terminal ... ok
+test phase_direction_size_and_handler_failure_poison_epoch ... ok
+test server_query_empty_is_not_server_offer ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/registry_sync.rs (target/x86_64-unknown-linux-musl/release/deps/registry_sync-70d7e75bf1ba0268)
+
+running 23 tests
+test aggregate_alias_budget_crosses_registries_and_accepts_exact_boundary ... ok
+test aggregate_entry_budget_exact_boundary_and_cross_registry_overflow ... ok
+test aggregate_wire_bytes_count_received_not_canonical_encoding ... ok
+test cross_registry_semantic_dependencies_must_be_validated ... ok
+test all_out_of_order_calls_poison_including_replays_after_commit ... ok
+test caught_host_panics_cannot_reopen_epoch ... ok
+test duplicate_start_names_rejected_on_wire_and_encode ... ok
+test empty_expected_set_still_requires_host_validation_and_commit ... ok
+test explicit_commit_failure_keeps_all_old_state_and_never_returns_ack ... ok
+test duplicate_unexpected_and_missing_snapshots_are_terminal ... ok
+test malformed_lifecycle_bodies_poison_without_commit ... ok
+test new_epoch_does_not_inherit_prior_staging_or_failure ... ok
+test no_publication_until_complete_atomic_barrier ... ok
+test per_snapshot_limits_not_relaxed_by_large_aggregate_budgets ... ok
+test registry_budget_is_separate_from_wire_codec_limit ... ok
+test semantic_unknown_entry_refused_without_partial_publication ... ok
+test start_literal_wire_order_and_empty_codec ... ok
+test start_every_truncation_trailing_and_malformed ... ok
+test unsupported_expected_registry_fails_at_start ... ok
+test unsupported_host_refuses_even_empty_task ... ok
+test structural_alias_failures_never_reach_semantic_host ... ok
+test start_count_and_body_boundaries ... ok
+test deterministic_malformed_smoke_corpus_has_no_panics ... ok
+
+test result: ok. 23 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+
+EXIT 0
+
+$ cargo clippy --offline --target x86_64-unknown-linux-musl --all-targets -- -D warnings
+    Checking horizon-neoforge-compat v0.1.0 (<project>)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.94s
+
+EXIT 0
+
+$ cargo doc --offline --no-deps --target x86_64-unknown-linux-musl
+ Documenting horizon-neoforge-compat v0.1.0 (<project>)
+    Checking horizon-neoforge-compat v0.1.0 (<project>)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.61s
+   Generated <project>/target/x86_64-unknown-linux-musl/doc/horizon_neoforge_compat/index.html and 1 other file
+
+EXIT 0
+
+$ python3 fixtures/generate.py --check
+6 synthetic fixtures verified
+
+EXIT 0
+
+$ python3 provenance/verify_upstream.py
+Verified NeoForge 21.1.248 source artifact and 18 inspected Java files
+
+EXIT 0
+
+$ python3 integration/check.py <horizon-pin> --rustc <rust-toolchain>/bin/rustc --target x86_64-unknown-linux-musl --linker <rust-toolchain>/lib/rustlib/x86_64-unknown-linux-gnu/bin/rust-lld
+test_default_reconfiguration_still_uses_original_path (__main__.main.<locals>.Structure.test_default_reconfiguration_still_uses_original_path) ... ok
+test_finish_is_before_horizon_accept_and_writer_transition (__main__.main.<locals>.Structure.test_finish_is_before_horizon_accept_and_writer_transition) ... ok
+test_opt_in_and_offer_suppression (__main__.main.<locals>.Structure.test_opt_in_and_offer_suppression) ... ok
+test_route_precedes_horizon_special_cases_and_generic_dispatch (__main__.main.<locals>.Structure.test_route_precedes_horizon_special_cases_and_generic_dispatch) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.001s
+
+OK
+PASS: HEAD ae632edf48f6cae3ba52a5c81523ec712488c9cc, 14 provenance hashes + 13 integration hashes
+PASS: clean application, reverse check, duplicate application refused
+rustc 1.85.1 (4eb161250 2025-03-15)
+
+running 6 tests
+test tests::early_loader_delivery_preserves_body_and_replies_without_an_accepted_horizon_epoch ... ok
+test tests::profile_rejects_wrong_baselines_and_reserved_or_duplicate_adapters ... ok
+test tests::invalid_batch_is_rejected_whole_and_even_optimistic_bridge_cannot_enter_play ... ok
+test tests::finish_refuses_pending_tasks_and_drop_resets_before_next_epoch ... ok
+test tests::undeclared_or_oversized_payloads_never_reach_bridge ... ok
+test tests::unsupported_neoforge_tasks_poison_the_epoch_and_cannot_finish ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+
+running 1 test
+test directions_767 ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+NOT EXECUTED here: full Horizon configure/queued-writer and TCP framing tests; see README.
+PASS: exact restoration after reverse application
+PASS: HEAD ae632edf48f6cae3ba52a5c81523ec712488c9cc, 14 provenance hashes + 13 integration hashes
+
+EXIT 0
+
+$ python3 integration/check_bridge.py
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.03s
+
+running 9 tests
+test net::early_configuration::tests::finish_refuses_pending_tasks_and_drop_resets_before_next_epoch ... ok
+test failure_payload_never_becomes_success ... ok
+test net::early_configuration::tests::early_loader_delivery_preserves_body_and_replies_without_an_accepted_horizon_epoch ... ok
+test net::early_configuration::tests::invalid_batch_is_rejected_whole_and_even_optimistic_bridge_cannot_enter_play ... ok
+test net::early_configuration::tests::profile_rejects_wrong_baselines_and_reserved_or_duplicate_adapters ... ok
+test actual_wire_query_setup_common_then_finish_refusal ... ok
+test net::early_configuration::tests::unsupported_neoforge_tasks_poison_the_epoch_and_cannot_finish ... ok
+test net::early_configuration::tests::undeclared_or_oversized_payloads_never_reach_bridge ... ok
+test unknown_required_task_and_reconnect_cleanup ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+PASS: actual library/companion/patched-endpoint contract; NOT full Horizon or sockets
+
+EXIT 0

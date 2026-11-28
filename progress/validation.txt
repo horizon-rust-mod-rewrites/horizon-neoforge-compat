@@ -1,0 +1,79 @@
+Compatibility tracking checkpoint, 2026-11-28
+Base remote HEAD: c72010b83ea4d2476f94ad8dae30e281a5037269
+Changes: progress metadata/report/tests/CI + acceptance plan/handoff ONLY.
+No Rust/core/patch/driver/full-workflow changes, compiler download or live server.
+Rechecked GitHub latest run46087704109 and both successful jobs at fb0294b4976bd78d4ee4cbfce44a6f049e0a4307.
+Historical execution, not a new-source run.
+
+PASS: progress metadata/report consistent (not runtime validation)
+test_absolute_traversal_and_backslash_paths_refuse (test_report.ReportTests.test_absolute_traversal_and_backslash_paths_refuse) ... ok
+test_baseline_valid_and_thirty_percent (test_report.ReportTests.test_baseline_valid_and_thirty_percent) ... ok
+test_boolean_weight_is_not_integer (test_report.ReportTests.test_boolean_weight_is_not_integer) ... ok
+test_check_mode_passes_without_writing (test_report.ReportTests.test_check_mode_passes_without_writing) ... ok
+test_check_mode_refuses_stale_output_without_writing (test_report.ReportTests.test_check_mode_refuses_stale_output_without_writing) ... ok
+test_complete_cannot_depend_on_incomplete (test_report.ReportTests.test_complete_cannot_depend_on_incomplete) ... ok
+test_completed_row_needs_evidence (test_report.ReportTests.test_completed_row_needs_evidence) ... ok
+test_cycle_refuses (test_report.ReportTests.test_cycle_refuses) ... ok
+test_duplicate_dependencies_refuse (test_report.ReportTests.test_duplicate_dependencies_refuse) ... ok
+test_duplicate_section_ids_refuse (test_report.ReportTests.test_duplicate_section_ids_refuse) ... ok
+test_duplicate_task_ids_refuse (test_report.ReportTests.test_duplicate_task_ids_refuse) ... ok
+test_exact_baseline_is_required (test_report.ReportTests.test_exact_baseline_is_required) ... ok
+test_external_symlink_refuses (test_report.ReportTests.test_external_symlink_refuses) ... ok
+test_invalid_checkpoint_sha_refuses (test_report.ReportTests.test_invalid_checkpoint_sha_refuses) ... ok
+test_invalid_execution_identity_refuses (test_report.ReportTests.test_invalid_execution_identity_refuses) ... ok
+test_invalid_json_cli_fails_without_rewriting (test_report.ReportTests.test_invalid_json_cli_fails_without_rewriting) ... ok
+test_invalid_run_url_refuses (test_report.ReportTests.test_invalid_run_url_refuses) ... ok
+test_missing_evidence_refuses (test_report.ReportTests.test_missing_evidence_refuses) ... ok
+test_partial_and_blocked_rows_earn_zero (test_report.ReportTests.test_partial_and_blocked_rows_earn_zero) ... ok
+test_report_is_deterministic_and_contains_no_ready_claim (test_report.ReportTests.test_report_is_deterministic_and_contains_no_ready_claim) ... ok
+test_required_gate_cannot_disappear (test_report.ReportTests.test_required_gate_cannot_disappear) ... ok
+test_unknown_or_self_dependency_refuses (test_report.ReportTests.test_unknown_or_self_dependency_refuses) ... ok
+test_unknown_status_refuses (test_report.ReportTests.test_unknown_status_refuses) ... ok
+test_weights_must_total_one_hundred (test_report.ReportTests.test_weights_must_total_one_hundred) ... ok
+test_zero_and_negative_weights_refuse (test_report.ReportTests.test_zero_and_negative_weights_refuse) ... ok
+
+----------------------------------------------------------------------
+Ran 25 tests in 0.148s
+
+OK
+test_below_reservation_refuses (test_check_full.DiskPreflightTests.test_below_reservation_refuses) ... ok
+test_exact_reservation_passes (test_check_full.DiskPreflightTests.test_exact_reservation_passes) ... ok
+test_invalid_reservations_refuse_before_disk_access (test_check_full.DiskPreflightTests.test_invalid_reservations_refuse_before_disk_access) ... ok
+test_minimum_allowed_reservation (test_check_full.DiskPreflightTests.test_minimum_allowed_reservation) ... ok
+test_source_copy_is_additional (test_check_full.DiskPreflightTests.test_source_copy_is_additional) ... ok
+test_disk_only_ignores_optional_nonexistent_source (test_check_full.DriverPreflightTests.test_disk_only_ignores_optional_nonexistent_source) ... ok
+test_disk_only_low_space_refuses (test_check_full.DriverPreflightTests.test_disk_only_low_space_refuses) ... ok
+test_disk_only_success_does_not_claim_build_or_touch_inputs (test_check_full.DriverPreflightTests.test_disk_only_success_does_not_claim_build_or_touch_inputs) ... ok
+test_existing_scratch_refuses_without_modification (test_check_full.DriverPreflightTests.test_existing_scratch_refuses_without_modification) ... ok
+test_missing_parent_refuses_without_creation (test_check_full.DriverPreflightTests.test_missing_parent_refuses_without_creation) ... ok
+test_normal_mode_missing_source_blobs_refuse (test_check_full.DriverPreflightTests.test_normal_mode_missing_source_blobs_refuse) ... ok
+test_normal_mode_rechecks_disk_with_source_copy_size (test_check_full.DriverPreflightTests.test_normal_mode_rechecks_disk_with_source_copy_size) ... ok
+test_normal_mode_refuses_disk_before_reading_source (test_check_full.DriverPreflightTests.test_normal_mode_refuses_disk_before_reading_source) ... ok
+test_normal_mode_still_rejects_overlapping_trees (test_check_full.DriverPreflightTests.test_normal_mode_still_rejects_overlapping_trees) ... ok
+test_normal_mode_still_requires_source (test_check_full.DriverPreflightTests.test_normal_mode_still_requires_source) ... ok
+test_client_did_not_link_core_refuses (test_full_contracts.LockAuditTests.test_client_did_not_link_core_refuses) ... ok
+test_core_from_registry_refuses (test_full_contracts.LockAuditTests.test_core_from_registry_refuses) ... ok
+test_core_not_added_refuses (test_full_contracts.LockAuditTests.test_core_not_added_refuses) ... ok
+test_duplicate_lock_identities_refuse_in_either_graph (test_full_contracts.LockAuditTests.test_duplicate_lock_identities_refuse_in_either_graph) ... ok
+test_existing_checksum_change_refuses (test_full_contracts.LockAuditTests.test_existing_checksum_change_refuses) ... ok
+test_existing_source_change_refuses (test_full_contracts.LockAuditTests.test_existing_source_change_refuses) ... ok
+test_existing_version_change_refuses (test_full_contracts.LockAuditTests.test_existing_version_change_refuses) ... ok
+test_extra_unexpected_package_refuses (test_full_contracts.LockAuditTests.test_extra_unexpected_package_refuses) ... ok
+test_lock_metadata_changes_refuse (test_full_contracts.LockAuditTests.test_lock_metadata_changes_refuse) ... ok
+test_new_transitive_dependency_on_core_refuses (test_full_contracts.LockAuditTests.test_new_transitive_dependency_on_core_refuses) ... ok
+test_only_local_core_addition_passes (test_full_contracts.LockAuditTests.test_only_local_core_addition_passes) ... ok
+test_removed_existing_package_refuses (test_full_contracts.LockAuditTests.test_removed_existing_package_refuses) ... ok
+test_unexpected_client_dependency_refuses (test_full_contracts.LockAuditTests.test_unexpected_client_dependency_refuses) ... ok
+test_empty_or_shrunken_or_failed_suite_refuses (test_full_contracts.TestSummaryTests.test_empty_or_shrunken_or_failed_suite_refuses) ... ok
+test_exact_minimum_passes (test_full_contracts.TestSummaryTests.test_exact_minimum_passes) ... ok
+test_ignored_tests_do_not_count_as_passes (test_full_contracts.TestSummaryTests.test_ignored_tests_do_not_count_as_passes) ... ok
+test_pinned_network_suite_with_known_ignored_tests_passes (test_full_contracts.TestSummaryTests.test_pinned_network_suite_with_known_ignored_tests_passes) ... ok
+test_retained_hosted_transcript_satisfies_historical_minima (test_full_contracts.TestSummaryTests.test_retained_hosted_transcript_satisfies_historical_minima) ... ok
+test_actual_glue_bytes_and_explicit_dependency_are_wired_only_in_scratch (test_full_contracts.WiringTests.test_actual_glue_bytes_and_explicit_dependency_are_wired_only_in_scratch) ... ok
+test_unexpected_manifest_shape_refuses (test_full_contracts.WiringTests.test_unexpected_manifest_shape_refuses) ... ok
+
+----------------------------------------------------------------------
+Ran 35 tests in 0.038s
+
+OK
+6 synthetic fixtures verified

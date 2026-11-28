@@ -1,0 +1,45 @@
+test_below_reservation_refuses (test_check_full.DiskPreflightTests.test_below_reservation_refuses) ... ok
+test_exact_reservation_passes (test_check_full.DiskPreflightTests.test_exact_reservation_passes) ... ok
+test_invalid_reservations_refuse_before_disk_access (test_check_full.DiskPreflightTests.test_invalid_reservations_refuse_before_disk_access) ... ok
+test_minimum_allowed_reservation (test_check_full.DiskPreflightTests.test_minimum_allowed_reservation) ... ok
+test_source_copy_is_additional (test_check_full.DiskPreflightTests.test_source_copy_is_additional) ... ok
+test_disk_only_ignores_optional_nonexistent_source (test_check_full.DriverPreflightTests.test_disk_only_ignores_optional_nonexistent_source) ... ok
+test_disk_only_low_space_refuses (test_check_full.DriverPreflightTests.test_disk_only_low_space_refuses) ... ok
+test_disk_only_success_does_not_claim_build_or_touch_inputs (test_check_full.DriverPreflightTests.test_disk_only_success_does_not_claim_build_or_touch_inputs) ... ok
+test_existing_scratch_refuses_without_modification (test_check_full.DriverPreflightTests.test_existing_scratch_refuses_without_modification) ... ok
+test_missing_parent_refuses_without_creation (test_check_full.DriverPreflightTests.test_missing_parent_refuses_without_creation) ... ok
+test_normal_mode_missing_source_blobs_refuse (test_check_full.DriverPreflightTests.test_normal_mode_missing_source_blobs_refuse) ... ok
+test_normal_mode_rechecks_disk_with_source_copy_size (test_check_full.DriverPreflightTests.test_normal_mode_rechecks_disk_with_source_copy_size) ... ok
+test_normal_mode_refuses_disk_before_reading_source (test_check_full.DriverPreflightTests.test_normal_mode_refuses_disk_before_reading_source) ... ok
+test_normal_mode_still_rejects_overlapping_trees (test_check_full.DriverPreflightTests.test_normal_mode_still_rejects_overlapping_trees) ... ok
+test_normal_mode_still_requires_source (test_check_full.DriverPreflightTests.test_normal_mode_still_requires_source) ... ok
+
+----------------------------------------------------------------------
+Ran 15 tests in 0.018s
+
+OK
+
+Actual machine disk-only refusal (not a full build):
+Filesystem total: 1,073,741,824 bytes; free: 1,070,776,320 bytes
+No full Horizon source, compiler, Cargo dependencies or game jars downloaded.
+
+disk-only preflight:
+Disk preflight: 1,070,776,320 free bytes; reservation 3,221,225,472 bytes; additional source copy 0 bytes
+full build NOT STARTED: insufficient disk (reservation 3,221,225,472 bytes + source copy 0 bytes); do not download large build inputs here
+exit code: 1
+
+normal entry point, absent source, low disk:
+Disk preflight: 1,070,776,320 free bytes; reservation 3,221,225,472 bytes; additional source copy 0 bytes
+full build NOT STARTED: insufficient disk (reservation 3,221,225,472 bytes + source copy 0 bytes); do not download large build inputs here
+exit code: 1
+
+Python syntax: PASS (both changed Python files)
+
+Synthetic fixture generator check:
+6 synthetic fixtures verified
+exit code: 0
+
+NOT RUN: Rust debug/release/Clippy/companion tests in this checkpoint; previous 153-test evidence is historical.
+NOT RUN: full patched Horizon/companion compilation, engine/TCP/default regressions, actual host inventory, semantic content, isolated NeoForge or live joins.
+No full-build success inferred. Both finish gates and production sources unchanged.
+AST comparison: tracked-source hashing, companion wiring and lock audit unchanged.

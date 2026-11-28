@@ -1,0 +1,159 @@
+# Active continuation — shared adapter domain and admission fences (hosted validation pending)
+
+Continues verified remote HEAD458ce6fcc552086f9bebd0bfbfd2e58142448201 without replacing newer work.
+The patch now gives both Session phase transitions, translation and generated-queue
+access one shared transaction domain. Explicit NeoForge configure opts into keeping
+that domain through each whole admitted reply batch and real socket write completion.
+Queued batches capture physical-adapter + monotonic phase-incarnation fences at
+admission, and refuse stale/wrong-connection/unfenced execution. New opaque prepared
+originals retain that same fence and use direct framing, not a second translation.
+Reconstructed-original phase checks and adaptation share a transaction as well.
+Ordinary vanilla/Horizon emission does not acquire the new domain across socket I/O.
+Cancellation retains its independent physical closer so blocked emission can unwind.
+
+Five new actual-protocol regressions cover both transitions/queue drains blocked by
+the same domain, emission/preparation ordering, re-entry/wrong-connection staleness,
+zero-output stale/unfenced/finish batch refusal, and TCP compression/encryption matrix.
+Existing policy/bootstrap entry tests now establish real protocol767 configuration
+instead of using unadapted memory connections. Driver minima require all17 owner /
+22 protocol-framing regressions (previous minima did not require all new a1 tests).
+Local patch/reverse/restoration+endpoint9/table1 and Python driver35/metadata28 pass.
+Full actual-client typecheck and these new socket/owner tests are PENDING until this
+new source's own standard hosted workflow finishes; do NOT infer they ran locally.
+
+Early inspection is no longer approval-blocked: prior a1fdf5c full run46163205119
+was observed IN_PROGRESS in its full engine step, not successful. Its metadata runs
+46163205043/46163209959 succeeded. Retain its exact-SHA artifact on completion.
+
+This is substantive central serialization work, NOT full owner completion. Dispatch,
+all generic prepared jobs/adapter-generated queues across epochs, negotiated split
+grants and routing, connection-wide login/play resource policy, asynchronous host
+completion and profile-safe reconnect still need completion/proof. Legacy Vec-returning
+preparation/detached framing seams remain caller-serialized and grant no authority.
+Both finish refusals and default split/flags opt-outs remain. **30/100; CANNOT JOIN.**
+No partial credit, rubric changes, mod rewrites, live tests, merge, force-push,
+visibility or schedule changes. Every published commit has required AI attribution.
+
+--- Prior checkpoint follows ---
+
+# Current milestone attempt — full owner not yet complete
+
+Published runtime [`a1fdf5c`](https://github.com/horizon-rust-mod-rewrites/horizon-neoforge-compat/commit/a1fdf5c83a36f3035b94a12a9477c4cef19d097f)
+adds detached cancellation, bounded absolute configuration policy and safe
+explicit-profile Transfer refusal. Local checks pass; actual full-engine hosted
+results await authorized inspection. See NEXT_AGENT.md and
+`docs/validation-owner-a1fdf5c-local.md` for exact evidence and blockers.
+**30/100, zero newly completed criteria; CANNOT JOIN.** Both finish refusals and
+default split/flag opt-outs remain. Earlier successful runs validate their own
+recorded source, not this new runtime patch.
+
+# Current milestone attempt (full validation pending)
+
+The new actual-path patch adds physical detached cancellation + shared terminal
+invalidation, an explicit-profile epoch cumulative/deadline policy, and automatic
+Transfer refusal instead of profile-less fallback. See NEXT_AGENT.md for policy,
+regressions and limitations. This is NOT full connection ownership: adapter phase
+and queue serialization, real bidirectional split authority, connection-wide
+budgets and complete profile lifecycle remain missing. No criterion awarded;
+**30/100, CANNOT JOIN**, all finish/default opt-out gates retained. Older exact-SHA
+validation below applies only to that recorded source until a new run succeeds.
+
+# Next production milestone: one ordered connection owner
+
+Status: **partial runtime prerequisite implemented; full owner NOT complete**.
+At source `d0c05270057bc69da8082a229dc265f5d4929bdf`, actual early configure
+uses the merged per-configuration bridge owner plus awaited, capacity-charged
+batch writes, cancellation, terminal physical closure, old-reader invalidation
+even without a shared writer, and immediate bridge reset.
+Selected actual-engine validation [run46161098482](https://github.com/horizon-rust-mod-rewrites/horizon-neoforge-compat/actions/runs/46161098482)
+passes12 owner tests (plus other retained suites in NEXT_AGENT.md). This does NOT
+serialize both adapter transitions, prepared originals, adapter queues or stale
+callbacks under one connection owner. Production split remains disabled. The
+acceptance matrix below remains the gate, not a claim already satisfied.
+`owner` is in_progress and earns zero of its4 points; overall remains30/100.
+
+Write receipts establish worker write_all completion only, never peer receipt,
+flush, semantic host completion or negotiated split authority. The early stack
+guard closes on every exit because finish/play remain deliberately unsupported.
+This continues NEXT_AGENT.md's first dependency, not a new handshake claim.
+Target remains MC1.21.1 / protocol767 / NeoForge21.1.248, pinned Horizon
+`ae632edf48f6cae3ba52a5c81523ec712488c9cc`.
+
+## Why the existing seams are not enough
+
+The actual inbound decoder, pure outbound preparer and synthetic TCP matrix pass
+at `fb0294b4976bd78d4ee4cbfce44a6f049e0a4307`; see
+[horizon-split-seam.md](horizon-split-seam.md),
+[horizon-split-outbound-seam.md](horizon-split-outbound-seam.md) and retained
+`integration/hosted-46087704109-full-check.txt`. Those tests assemble boundaries
+manually. They do not install production routing or provide shared ownership.
+
+Reading both adapter phases is not synchronization. Detached NETWORK preparation
+cannot attest a live socket/epoch. Existing QueuedWriter's ordinary 16MiB budget
+is not atomic fragmented-batch admission, idle expiry or awaited completion.
+No runtime caller may infer split authority from a registration list, packet
+threshold, successful decoding or preparation.
+
+## Ownership contract to implement in the actual client
+
+Choose an owner architecture only after inspecting the actual connection and
+adapter code at the pin. An event-loop/actor is a possible approach, not an
+implemented API or mandate. Its serialization domain MUST encompass:
+
+- Both adapter phase transitions and the exact connection/configuration epoch.
+- Socket ingress, reconstructed-original decoding and actual host dispatch.
+- Negotiated authority, Loader state, staging and revocable host inventory.
+- Outbound original preparation, adapter-generated inbound/outbound queues,
+  whole-batch reservation, serialized framing and queued/socket write completion.
+- Idle timers, cancellation, detached-socket closer and terminal teardown.
+
+Tag pending work and grants with an epoch. Reject stale callbacks, timer events,
+prepared originals and batches after disconnect/reconnect or reconfiguration.
+Async work completion must report to that owner; a new mutex around only the
+split assembler does not serialize the connection. Do not hold an engine/main
+thread lock across awaits or let cyclic wait dependencies deadlock teardown.
+
+## Actual production-path acceptance matrix
+
+| Area | Required assertions |
+| --- | --- |
+| Phase/epoch ordering | Deterministic barriers interleave ingress, outbound preparation, BOTH adapter transitions, queued replies and disconnect. No original observes a mixed phase/epoch; stale work has no effects on its successor. |
+| Negotiated authority | Exact selected setup and real installed handlers provide each direction's grant. Missing, wrong-direction, wrong-phase and stale grants refuse before effects. Unregister/revoke cannot leave usable cached grants. |
+| Exactly-once transforms | Prepare an original once, split once, map each envelope once. Unsplit prepared originals enter direct framing, never ordinary adapter translation again. Preserve both adapter-queue orders. |
+| Atomic admission | Reserve the whole batch under the owner. Budget/allocation/backpressure failure exposes zero fragments. Bound original count, envelope count, pending bytes, connection traffic and deadlines including ordinary traffic. Never introduce an unbounded queue. |
+| Serialized emission | No other original or phase transition interleaves within an admitted fragment batch. Compression/framing/encryption/counters occur at actual emission, not pure preparation. |
+| Awaited completion | A queue insertion is not dispatch/write success. Required task progress waits for actual host/main-thread and transport completion. Cancellation or failure after partial output terminates; no ambiguous replay or invented acknowledgment. |
+| Idle deadline | Partial assembly expires without any subsequent incoming packet. Ordinary traffic or duplicate fragments cannot extend its absolute lifetime. Timer cancellation/replacement is epoch-safe. |
+| Terminal cleanup | Malformed, unsupported, admission/dispatch/write, timeout and phase failures revoke grants, reset Loader/content and close the actual transport, including externally owned detached sockets. One terminal cause, no later success/ack. |
+| Lifecycle/profile | Exercise reconnect, transfer and configuration re-entry. Retain or deliberately renegotiate the explicit NeoForge profile; never accidentally fall through the ordinary `configure(..., None)` wrapper to vanilla behavior. |
+| Regression scope | Actual runtime entry points, not a second synthetic owner façade. Exercise split/unsplit cases and TCP across compression on/off × encryption on/off; preserve vanilla/Horizon routes. |
+
+Record exact tested source SHA, tests run, ignored tests, failure diagnostics and
+retained output. Update the tracker only for criteria actually satisfied. Do not
+call the owner complete on phase snapshots or standalone splitter tests alone.
+
+## Follow-on boundaries (not solved by the owner)
+
+1. Audit a full exact-version required/conditional configuration task matrix:
+   registration/negotiation, frozen registries, config files, data maps, extensible
+   enums, feature flags and split. For every task record authority, ordering,
+   bounds, real host effects, async barriers, timeout and failure/ack behavior.
+2. Host feature evidence must describe real enforced implementations, distinguish
+   unavailable from genuinely known-empty, bind to implementation lifetime and
+   revoke stale profiles. Peer/world flags and pack hashes are not evidence.
+3. Publish real both-way semantic content atomically: items/components, block
+   states/chunks/palettes, entities/serializers, recipes/tags/menus and remaining
+   content-bearing paths. Numeric maps alone do not supply those semantics.
+4. Define a usable extension contract: per-connection state, negotiated sends and
+   replies, configuration AND play routing, lifecycle/reset hooks, asynchronous
+   completion and bounded diagnostics. Current stateless callbacks are not this.
+5. Prove isolated exact loader-only and minimal fixture-mod interoperability with
+   meaningful bidirectional world interaction and reconnect/failure coverage.
+   Conditional tasks need controlled fixtures even if loader-only omits them.
+
+Both core and engine finish refusals remain during owner/task/content work. Once
+all prerequisites genuinely exist, replace hard refusals with reviewed conditional
+completion barriers in a dedicated milestone, and validate those barriers with
+live tests before claiming completion. Never remove the refusals unconditionally
+or forge finish simply to obtain a join log. Use isolated exact-version servers,
+not the auto-updating production pack. No individual mod rewrite belongs here.

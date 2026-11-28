@@ -1,0 +1,5 @@
+PASS: accepts only the expected local dependency addition to the actual pinned lock model
+PASS: rejects changed pinned dependency version
+PASS: rejects unexpected new dependency
+PASS: full-driver preparation helper wires the actual companion + shared tests into actual client sources
+NOT EXECUTED: driver Cargo subprocess path / full Horizon compilation and tests

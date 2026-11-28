@@ -1,0 +1,12 @@
+Executed Java/Rust differential rerun against final release binary, 2026-11-27.
+Rust 1.95.0, x86_64-unknown-linux-musl. Java 21 runtime/compiler per results.json.
+Preparation: see prepare.py, docs/java-reference.md, results.json source adaptation hashes.
+Invocation from checkout:
+python3 tests/reference/differential.py --scratch <external-scratch> --java-home <java21-home> --rust-bin <project>/target/x86_64-unknown-linux-musl/release/codec-reference --report <external-scratch>/results.json
+PASS 256 valid models, both encoders -> both decoders (1024 semantic comparisons)
+PASS 2 literal anchors in both independent encoders
+PASS 1711 shared malformed/truncation cases rejected by both
+PASS 6 Java-encodable/Rust-writer-refused boundary models (string, entry, body limits)
+PASS 9 explicitly classified upstream-accepts/Rust-rejects cases
+PASS 256 bounded smoke inputs: every Rust acceptance agrees (0 acceptances)
+PASS actual Java 21 / official MC 1.21.1 / source-extracted NeoForge 21.1.248 differential suite

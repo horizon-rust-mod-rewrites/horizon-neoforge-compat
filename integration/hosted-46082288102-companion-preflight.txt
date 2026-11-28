@@ -1,0 +1,79 @@
+##[group]Run set -euo pipefail
+2026-11-27T23:28:22.9760133Z [36;1mset -euo pipefail[0m
+2026-11-27T23:28:22.9760542Z [36;1mpython3 -m unittest discover -s integration -p 'test_*.py' -v[0m
+2026-11-27T23:28:22.9761041Z [36;1mpython3 fixtures/generate.py --check[0m
+2026-11-27T23:28:22.9761537Z [36;1mpython3 integration/check_bridge.py --target x86_64-unknown-linux-gnu[0m
+2026-11-27T23:28:22.9808369Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-11-27T23:28:22.9808782Z env:
+2026-11-27T23:28:22.9809042Z   CARGO_TERM_COLOR: never
+2026-11-27T23:28:22.9809327Z   CARGO_INCREMENTAL: 0
+2026-11-27T23:28:22.9809586Z   CARGO_BUILD_JOBS: 2
+2026-11-27T23:28:22.9809844Z   CARGO_PROFILE_DEV_DEBUG: 0
+2026-11-27T23:28:22.9810115Z ##[endgroup]
+2026-11-27T23:28:23.0876286Z test_below_reservation_refuses (test_check_full.DiskPreflightTests.test_below_reservation_refuses) ... ok
+2026-11-27T23:28:23.0878511Z test_exact_reservation_passes (test_check_full.DiskPreflightTests.test_exact_reservation_passes) ... ok
+2026-11-27T23:28:23.0887748Z test_invalid_reservations_refuse_before_disk_access (test_check_full.DiskPreflightTests.test_invalid_reservations_refuse_before_disk_access) ... ok
+2026-11-27T23:28:23.0889950Z test_minimum_allowed_reservation (test_check_full.DiskPreflightTests.test_minimum_allowed_reservation) ... ok
+2026-11-27T23:28:23.0894376Z test_source_copy_is_additional (test_check_full.DiskPreflightTests.test_source_copy_is_additional) ... ok
+2026-11-27T23:28:23.0911054Z test_disk_only_ignores_optional_nonexistent_source (test_check_full.DriverPreflightTests.test_disk_only_ignores_optional_nonexistent_source) ... ok
+2026-11-27T23:28:23.0921647Z test_disk_only_low_space_refuses (test_check_full.DriverPreflightTests.test_disk_only_low_space_refuses) ... ok
+2026-11-27T23:28:23.0933408Z test_disk_only_success_does_not_claim_build_or_touch_inputs (test_check_full.DriverPreflightTests.test_disk_only_success_does_not_claim_build_or_touch_inputs) ... ok
+2026-11-27T23:28:23.0945895Z test_existing_scratch_refuses_without_modification (test_check_full.DriverPreflightTests.test_existing_scratch_refuses_without_modification) ... ok
+2026-11-27T23:28:23.0957645Z test_missing_parent_refuses_without_creation (test_check_full.DriverPreflightTests.test_missing_parent_refuses_without_creation) ... ok
+2026-11-27T23:28:23.0970612Z test_normal_mode_missing_source_blobs_refuse (test_check_full.DriverPreflightTests.test_normal_mode_missing_source_blobs_refuse) ... ok
+2026-11-27T23:28:23.0984159Z test_normal_mode_rechecks_disk_with_source_copy_size (test_check_full.DriverPreflightTests.test_normal_mode_rechecks_disk_with_source_copy_size) ... ok
+2026-11-27T23:28:23.0995087Z test_normal_mode_refuses_disk_before_reading_source (test_check_full.DriverPreflightTests.test_normal_mode_refuses_disk_before_reading_source) ... ok
+2026-11-27T23:28:23.1005831Z test_normal_mode_still_rejects_overlapping_trees (test_check_full.DriverPreflightTests.test_normal_mode_still_rejects_overlapping_trees) ... ok
+2026-11-27T23:28:23.1025010Z test_normal_mode_still_requires_source (test_check_full.DriverPreflightTests.test_normal_mode_still_requires_source) ... ok
+2026-11-27T23:28:23.1028222Z test_client_did_not_link_core_refuses (test_full_contracts.LockAuditTests.test_client_did_not_link_core_refuses) ... ok
+2026-11-27T23:28:23.1031889Z test_core_from_registry_refuses (test_full_contracts.LockAuditTests.test_core_from_registry_refuses) ... ok
+2026-11-27T23:28:23.1035306Z test_core_not_added_refuses (test_full_contracts.LockAuditTests.test_core_not_added_refuses) ... ok
+2026-11-27T23:28:23.1038560Z test_duplicate_lock_identities_refuse_in_either_graph (test_full_contracts.LockAuditTests.test_duplicate_lock_identities_refuse_in_either_graph) ... ok
+2026-11-27T23:28:23.1040437Z test_existing_checksum_change_refuses (test_full_contracts.LockAuditTests.test_existing_checksum_change_refuses) ... ok
+2026-11-27T23:28:23.1042853Z test_existing_source_change_refuses (test_full_contracts.LockAuditTests.test_existing_source_change_refuses) ... ok
+2026-11-27T23:28:23.1044851Z test_existing_version_change_refuses (test_full_contracts.LockAuditTests.test_existing_version_change_refuses) ... ok
+2026-11-27T23:28:23.1047892Z test_extra_unexpected_package_refuses (test_full_contracts.LockAuditTests.test_extra_unexpected_package_refuses) ... ok
+2026-11-27T23:28:23.1050780Z test_lock_metadata_changes_refuse (test_full_contracts.LockAuditTests.test_lock_metadata_changes_refuse) ... ok
+2026-11-27T23:28:23.1053994Z test_new_transitive_dependency_on_core_refuses (test_full_contracts.LockAuditTests.test_new_transitive_dependency_on_core_refuses) ... ok
+2026-11-27T23:28:23.1056735Z test_only_local_core_addition_passes (test_full_contracts.LockAuditTests.test_only_local_core_addition_passes) ... ok
+2026-11-27T23:28:23.1058741Z test_removed_existing_package_refuses (test_full_contracts.LockAuditTests.test_removed_existing_package_refuses) ... ok
+2026-11-27T23:28:23.1060666Z test_unexpected_client_dependency_refuses (test_full_contracts.LockAuditTests.test_unexpected_client_dependency_refuses) ... ok
+2026-11-27T23:28:23.1063877Z test_empty_or_shrunken_or_failed_suite_refuses (test_full_contracts.TestSummaryTests.test_empty_or_shrunken_or_failed_suite_refuses) ... ok
+2026-11-27T23:28:23.1074544Z test_exact_minimum_passes (test_full_contracts.TestSummaryTests.test_exact_minimum_passes) ... ok
+2026-11-27T23:28:23.1075733Z test_ignored_tests_do_not_count_as_passes (test_full_contracts.TestSummaryTests.test_ignored_tests_do_not_count_as_passes) ... ok
+2026-11-27T23:28:23.1076950Z test_pinned_network_suite_with_known_ignored_tests_passes (test_full_contracts.TestSummaryTests.test_pinned_network_suite_with_known_ignored_tests_passes) ... ok
+2026-11-27T23:28:23.1078281Z test_retained_hosted_transcript_satisfies_historical_minima (test_full_contracts.TestSummaryTests.test_retained_hosted_transcript_satisfies_historical_minima) ... ok
+2026-11-27T23:28:23.1084878Z test_actual_glue_bytes_and_explicit_dependency_are_wired_only_in_scratch (test_full_contracts.WiringTests.test_actual_glue_bytes_and_explicit_dependency_are_wired_only_in_scratch) ... ok
+2026-11-27T23:28:23.1093573Z test_unexpected_manifest_shape_refuses (test_full_contracts.WiringTests.test_unexpected_manifest_shape_refuses) ... ok
+2026-11-27T23:28:23.1094357Z 
+2026-11-27T23:28:23.1094606Z ----------------------------------------------------------------------
+2026-11-27T23:28:23.1095099Z Ran 35 tests in 0.022s
+2026-11-27T23:28:23.1095269Z 
+2026-11-27T23:28:23.1095381Z OK
+2026-11-27T23:28:23.1432073Z 6 synthetic fixtures verified
+2026-11-27T23:28:23.2279484Z    Compiling horizon-neoforge-compat v0.1.0 (/home/runner/work/horizon-neoforge-compat/horizon-neoforge-compat)
+2026-11-27T23:28:23.9418665Z     Finished `dev` profile [unoptimized] target(s) in 0.75s
+2026-11-27T23:28:24.2327415Z 
+2026-11-27T23:28:24.2327910Z running 17 tests
+2026-11-27T23:28:24.2338152Z test compat_bridge::tests::actual_bridge_reset_is_terminal_and_new_factory_epoch_is_independent ... ok
+2026-11-27T23:28:24.2339737Z test compat_bridge::tests::failure_payload_never_becomes_success ... ok
+2026-11-27T23:28:24.2341110Z test compat_bridge::tests::inventory_is_checked_before_registration_provider_runs ... ok
+2026-11-27T23:28:24.2342348Z test compat_bridge::tests::actual_wire_query_setup_common_then_finish_refusal ... ok
+2026-11-27T23:28:24.2434050Z test compat_bridge::tests::inventory_mismatch_never_constructs_loader_state ... ok
+2026-11-27T23:28:24.2435237Z test compat_bridge::tests::peer_setup_cannot_select_a_feature_inventory_the_host_never_attested ... ok
+2026-11-27T23:28:24.2436621Z test net::early_configuration::tests::early_loader_delivery_preserves_body_and_replies_without_an_accepted_horizon_epoch ... ok
+2026-11-27T23:28:24.2437913Z test compat_bridge::tests::unknown_required_task_and_reconnect_cleanup ... ok
+2026-11-27T23:28:24.2439018Z test compat_bridge::tests::unavailable_host_inventory_never_offers_feature_or_split_support ... ok
+2026-11-27T23:28:24.2440583Z test compat_bridge::tests::peer_announcements_cannot_enable_unimplemented_required_tasks ... ok
+2026-11-27T23:28:24.2441924Z test net::early_configuration::tests::profile_rejects_wrong_baselines_and_reserved_or_duplicate_adapters ... ok
+2026-11-27T23:28:24.2443487Z test net::early_configuration::tests::finish_refuses_pending_tasks_and_drop_resets_before_next_epoch ... ok
+2026-11-27T23:28:24.2444895Z test net::early_configuration::tests::payload_refusal_diagnostics_do_not_reflect_invalid_or_unbounded_identifiers ... ok
+2026-11-27T23:28:24.2446383Z test net::early_configuration::tests::invalid_batch_is_rejected_whole_and_even_optimistic_bridge_cannot_enter_play ... ok
+2026-11-27T23:28:24.2447719Z test net::early_configuration::tests::undeclared_or_oversized_payloads_never_reach_bridge ... ok
+2026-11-27T23:28:24.2448886Z test net::early_configuration::tests::unsupported_neoforge_tasks_poison_the_epoch_and_cannot_finish ... ok
+2026-11-27T23:28:24.2450021Z test net::early_configuration::tests::unwinding_external_bridge_panic_poisoned_epoch_cannot_resume_or_finish ... ok
+2026-11-27T23:28:24.2450496Z 
+2026-11-27T23:28:24.2450765Z test result: ok. 17 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+2026-11-27T23:28:24.2451100Z 
+2026-11-27T23:28:24.2451625Z PASS: actual library/companion/patched-endpoint contract; NOT full Horizon or sockets
+2026-11-27T23:28:24.2569642Z 

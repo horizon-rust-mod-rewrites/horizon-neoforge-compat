@@ -1,0 +1,1046 @@
+ï»¿2026-11-28T12:47:23.3310070Z Current runner version: '2.338.2'
+2026-11-28T12:47:23.3327495Z ##[group]Runner Image Provisioner
+2026-11-28T12:47:23.3328141Z Hosted Compute Agent
+2026-11-28T12:47:23.3328614Z Version: 20261111.635
+2026-11-28T12:47:23.3329082Z Commit: b8a594ea514ff44cadb5342986c68b1eac6e22ed
+2026-11-28T12:47:23.3329641Z Build Date: 2026-11-11T01:49:01Z
+2026-11-28T12:47:23.3330148Z Worker ID: {89a70513-a95d-4351-b006-292415fe512a}
+2026-11-28T12:47:23.3330664Z Region: us-west-2
+2026-11-28T12:47:23.3331088Z Cloud: AWS
+2026-11-28T12:47:23.3331485Z ##[endgroup]
+2026-11-28T12:47:23.3332372Z ##[group]Operating System
+2026-11-28T12:47:23.3332817Z Ubuntu
+2026-11-28T12:47:23.3333186Z 24.04.5
+2026-11-28T12:47:23.3333531Z LTS
+2026-11-28T12:47:23.3333907Z ##[endgroup]
+2026-11-28T12:47:23.3334308Z ##[group]Runner Image
+2026-11-28T12:47:23.3334766Z Image: ubuntu-24.04
+2026-11-28T12:47:23.3335424Z Version: 20261122.23.1
+2026-11-28T12:47:23.3336406Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20261122.23/images/ubuntu/Ubuntu2404-Readme.md
+2026-11-28T12:47:23.3337647Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20261122.23
+2026-11-28T12:47:23.3338371Z ##[endgroup]
+2026-11-28T12:47:23.3339200Z ##[group]GITHUB_TOKEN Permissions
+2026-11-28T12:47:23.3340891Z Contents: read
+2026-11-28T12:47:23.3341328Z Metadata: read
+2026-11-28T12:47:23.3341706Z ##[endgroup]
+2026-11-28T12:47:23.3343180Z Secret source: Actions
+2026-11-28T12:47:23.3343811Z Cache mode: write
+2026-11-28T12:47:23.3344359Z Prepare workflow directory
+2026-11-28T12:47:23.3705920Z Prepare all required actions
+2026-11-28T12:47:23.3745054Z Getting action download info
+2026-11-28T12:47:23.6796765Z Download action repository 'actions/checkout@11d5960a326750d5838078e36cf38b85af677262' (SHA:11d5960a326750d5838078e36cf38b85af677262)
+2026-11-28T12:47:24.7670421Z Download action repository 'actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02' (SHA:ea165f8d65b6e75b540449e92b4886f43607fa02)
+2026-11-28T12:47:25.1098211Z Complete job name: full-integration
+2026-11-28T12:47:25.1758818Z ##[group]Run actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+2026-11-28T12:47:25.1759629Z with:
+2026-11-28T12:47:25.1760094Z   persist-credentials: false
+2026-11-28T12:47:25.1760891Z   repository: horizon-rust-mod-rewrites/horizon-neoforge-compat
+2026-11-28T12:47:25.1767248Z   token: ***
+2026-11-28T12:47:25.1767645Z   ssh-strict: true
+2026-11-28T12:47:25.1767977Z   ssh-user: git
+2026-11-28T12:47:25.1768271Z   clean: true
+2026-11-28T12:47:25.1768649Z   sparse-checkout-cone-mode: true
+2026-11-28T12:47:25.1769098Z   fetch-depth: 1
+2026-11-28T12:47:25.1769445Z   fetch-tags: false
+2026-11-28T12:47:25.1769780Z   show-progress: true
+2026-11-28T12:47:25.1770115Z   lfs: false
+2026-11-28T12:47:25.1770452Z   submodules: false
+2026-11-28T12:47:25.1770795Z   set-safe-directory: true
+2026-11-28T12:47:25.1771227Z   allow-unsafe-pr-checkout: false
+2026-11-28T12:47:25.1771918Z env:
+2026-11-28T12:47:25.1772207Z   CARGO_TERM_COLOR: never
+2026-11-28T12:47:25.1772623Z   CARGO_INCREMENTAL: 0
+2026-11-28T12:47:25.1773073Z   CARGO_BUILD_JOBS: 2
+2026-11-28T12:47:25.1773443Z   CARGO_PROFILE_DEV_DEBUG: 0
+2026-11-28T12:47:25.1773873Z   CARGO_PROFILE_TEST_DEBUG: 0
+2026-11-28T12:47:25.1774669Z   CARGO_HOME: /home/runner/work/horizon-neoforge-compat/horizon-neoforge-compat/../neoforge-cargo
+2026-11-28T12:47:25.1776119Z   HORIZON_PIN: /home/runner/work/horizon-neoforge-compat/horizon-neoforge-compat/../horizon-pin
+2026-11-28T12:47:25.1777444Z   HORIZON_SCRATCH: /home/runner/work/horizon-neoforge-compat/horizon-neoforge-compat/../horizon-full
+2026-11-28T12:47:25.1778361Z   HORIZON_TELEMETRY_URL: off
+2026-11-28T12:47:25.1778788Z   RUSTFLAGS: -C debuginfo=0
+2026-11-28T12:47:25.1779159Z ##[endgroup]
+2026-11-28T12:47:27.5495082Z Syncing repository: horizon-rust-mod-rewrites/horizon-neoforge-compat
+2026-11-28T12:47:27.5497010Z ##[group]Getting Git version info
+2026-11-28T12:47:27.5497648Z Working directory is '/home/runner/work/horizon-neoforge-compat/horizon-neoforge-compat'
+2026-11-28T12:47:27.5498663Z [command]/usr/bin/git version
+2026-11-28T12:47:27.6180667Z git version 2.56.1
+2026-11-28T12:47:27.6193916Z ##[endgroup]
+2026-11-28T12:47:27.6201260Z Temporarily overriding HOME='/home/runner/work/_temp/fb88d7d1-e2ba-4a8c-9e7e-f4c6cd9c58d2' before making global git config changes
+2026-11-28T12:47:27.6202255Z Adding repository directory to the temporary git global config as a safe directory
+2026-11-28T12:47:27.6206686Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/horizon-neoforge-compat/horizon-neoforge-compat
+2026-11-28T12:47:27.6577214Z Deleting the contents of '/home/runner/work/horizon-neoforge-compat/horizon-neoforge-compat'
+2026-11-28T12:47:27.6578319Z ##[group]Initializing the repository
+2026-11-28T12:47:27.6583363Z [command]/usr/bin/git init /home/runner/work/horizon-neoforge-compat/horizon-neoforge-compat
+2026-11-28T12:47:27.6991310Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-11-28T12:47:27.6991900Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-11-28T12:47:27.6992496Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-11-28T12:47:27.6992894Z hint: call:
+2026-11-28T12:47:27.6993119Z hint:
+2026-11-28T12:47:27.6993471Z hint: 	git config --global init.defaultBranch <name>
+2026-11-28T12:47:27.6993792Z hint:
+2026-11-28T12:47:27.6994232Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-11-28T12:47:27.6994771Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-11-28T12:47:27.6995333Z hint:
+2026-11-28T12:47:27.6995608Z hint: 	git branch -m <name>
+2026-11-28T12:47:27.6995865Z hint:
+2026-11-28T12:47:27.6996219Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-11-28T12:47:27.7003170Z Initialized empty Git repository in /home/runner/work/horizon-neoforge-compat/horizon-neoforge-compat/.git/
+2026-11-28T12:47:27.7010415Z [command]/usr/bin/git remote add origin https://github.com/horizon-rust-mod-rewrites/horizon-neoforge-compat
+2026-11-28T12:47:27.7055911Z ##[endgroup]
+2026-11-28T12:47:27.7056451Z ##[group]Disabling automatic garbage collection
+2026-11-28T12:47:27.7057216Z [command]/usr/bin/git config --local gc.auto 0
+2026-11-28T12:47:27.7079530Z ##[endgroup]
+2026-11-28T12:47:27.7079993Z ##[group]Setting up auth
+2026-11-28T12:47:27.7083951Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-11-28T12:47:27.7109669Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-11-28T12:47:27.9025305Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-11-28T12:47:27.9048213Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-11-28T12:47:27.9197351Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-11-28T12:47:27.9223786Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-11-28T12:47:27.9372932Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-11-28T12:47:27.9399790Z ##[endgroup]
+2026-11-28T12:47:27.9400404Z ##[group]Fetching the repository
+2026-11-28T12:47:27.9412964Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +647f4300b365b2739657bb450b0e780b53273d35:refs/remotes/origin/feat/neoforge-21.1.248-early-handshake
+2026-11-28T12:47:28.4080893Z From https://github.com/horizon-rust-mod-rewrites/horizon-neoforge-compat
+2026-11-28T12:47:28.4081851Z  * [new ref]         647f4300b365b2739657bb450b0e780b53273d35 -> origin/feat/neoforge-21.1.248-early-handshake
+2026-11-28T12:47:28.4085214Z ##[endgroup]
+2026-11-28T12:47:28.4085802Z ##[group]Determining the checkout info
+2026-11-28T12:47:28.4087560Z ##[endgroup]
+2026-11-28T12:47:28.4091794Z [command]/usr/bin/git sparse-checkout disable
+2026-11-28T12:47:28.4151574Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-11-28T12:47:28.4171951Z ##[group]Checking out the ref
+2026-11-28T12:47:28.4175526Z [command]/usr/bin/git checkout --progress --force -B feat/neoforge-21.1.248-early-handshake refs/remotes/origin/feat/neoforge-21.1.248-early-handshake
+2026-11-28T12:47:28.4296363Z Switched to a new branch 'feat/neoforge-21.1.248-early-handshake'
+2026-11-28T12:47:28.4302200Z branch 'feat/neoforge-21.1.248-early-handshake' set up to track 'origin/feat/neoforge-21.1.248-early-handshake'.
+2026-11-28T12:47:28.4305837Z ##[endgroup]
+2026-11-28T12:47:28.4336547Z [command]/usr/bin/git log -1 --format=%H
+2026-11-28T12:47:28.4353472Z 647f4300b365b2739657bb450b0e780b53273d35
+2026-11-28T12:47:28.4362013Z ##[group]Removing auth
+2026-11-28T12:47:28.4362646Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-11-28T12:47:28.4384660Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-11-28T12:47:28.4531371Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-11-28T12:47:28.4551682Z http.https://github.com/.extraheader
+2026-11-28T12:47:28.4556838Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+2026-11-28T12:47:28.4577773Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-11-28T12:47:28.4720037Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-11-28T12:47:28.4742017Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-11-28T12:47:28.4883057Z ##[endgroup]
+2026-11-28T12:47:28.5034184Z ##[group]Run set -euo pipefail
+2026-11-28T12:47:28.5034547Z [36;1mset -euo pipefail[0m
+2026-11-28T12:47:28.5035049Z [36;1mmkdir -p ci-evidence[0m
+2026-11-28T12:47:28.5035405Z [36;1mdf -h "$RUNNER_TEMP" | tee ci-evidence/disk-before.txt[0m
+2026-11-28T12:47:28.5035800Z [36;1mpython3 integration/check_full.py --scratch "$HORIZON_SCRATCH" \[0m
+2026-11-28T12:47:28.5036304Z [36;1m  --minimum-build-free-gib 10 --disk-preflight-only | tee ci-evidence/disk-preflight.txt[0m
+2026-11-28T12:47:28.9073467Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-11-28T12:47:28.9073771Z env:
+2026-11-28T12:47:28.9074083Z   CARGO_TERM_COLOR: never
+2026-11-28T12:47:28.9074320Z   CARGO_INCREMENTAL: 0
+2026-11-28T12:47:28.9074559Z   CARGO_BUILD_JOBS: 2
+2026-11-28T12:47:28.9074786Z   CARGO_PROFILE_DEV_DEBUG: 0
+2026-11-28T12:47:28.9075303Z   CARGO_PROFILE_TEST_DEBUG: 0
+2026-11-28T12:47:28.9075806Z   CARGO_HOME: /home/runner/work/horizon-neoforge-compat/horizon-neoforge-compat/../neoforge-cargo
+2026-11-28T12:47:28.9076348Z   HORIZON_PIN: /home/runner/work/horizon-neoforge-compat/horizon-neoforge-compat/../horizon-pin
+2026-11-28T12:47:28.9076901Z   HORIZON_SCRATCH: /home/runner/work/horizon-neoforge-compat/horizon-neoforge-compat/../horizon-full
+2026-11-28T12:47:28.9077289Z   HORIZON_TELEMETRY_URL: off
+2026-11-28T12:47:28.9077525Z   RUSTFLAGS: -C debuginfo=0
+2026-11-28T12:47:28.9077757Z ##[endgroup]
+2026-11-28T12:47:28.9153045Z Filesystem            Size  Used Avail Use% Mounted on
+2026-11-28T12:47:28.9153397Z /dev/mapper/cow-root  145G   57G   88G  40% /
+2026-11-28T12:47:29.0263990Z Disk preflight: 94,370,557,952 free bytes; reservation 10,737,418,240 bytes; additional source copy 0 bytes
+2026-11-28T12:47:29.0265075Z Disk-only preflight passed lower bound. NO source, toolchain, dependency, compilation, engine/TCP or join checks executed; build fit is NOT guaranteed.
+2026-11-28T12:47:29.0361780Z ##[group]Run set -euo pipefail
+2026-11-28T12:47:29.0362077Z [36;1mset -euo pipefail[0m
+2026-11-28T12:47:29.0362397Z [36;1msudo timeout 300 apt-get update[0m
+2026-11-28T12:47:29.0362725Z [36;1msudo timeout 300 apt-get install -y --no-install-recommends \[0m
+2026-11-28T12:47:29.0363130Z [36;1m  build-essential pkg-config libasound2-dev libudev-dev[0m
+2026-11-28T12:47:29.0363667Z [36;1mrustup toolchain install 1.97.0 --profile minimal --component rustfmt --component clippy[0m
+2026-11-28T12:47:29.0364104Z [36;1mrustup default 1.97.0[0m
+2026-11-28T12:47:29.0364398Z [36;1mrustc --version | tee ci-evidence/toolchain.txt[0m
+2026-11-28T12:47:29.0364773Z [36;1mcargo --version | tee -a ci-evidence/toolchain.txt[0m
+2026-11-28T12:47:29.0384026Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-11-28T12:47:29.0384334Z env:
+2026-11-28T12:47:29.0384655Z   CARGO_TERM_COLOR: never
+2026-11-28T12:47:29.0385057Z   CARGO_INCREMENTAL: 0
+2026-11-28T12:47:29.0385416Z   CARGO_BUILD_JOBS: 2
+2026-11-28T12:47:29.0385641Z   CARGO_PROFILE_DEV_DEBUG: 0
+2026-11-28T12:47:29.0385897Z   CARGO_PROFILE_TEST_DEBUG: 0
+2026-11-28T12:47:29.0386390Z   CARGO_HOME: /home/runner/work/horizon-neoforge-compat/horizon-neoforge-compat/../neoforge-cargo
+2026-11-28T12:47:29.0386952Z   HORIZON_PIN: /home/runner/work/horizon-neoforge-compat/horizon-neoforge-compat/../horizon-pin
+2026-11-28T12:47:29.0387489Z   HORIZON_SCRATCH: /home/runner/work/horizon-neoforge-compat/horizon-neoforge-compat/../horizon-full
+2026-11-28T12:47:29.0387913Z   HORIZON_TELEMETRY_URL: off
+2026-11-28T12:47:29.0388171Z   RUSTFLAGS: -C debuginfo=0
+2026-11-28T12:47:29.0388410Z ##[endgroup]
+2026-11-28T12:47:29.1781210Z Get:1 file:/etc/apt/apt-mirrors.txt Mirrorlist [152 B]
+2026-11-28T12:47:29.1925560Z Hit:2 http://us-west-2.ec2.archive.ubuntu.com/ubuntu noble InRelease
+2026-11-28T12:47:29.1945224Z Get:3 http://us-west-2.ec2.archive.ubuntu.com/ubuntu noble-updates InRelease [126 kB]
+2026-11-28T12:47:29.2291041Z Get:4 http://us-west-2.ec2.archive.ubuntu.com/ubuntu noble-backports InRelease [126 kB]
+2026-11-28T12:47:29.2302780Z Get:5 http://us-west-2.ec2.archive.ubuntu.com/ubuntu noble-security InRelease [126 kB]
+2026-11-28T12:47:29.2944648Z Get:6 https://packages.microsoft.com/ubuntu/24.04/prod noble InRelease [3600 B]
+2026-11-28T12:47:29.3691072Z Get:7 http://us-west-2.ec2.archive.ubuntu.com/ubuntu noble-updates/main amd64 Packages [1492 kB]
+2026-11-28T12:47:29.3919611Z Get:8 http://us-west-2.ec2.archive.ubuntu.com/ubuntu noble-updates/main Translation-en [321 kB]
+2026-11-28T12:47:29.3964658Z Get:9 http://us-west-2.ec2.archive.ubuntu.com/ubuntu noble-updates/universe amd64 Packages [1716 kB]
+2026-11-28T12:47:29.4104003Z Get:10 http://us-west-2.ec2.archive.ubuntu.com/ubuntu noble-updates/restricted amd64 Packages [1949 kB]
+2026-11-28T12:47:29.4221398Z Get:11 http://us-west-2.ec2.archive.ubuntu.com/ubuntu noble-updates/restricted Translation-en [448 kB]
+2026-11-28T12:47:29.4395942Z Get:12 http://us-west-2.ec2.archive.ubuntu.com/ubuntu noble-security/main amd64 Packages [1231 kB]
+2026-11-28T12:47:29.4466262Z Get:13 http://us-west-2.ec2.archive.ubuntu.com/ubuntu noble-security/main Translation-en [243 kB]
+2026-11-28T12:47:29.4495121Z Get:14 http://us-west-2.ec2.archive.ubuntu.com/ubuntu noble-security/universe amd64 Packages [1233 kB]
+2026-11-28T12:47:29.4567928Z Get:15 http://us-west-2.ec2.archive.ubuntu.com/ubuntu noble-security/universe Translation-en [249 kB]
+2026-11-28T12:47:29.4601733Z Get:16 http://us-west-2.ec2.archive.ubuntu.com/ubuntu noble-security/restricted amd64 Packages [1842 kB]
+2026-11-28T12:47:29.4733701Z Get:17 http://us-west-2.ec2.archive.ubuntu.com/ubuntu noble-security/restricted Translation-en [429 kB]
+2026-11-28T12:47:29.5210744Z Get:18 https://packages.microsoft.com/ubuntu/24.04/prod noble/main amd64 Packages [882 kB]
+2026-11-28T12:47:29.6109298Z Get:19 https://packages.microsoft.com/ubuntu/24.04/prod noble/main arm64 Packages [804 kB]
+2026-11-28T12:47:39.6492922Z Fetched 13.2 MB in 1s (11.4 MB/s)
+2026-11-28T12:47:40.6283447Z Reading package lists...
+2026-11-28T12:47:40.6571331Z Reading package lists...
+2026-11-28T12:47:40.8453254Z Building dependency tree...
+2026-11-28T12:47:40.8458289Z Reading state information...
+2026-11-28T12:47:40.9782220Z pkg-config is already the newest version (1.8.1-2build1).
+2026-11-28T12:47:40.9783085Z The following additional packages will be installed:
+2026-11-28T12:47:40.9787269Z   libasound2-data libasound2t64
+2026-11-28T12:47:40.9793394Z Suggested packages:
+2026-11-28T12:47:40.9793871Z   alsa-utils libasound2-doc libasound2-plugins
+2026-11-28T12:47:40.9794636Z Recommended packages:
+2026-11-28T12:47:40.9795242Z   alsa-ucm-conf alsa-topology-conf
+2026-11-28T12:47:41.0274148Z The following NEW packages will be installed:
+2026-11-28T12:47:41.0279264Z   build-essential libasound2-dev libudev-dev
+2026-11-28T12:47:41.0283217Z The following packages will be upgraded:
+2026-11-28T12:47:41.0288661Z   libasound2-data libasound2t64
+2026-11-28T12:47:41.0428967Z 2 upgraded, 3 newly installed, 0 to remove and 40 not upgraded.
+2026-11-28T12:47:41.0429319Z Need to get 564 kB of archives.
+2026-11-28T12:47:41.0429690Z After this operation, 936 kB of additional disk space will be used.
+2026-11-28T12:47:41.0430104Z Get:1 file:/etc/apt/apt-mirrors.txt Mirrorlist [152 B]
+2026-11-28T12:47:41.1464297Z Get:2 http://us-west-2.ec2.archive.ubuntu.com/ubuntu noble/main amd64 build-essential amd64 12.10ubuntu1 [4928 B]
+2026-11-28T12:47:41.2196105Z Get:3 http://us-west-2.ec2.archive.ubuntu.com/ubuntu noble-updates/main amd64 libasound2t64 amd64 1.2.11-1ubuntu0.5 [400 kB]
+2026-11-28T12:47:41.3759553Z Get:4 http://us-west-2.ec2.archive.ubuntu.com/ubuntu noble-updates/main amd64 libasound2-data all 1.2.11-1ubuntu0.5 [21.6 kB]
+2026-11-28T12:47:41.4595610Z Get:5 http://us-west-2.ec2.archive.ubuntu.com/ubuntu noble-updates/main amd64 libasound2-dev amd64 1.2.11-1ubuntu0.5 [115 kB]
+2026-11-28T12:47:41.5442432Z Get:6 http://us-west-2.ec2.archive.ubuntu.com/ubuntu noble-updates/main amd64 libudev-dev amd64 255.4-1ubuntu8.19 [22.0 kB]
+2026-11-28T12:47:42.4642849Z Fetched 564 kB in 1s (1107 kB/s)
+2026-11-28T12:47:42.5546380Z Selecting previously unselected package build-essential.
+2026-11-28T12:47:42.7784618Z (Reading database ... 
+2026-11-28T12:47:42.7785143Z (Reading database ... 5%
+2026-11-28T12:47:42.7790689Z (Reading database ... 10%
+2026-11-28T12:47:42.7791013Z (Reading database ... 15%
+2026-11-28T12:47:42.7791239Z (Reading database ... 20%
+2026-11-28T12:47:42.7791471Z (Reading database ... 25%
+2026-11-28T12:47:42.7791702Z (Reading database ... 30%
+2026-11-28T12:47:42.7791940Z (Reading database ... 35%
+2026-11-28T12:47:42.7792196Z (Reading database ... 40%
+2026-11-28T12:47:42.7792425Z (Reading database ... 45%
+2026-11-28T12:47:42.7792641Z (Reading database ... 50%
+2026-11-28T12:47:42.8469666Z (Reading database ... 55%
+2026-11-28T12:47:43.2272007Z (Reading database ... 60%
+2026-11-28T12:47:43.2990234Z (Reading database ... 65%
+2026-11-28T12:47:43.3695871Z (Reading database ... 70%
+2026-11-28T12:47:43.4617387Z (Reading database ... 75%
+2026-11-28T12:47:44.0336078Z (Reading database ... 80%
+2026-11-28T12:47:44.4885654Z (Reading database ... 85%
+2026-11-28T12:47:45.7410768Z (Reading database ... 90%
+2026-11-28T12:47:46.7692580Z (Reading database ... 95%
+2026-11-28T12:47:46.7692976Z (Reading database ... 100%
+2026-11-28T12:47:46.7693354Z (Reading database ... 216824 files and directories currently installed.)
+2026-11-28T12:47:46.7731203Z Preparing to unpack .../build-essential_12.10ubuntu1_amd64.deb ...
+2026-11-28T12:47:46.7747346Z Unpacking build-essential (12.10ubuntu1) ...
+2026-11-28T12:47:46.7998365Z Preparing to unpack .../libasound2t64_1.2.11-1ubuntu0.5_amd64.deb ...
+2026-11-28T12:47:46.8020111Z Unpacking libasound2t64:amd64 (1.2.11-1ubuntu0.5) over (1.2.11-1ubuntu0.3) ...
+2026-11-28T12:47:46.8682941Z Preparing to unpack .../libasound2-data_1.2.11-1ubuntu0.5_all.deb ...
+2026-11-28T12:47:46.8692486Z Unpacking libasound2-data (1.2.11-1ubuntu0.5) over (1.2.11-1ubuntu0.3) ...
+2026-11-28T12:47:46.9242977Z Selecting previously unselected package libasound2-dev:amd64.
+2026-11-28T12:47:46.9329521Z Preparing to unpack .../libasound2-dev_1.2.11-1ubuntu0.5_amd64.deb ...
+2026-11-28T12:47:46.9355682Z Unpacking libasound2-dev:amd64 (1.2.11-1ubuntu0.5) ...
+2026-11-28T12:47:47.1040866Z Selecting previously unselected package libudev-dev:amd64.
+2026-11-28T12:47:47.1128980Z Preparing to unpack .../libudev-dev_255.4-1ubuntu8.19_amd64.deb ...
+2026-11-28T12:47:47.1134357Z Unpacking libudev-dev:amd64 (255.4-1ubuntu8.19) ...
+2026-11-28T12:47:47.1441597Z Setting up libasound2-data (1.2.11-1ubuntu0.5) ...
+2026-11-28T12:47:47.1455670Z Setting up libasound2t64:amd64 (1.2.11-1ubuntu0.5) ...
+2026-11-28T12:47:47.1467506Z Setting up libudev-dev:amd64 (255.4-1ubuntu8.19) ...
+2026-11-28T12:47:47.1479043Z Setting up build-essential (12.10ubuntu1) ...
+2026-11-28T12:47:47.1489618Z Setting up libasound2-dev:amd64 (1.2.11-1ubuntu0.5) ...
+2026-11-28T12:47:47.1503240Z Processing triggers for man-db (2.12.0-4build2) ...
+2026-11-28T12:47:47.1850105Z Not building database; man-db/auto-update is not 'true'.
+2026-11-28T12:47:47.1858703Z Processing triggers for libc-bin (2.39-0ubuntu8.12) ...
+2026-11-28T12:47:52.3920670Z 
+2026-11-28T12:47:52.3922028Z Running kernel seems to be up-to-date.
+2026-11-28T12:47:52.3922477Z 
+2026-11-28T12:47:52.3922618Z No services need to be restarted.
+2026-11-28T12:47:52.3922954Z 
+2026-11-28T12:47:52.3923084Z No containers need to be restarted.
+2026-11-28T12:47:52.3923297Z 
+2026-11-28T12:47:52.3923433Z No user sessions are running outdated binaries.
+2026-11-28T12:47:52.3923678Z 
+2026-11-28T12:47:52.3923920Z No VM guests are running outdated hypervisor (qemu) binaries on this host.
+2026-11-28T12:47:53.6467383Z info: syncing channel updates for 1.97.0-x86_64-unknown-linux-gnu
+2026-11-28T12:47:53.9078627Z info: latest update on 2026-07-09 for version 1.97.0 (2d8144b78 2026-07-07)
+2026-11-28T12:47:53.9079075Z info: downloading 5 components
+2026-11-28T12:48:01.1043638Z 
+2026-11-28T12:48:01.1100198Z   1.97.0-x86_64-unknown-linux-gnu installed - rustc 1.97.0 (2d8144b78 2026-07-07)
+2026-11-28T12:48:01.1100537Z 
+2026-11-28T12:48:01.1181492Z info: using existing install for 1.97.0-x86_64-unknown-linux-gnu
+2026-11-28T12:48:01.1184531Z info: default toolchain set to 1.97.0-x86_64-unknown-linux-gnu
+2026-11-28T12:48:01.1184804Z 
+2026-11-28T12:48:01.1236339Z   1.97.0-x86_64-unknown-linux-gnu unchanged - rustc 1.97.0 (2d8144b78 2026-07-07)
+2026-11-28T12:48:01.1236770Z 
+2026-11-28T12:48:01.1320159Z rustc 1.97.0 (2d8144b78 2026-07-07)
+2026-11-28T12:48:01.1383667Z cargo 1.97.0 (c980f4866 2026-06-30)
+2026-11-28T12:48:01.1419733Z ##[group]Run set -euo pipefail
+2026-11-28T12:48:01.1420078Z [36;1mset -euo pipefail[0m
+2026-11-28T12:48:01.1420315Z [36;1m{[0m
+2026-11-28T12:48:01.1420597Z [36;1m  python3 -m unittest discover -s integration -p 'test_*.py' -v[0m
+2026-11-28T12:48:01.1420930Z [36;1m  python3 fixtures/generate.py --check[0m
+2026-11-28T12:48:01.1421180Z [36;1m  cargo fmt --check[0m
+2026-11-28T12:48:01.1421440Z [36;1m  cargo test --offline --locked[0m
+2026-11-28T12:48:01.1421719Z [36;1m  cargo test --offline --locked --release[0m
+2026-11-28T12:48:01.1422145Z [36;1m  cargo clippy --offline --locked --all-targets -- -D warnings[0m
+2026-11-28T12:48:01.1422472Z [36;1m  cargo doc --offline --locked --no-deps[0m
+2026-11-28T12:48:01.1422734Z [36;1m} 2>&1 | tee ci-evidence/core.txt[0m
+2026-11-28T12:48:01.1445609Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-11-28T12:48:01.1446245Z env:
+2026-11-28T12:48:01.1446456Z   CARGO_TERM_COLOR: never
+2026-11-28T12:48:01.1446790Z   CARGO_INCREMENTAL: 0
+2026-11-28T12:48:01.1447017Z   CARGO_BUILD_JOBS: 2
+2026-11-28T12:48:01.1447218Z   CARGO_PROFILE_DEV_DEBUG: 0
+2026-11-28T12:48:01.1447465Z   CARGO_PROFILE_TEST_DEBUG: 0
+2026-11-28T12:48:01.1447828Z   CARGO_HOME: /home/runner/work/horizon-neoforge-compat/horizon-neoforge-compat/../neoforge-cargo
+2026-11-28T12:48:01.1448332Z   HORIZON_PIN: /home/runner/work/horizon-neoforge-compat/horizon-neoforge-compat/../horizon-pin
+2026-11-28T12:48:01.1448990Z   HORIZON_SCRATCH: /home/runner/work/horizon-neoforge-compat/horizon-neoforge-compat/../horizon-full
+2026-11-28T12:48:01.1449362Z   HORIZON_TELEMETRY_URL: off
+2026-11-28T12:48:01.1449608Z   RUSTFLAGS: -C debuginfo=0
+2026-11-28T12:48:01.1449869Z   CARGO_TARGET_DIR: /home/runner/work/_temp/compat-target
+2026-11-28T12:48:01.1450152Z   RUSTDOCFLAGS: -D warnings
+2026-11-28T12:48:01.1450386Z ##[endgroup]
+2026-11-28T12:48:01.2460763Z test_below_reservation_refuses (test_check_full.DiskPreflightTests.test_below_reservation_refuses) ... ok
+2026-11-28T12:48:01.2461466Z test_exact_reservation_passes (test_check_full.DiskPreflightTests.test_exact_reservation_passes) ... ok
+2026-11-28T12:48:01.2468539Z test_invalid_reservations_refuse_before_disk_access (test_check_full.DiskPreflightTests.test_invalid_reservations_refuse_before_disk_access) ... ok
+2026-11-28T12:48:01.2469359Z test_minimum_allowed_reservation (test_check_full.DiskPreflightTests.test_minimum_allowed_reservation) ... ok
+2026-11-28T12:48:01.2472135Z test_source_copy_is_additional (test_check_full.DiskPreflightTests.test_source_copy_is_additional) ... ok
+2026-11-28T12:48:01.2483522Z test_disk_only_ignores_optional_nonexistent_source (test_check_full.DriverPreflightTests.test_disk_only_ignores_optional_nonexistent_source) ... ok
+2026-11-28T12:48:01.2490599Z test_disk_only_low_space_refuses (test_check_full.DriverPreflightTests.test_disk_only_low_space_refuses) ... ok
+2026-11-28T12:48:01.2498324Z test_disk_only_success_does_not_claim_build_or_touch_inputs (test_check_full.DriverPreflightTests.test_disk_only_success_does_not_claim_build_or_touch_inputs) ... ok
+2026-11-28T12:48:01.2506574Z test_existing_scratch_refuses_without_modification (test_check_full.DriverPreflightTests.test_existing_scratch_refuses_without_modification) ... ok
+2026-11-28T12:48:01.2514212Z test_missing_parent_refuses_without_creation (test_check_full.DriverPreflightTests.test_missing_parent_refuses_without_creation) ... ok
+2026-11-28T12:48:01.2522903Z test_normal_mode_missing_source_blobs_refuse (test_check_full.DriverPreflightTests.test_normal_mode_missing_source_blobs_refuse) ... ok
+2026-11-28T12:48:01.2532118Z test_normal_mode_rechecks_disk_with_source_copy_size (test_check_full.DriverPreflightTests.test_normal_mode_rechecks_disk_with_source_copy_size) ... ok
+2026-11-28T12:48:01.2539188Z test_normal_mode_refuses_disk_before_reading_source (test_check_full.DriverPreflightTests.test_normal_mode_refuses_disk_before_reading_source) ... ok
+2026-11-28T12:48:01.2546271Z test_normal_mode_still_rejects_overlapping_trees (test_check_full.DriverPreflightTests.test_normal_mode_still_rejects_overlapping_trees) ... ok
+2026-11-28T12:48:01.2561009Z test_normal_mode_still_requires_source (test_check_full.DriverPreflightTests.test_normal_mode_still_requires_source) ... ok
+2026-11-28T12:48:01.2563081Z test_client_did_not_link_core_refuses (test_full_contracts.LockAuditTests.test_client_did_not_link_core_refuses) ... ok
+2026-11-28T12:48:01.2565149Z test_core_from_registry_refuses (test_full_contracts.LockAuditTests.test_core_from_registry_refuses) ... ok
+2026-11-28T12:48:01.2566937Z test_core_not_added_refuses (test_full_contracts.LockAuditTests.test_core_not_added_refuses) ... ok
+2026-11-28T12:48:01.2568702Z test_duplicate_lock_identities_refuse_in_either_graph (test_full_contracts.LockAuditTests.test_duplicate_lock_identities_refuse_in_either_graph) ... ok
+2026-11-28T12:48:01.2569479Z test_existing_checksum_change_refuses (test_full_contracts.LockAuditTests.test_existing_checksum_change_refuses) ... ok
+2026-11-28T12:48:01.2570350Z test_existing_source_change_refuses (test_full_contracts.LockAuditTests.test_existing_source_change_refuses) ... ok
+2026-11-28T12:48:01.2571350Z test_existing_version_change_refuses (test_full_contracts.LockAuditTests.test_existing_version_change_refuses) ... ok
+2026-11-28T12:48:01.2573116Z test_extra_unexpected_package_refuses (test_full_contracts.LockAuditTests.test_extra_unexpected_package_refuses) ... ok
+2026-11-28T12:48:01.2574421Z test_lock_metadata_changes_refuse (test_full_contracts.LockAuditTests.test_lock_metadata_changes_refuse) ... ok
+2026-11-28T12:48:01.2576234Z test_new_transitive_dependency_on_core_refuses (test_full_contracts.LockAuditTests.test_new_transitive_dependency_on_core_refuses) ... ok
+2026-11-28T12:48:01.2577925Z test_only_local_core_addition_passes (test_full_contracts.LockAuditTests.test_only_local_core_addition_passes) ... ok
+2026-11-28T12:48:01.2579297Z test_removed_existing_package_refuses (test_full_contracts.LockAuditTests.test_removed_existing_package_refuses) ... ok
+2026-11-28T12:48:01.2580494Z test_unexpected_client_dependency_refuses (test_full_contracts.LockAuditTests.test_unexpected_client_dependency_refuses) ... ok
+2026-11-28T12:48:01.2585975Z test_empty_or_shrunken_or_failed_suite_refuses (test_full_contracts.TestSummaryTests.test_empty_or_shrunken_or_failed_suite_refuses) ... ok
+2026-11-28T12:48:01.2587066Z test_exact_minimum_passes (test_full_contracts.TestSummaryTests.test_exact_minimum_passes) ... ok
+2026-11-28T12:48:01.2587925Z test_ignored_tests_do_not_count_as_passes (test_full_contracts.TestSummaryTests.test_ignored_tests_do_not_count_as_passes) ... ok
+2026-11-28T12:48:01.2589103Z test_pinned_network_suite_with_known_ignored_tests_passes (test_full_contracts.TestSummaryTests.test_pinned_network_suite_with_known_ignored_tests_passes) ... ok
+2026-11-28T12:48:01.2590371Z test_retained_hosted_transcript_satisfies_historical_minima (test_full_contracts.TestSummaryTests.test_retained_hosted_transcript_satisfies_historical_minima) ... ok
+2026-11-28T12:48:01.2594475Z test_actual_glue_bytes_and_explicit_dependency_are_wired_only_in_scratch (test_full_contracts.WiringTests.test_actual_glue_bytes_and_explicit_dependency_are_wired_only_in_scratch) ... ok
+2026-11-28T12:48:01.2599410Z test_unexpected_manifest_shape_refuses (test_full_contracts.WiringTests.test_unexpected_manifest_shape_refuses) ... ok
+2026-11-28T12:48:01.2599769Z 
+2026-11-28T12:48:01.2600013Z ----------------------------------------------------------------------
+2026-11-28T12:48:01.2600501Z Ran 35 tests in 0.014s
+2026-11-28T12:48:01.2600704Z 
+2026-11-28T12:48:01.2600822Z OK
+2026-11-28T12:48:01.2851383Z 6 synthetic fixtures verified
+2026-11-28T12:48:01.3812271Z    Compiling horizon-neoforge-compat v0.1.0 (/home/runner/work/horizon-neoforge-compat/horizon-neoforge-compat)
+2026-11-28T12:48:02.8760086Z     Finished `test` profile [unoptimized] target(s) in 1.51s
+2026-11-28T12:48:02.8765516Z      Running unittests src/lib.rs (/home/runner/work/_temp/compat-target/debug/deps/horizon_neoforge_compat-573b44389f8e3e19)
+2026-11-28T12:48:02.8772085Z 
+2026-11-28T12:48:02.8772634Z running 0 tests
+2026-11-28T12:48:02.8772911Z 
+2026-11-28T12:48:02.8773149Z test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+2026-11-28T12:48:02.8773429Z 
+2026-11-28T12:48:02.8775565Z      Running unittests src/bin/codec-reference.rs (/home/runner/work/_temp/compat-target/debug/deps/codec_reference-8b2eb44a77bc4644)
+2026-11-28T12:48:02.8781235Z 
+2026-11-28T12:48:02.8781646Z running 3 tests
+2026-11-28T12:48:02.8789025Z test tests::envelope_empty_maps ... ok
+2026-11-28T12:48:02.8789398Z test tests::bad_envelopes_and_models_refuse ... ok
+2026-11-28T12:48:02.8789799Z test tests::envelope_preserves_empty_phases_and_unicode ... ok
+2026-11-28T12:48:02.8790021Z 
+2026-11-28T12:48:02.8790209Z test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+2026-11-28T12:48:02.8790479Z 
+2026-11-28T12:48:02.8790825Z      Running unittests src/bin/compat-inspect.rs (/home/runner/work/_temp/compat-target/debug/deps/compat_inspect-eef97a2c4b280677)
+2026-11-28T12:48:02.8791641Z 
+2026-11-28T12:48:02.8791778Z running 0 tests
+2026-11-28T12:48:02.8791932Z 
+2026-11-28T12:48:02.8792282Z test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+2026-11-28T12:48:02.8792796Z 
+2026-11-28T12:48:02.8793071Z      Running tests/cli.rs (/home/runner/work/_temp/compat-target/debug/deps/cli-f04c4a1bdbe4d2ff)
+2026-11-28T12:48:02.8799615Z 
+2026-11-28T12:48:02.8799799Z running 3 tests
+2026-11-28T12:48:02.8808352Z test demo_explicitly_does_not_join ... ok
+2026-11-28T12:48:02.8810511Z test bad_usage_has_nonzero_exit ... ok
+2026-11-28T12:48:02.8810848Z test fixture_inspection ... ok
+2026-11-28T12:48:02.8811057Z 
+2026-11-28T12:48:02.8811269Z test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+2026-11-28T12:48:02.8811562Z 
+2026-11-28T12:48:02.8811956Z      Running tests/core.rs (/home/runner/work/_temp/compat-target/debug/deps/core-841b8e1d402e5a90)
+2026-11-28T12:48:02.8818837Z 
+2026-11-28T12:48:02.8819029Z running 30 tests
+2026-11-28T12:48:02.8821896Z test baseline_is_exact_not_wildcard ... ok
+2026-11-28T12:48:02.8823434Z test body_limit ... ok
+2026-11-28T12:48:02.8824017Z test common_submachine_replies_without_join_claim ... ok
+2026-11-28T12:48:02.8824570Z test dinnerbone_golden ... ok
+2026-11-28T12:48:02.8825250Z test dinnerbone_shorthand_and_empty ... ok
+2026-11-28T12:48:02.8825916Z test dinnerbone_union_unregister_and_no_negotiation_side_effect ... ok
+2026-11-28T12:48:02.8826546Z test every_prefix_truncation_rejected ... ok
+2026-11-28T12:48:02.8827112Z test extension_cannot_reserve_core_namespaces_or_duplicate ... ok
+2026-11-28T12:48:02.8827725Z test extension_dispatch_enforces_phase_size_and_failure ... ok
+2026-11-28T12:48:02.8835608Z test duplicate_register_fails ... ok
+2026-11-28T12:48:02.8836416Z test identifier_grammar ... ok
+2026-11-28T12:48:02.8837048Z test invalid_dinnerbone_is_not_silently_skipped ... ok
+2026-11-28T12:48:02.8837723Z test malformed_string_utf8_and_count ... ok
+2026-11-28T12:48:02.8838288Z test modded_and_unknown_tasks_never_acknowledged ... ok
+2026-11-28T12:48:02.8838887Z test maps_are_explicit_bidirectional_and_total ... ok
+2026-11-28T12:48:02.8839453Z test negative_and_large_counts ... ok
+2026-11-28T12:48:02.8839921Z test no_compatible_version_poisoned ... ok
+2026-11-28T12:48:02.8840516Z test only_handler_backed_channels_advertised ... ok
+2026-11-28T12:48:02.8841090Z test overlong_varint_and_overflow ... ok
+2026-11-28T12:48:02.8841836Z test register_before_version_and_repeated_version_refused ... ok
+2026-11-28T12:48:02.8842409Z test register_golden ... ok
+2026-11-28T12:48:02.8842872Z test signed_varint_golden ... ok
+2026-11-28T12:48:02.8843423Z test snapshot_duplicate_names_negative_ids_and_alias_cycles ... ok
+2026-11-28T12:48:02.8844009Z test snapshot_duplicate_wire_id_refused ... ok
+2026-11-28T12:48:02.8844481Z test snapshot_golden ... ok
+2026-11-28T12:48:02.8845229Z test trailing_bytes_rejected ... ok
+2026-11-28T12:48:02.8845908Z test unsupported_common_phase_and_version_refused ... ok
+2026-11-28T12:48:02.8846488Z test version_golden ... ok
+2026-11-28T12:48:02.8893052Z test channel_count_and_writer_body_bounds ... ok
+2026-11-28T12:48:02.8902803Z test bounded_deterministic_malformed_corpus_no_panics ... ok
+2026-11-28T12:48:02.8903166Z 
+2026-11-28T12:48:02.8903429Z test result: ok. 30 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+2026-11-28T12:48:02.8903796Z 
+2026-11-28T12:48:02.8904413Z      Running tests/feature_flags.rs (/home/runner/work/_temp/compat-target/debug/deps/feature_flags-df82842bee48e2e2)
+2026-11-28T12:48:02.8911437Z 
+2026-11-28T12:48:02.8911871Z running 12 tests
+2026-11-28T12:48:02.8919148Z test close_and_fresh_epoch ... ok
+2026-11-28T12:48:02.8919490Z test both_missing_local_and_missing_remote_refused ... ok
+2026-11-28T12:48:02.8919953Z test duplicate_delivery_is_terminal ... ok
+2026-11-28T12:48:02.8920333Z test duplicate_normalized_names_refused ... ok
+2026-11-28T12:48:02.8920941Z test empty_equality_is_explicit_and_ack_has_no_count ... ok
+2026-11-28T12:48:02.8921586Z test every_prefix_and_trailing_refused ... ok
+2026-11-28T12:48:02.8922435Z test literal_anchor_and_empty ... ok
+2026-11-28T12:48:02.8922825Z test malformed_input_poisons_task ... ok
+2026-11-28T12:48:02.8923168Z test populated_exact_equality ... ok
+2026-11-28T12:48:02.8923511Z test wire_order_does_not_change_set ... ok
+2026-11-28T12:48:02.8933672Z test constructor_checks_aggregate_bytes ... ok
+2026-11-28T12:48:02.8939791Z test count_budget_and_constructor_bound ... ok
+2026-11-28T12:48:02.8940061Z 
+2026-11-28T12:48:02.8940338Z test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+2026-11-28T12:48:02.8940613Z 
+2026-11-28T12:48:02.8942065Z      Running tests/feature_flags_loader.rs (/home/runner/work/_temp/compat-target/debug/deps/feature_flags_loader-0de7c6dfb57347c4)
+2026-11-28T12:48:02.8948241Z 
+2026-11-28T12:48:02.8948425Z running 13 tests
+2026-11-28T12:48:02.8952862Z test caller_cannot_replace_builtin_handlers ... ok
+2026-11-28T12:48:02.8953685Z test announced_channels_do_not_grant_task_pair ... ok
+2026-11-28T12:48:02.8954220Z test half_selected_pair_is_refused_atomically ... ok
+2026-11-28T12:48:02.8954645Z test no_default_inventory_or_advertisement ... ok
+2026-11-28T12:48:02.8955604Z test duplicate_and_close_revoke_check ... ok
+2026-11-28T12:48:02.8956125Z test nonempty_host_inventory_must_match ... ok
+2026-11-28T12:48:02.8956606Z test no_pre_setup_or_wrong_direction ... ok
+2026-11-28T12:48:02.8957124Z test mismatch_or_malformed_revokes_grants_and_never_retries ... ok
+2026-11-28T12:48:02.8957551Z test only_selected_inbound_is_announced ... ok
+2026-11-28T12:48:02.8957968Z test opt_in_offers_exact_real_handler_directions ... ok
+2026-11-28T12:48:02.8958343Z test optional_absence_does_not_enable_dispatch ... ok
+2026-11-28T12:48:02.8958727Z test sends_exact_empty_ack_after_real_equality_but_no_finish ... ok
+2026-11-28T12:48:02.8959160Z test unsupported_baseline_still_refused ... ok
+2026-11-28T12:48:02.8959413Z 
+2026-11-28T12:48:02.8959703Z test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+2026-11-28T12:48:02.8960004Z 
+2026-11-28T12:48:02.8960352Z      Running tests/loader.rs (/home/runner/work/_temp/compat-target/debug/deps/loader-ee384a4ca00742de)
+2026-11-28T12:48:02.8962681Z 
+2026-11-28T12:48:02.8962801Z running 13 tests
+2026-11-28T12:48:02.8966282Z test empty_setup_can_negotiate_but_never_join ... ok
+2026-11-28T12:48:02.8975595Z test dinnerbone_cannot_grant_authority ... ok
+2026-11-28T12:48:02.8976123Z test decoded_setup_failure_is_terminal_and_retains_only_untrusted_data ... ok
+2026-11-28T12:48:02.8976541Z test invalid_phase_setup_is_not_silently_ignored ... ok
+2026-11-28T12:48:02.8976835Z test baseline_and_close_are_strict ... ok
+2026-11-28T12:48:02.8977141Z test malformed_failure_never_exposes_partial_reasons_or_retries ... ok
+2026-11-28T12:48:02.8977489Z test no_setup_without_query ... ok
+2026-11-28T12:48:02.8977783Z test nonempty_server_query_refused ... ok
+2026-11-28T12:48:02.8978187Z test repeated_and_malformed_messages_poison ... ok
+2026-11-28T12:48:02.8978489Z test setup_failure_and_unknown_tasks_terminal ... ok
+2026-11-28T12:48:02.8978812Z test setup_failure_revokes_previously_accepted_handler_grants ... ok
+2026-11-28T12:48:02.8979210Z test wire_offer_direction_version_and_callback_are_real ... ok
+2026-11-28T12:48:02.9012632Z test epoch_budget_limits_repeated_announcements ... ok
+2026-11-28T12:48:02.9012934Z 
+2026-11-28T12:48:02.9013267Z test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+2026-11-28T12:48:02.9013585Z 
+2026-11-28T12:48:02.9014243Z      Running tests/modded.rs (/home/runner/work/_temp/compat-target/debug/deps/modded-bd5c1831f2fade04)
+2026-11-28T12:48:02.9020871Z 
+2026-11-28T12:48:02.9021164Z running 14 tests
+2026-11-28T12:48:02.9035877Z test audited_enum_ordinals_and_phase_conversion ... ok
+2026-11-28T12:48:02.9036448Z test bad_booleans_flows_strings_and_ids ... ok
+2026-11-28T12:48:02.9037078Z test duplicate_phases_and_ids_never_overwrite ... ok
+2026-11-28T12:48:02.9038045Z test every_query_and_setup_truncation_and_trailing_byte ... ok
+2026-11-28T12:48:02.9038724Z test failure_is_explicitly_unsupported_terminal_not_a_fake_string_codec ... ok
+2026-11-28T12:48:02.9039348Z test literal_query_and_setup_vectors ... ok
+2026-11-28T12:48:02.9039882Z test mismatched_redundant_ids_rejected_both_directions ... ok
+2026-11-28T12:48:02.9040521Z test noncanonical_short_varints_accepted_but_writer_canonical ... ok
+2026-11-28T12:48:02.9041282Z test payload_names_and_empty_maps ... ok
+2026-11-28T12:48:02.9042032Z test required_empty_version_and_unicode_version_are_wire_values ... ok
+2026-11-28T12:48:02.9051814Z test string_and_body_budgets_apply_to_decoders_and_writers ... ok
+2026-11-28T12:48:02.9055895Z test negative_overlarge_and_overflow_counts ... ok
+2026-11-28T12:48:02.9072937Z test deterministic_malformed_corpus_never_panics_or_escapes_terminal_failure ... ok
+2026-11-28T12:48:02.9140501Z test entry_budget_boundary_and_cross_phase_total ... ok
+2026-11-28T12:48:02.9140801Z 
+2026-11-28T12:48:02.9140984Z test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+2026-11-28T12:48:02.9141429Z 
+2026-11-28T12:48:02.9142258Z      Running tests/negotiation.rs (/home/runner/work/_temp/compat-target/debug/deps/negotiation-eb7917a2d39c2a39)
+2026-11-28T12:48:02.9149805Z 
+2026-11-28T12:48:02.9150060Z running 10 tests
+2026-11-28T12:48:02.9152620Z test close_revokes_capabilities ... ok
+2026-11-28T12:48:02.9154762Z test bootstrap_channel_cannot_be_replaced ... ok
+2026-11-28T12:48:02.9156136Z test optional_absence_is_not_authority ... ok
+2026-11-28T12:48:02.9156510Z test missing_callback_not_advertised ... ok
+2026-11-28T12:48:02.9156868Z test optional_does_not_relax_matching_flow_or_version ... ok
+2026-11-28T12:48:02.9157261Z test mismatches_and_duplicates_do_not_partially_install ... ok
+2026-11-28T12:48:02.9157585Z test required_absence_is_terminal ... ok
+2026-11-28T12:48:02.9157847Z test ordering_is_terminal ... ok
+2026-11-28T12:48:02.9158196Z test phase_direction_size_and_handler_failure_poison_epoch ... ok
+2026-11-28T12:48:02.9158525Z test server_query_empty_is_not_server_offer ... ok
+2026-11-28T12:48:02.9158682Z 
+2026-11-28T12:48:02.9158911Z test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+2026-11-28T12:48:02.9159153Z 
+2026-11-28T12:48:02.9159451Z      Running tests/registry_sync.rs (/home/runner/work/_temp/compat-target/debug/deps/registry_sync-1cc90c73610c6972)
+2026-11-28T12:48:02.9162760Z 
+2026-11-28T12:48:02.9162848Z running 23 tests
+2026-11-28T12:48:02.9167727Z test aggregate_entry_budget_exact_boundary_and_cross_registry_overflow ... ok
+2026-11-28T12:48:02.9168450Z test aggregate_alias_budget_crosses_registries_and_accepts_exact_boundary ... ok
+2026-11-28T12:48:02.9169184Z test aggregate_wire_bytes_count_received_not_canonical_encoding ... ok
+2026-11-28T12:48:02.9176591Z test cross_registry_semantic_dependencies_must_be_validated ... ok
+2026-11-28T12:48:02.9177439Z test caught_host_panics_cannot_reopen_epoch ... ok
+2026-11-28T12:48:02.9177946Z test all_out_of_order_calls_poison_including_replays_after_commit ... ok
+2026-11-28T12:48:02.9178610Z test duplicate_start_names_rejected_on_wire_and_encode ... ok
+2026-11-28T12:48:02.9179293Z test empty_expected_set_still_requires_host_validation_and_commit ... ok
+2026-11-28T12:48:02.9180628Z test duplicate_unexpected_and_missing_snapshots_are_terminal ... ok
+2026-11-28T12:48:02.9181347Z test explicit_commit_failure_keeps_all_old_state_and_never_returns_ack ... ok
+2026-11-28T12:48:02.9182025Z test malformed_lifecycle_bodies_poison_without_commit ... ok
+2026-11-28T12:48:02.9182619Z test new_epoch_does_not_inherit_prior_staging_or_failure ... ok
+2026-11-28T12:48:02.9183214Z test no_publication_until_complete_atomic_barrier ... ok
+2026-11-28T12:48:02.9195886Z test registry_budget_is_separate_from_wire_codec_limit ... ok
+2026-11-28T12:48:02.9196534Z test per_snapshot_limits_not_relaxed_by_large_aggregate_budgets ... ok
+2026-11-28T12:48:02.9197167Z test semantic_unknown_entry_refused_without_partial_publication ... ok
+2026-11-28T12:48:02.9198308Z test start_every_truncation_trailing_and_malformed ... ok
+2026-11-28T12:48:02.9198866Z test start_literal_wire_order_and_empty_codec ... ok
+2026-11-28T12:48:02.9199363Z test structural_alias_failures_never_reach_semantic_host ... ok
+2026-11-28T12:48:02.9199877Z test unsupported_expected_registry_fails_at_start ... ok
+2026-11-28T12:48:02.9200602Z test unsupported_host_refuses_even_empty_task ... ok
+2026-11-28T12:48:02.9207935Z test start_count_and_body_boundaries ... ok
+2026-11-28T12:48:02.9668946Z test deterministic_malformed_smoke_corpus_has_no_panics ... ok
+2026-11-28T12:48:02.9669166Z 
+2026-11-28T12:48:02.9669406Z test result: ok. 23 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s
+2026-11-28T12:48:02.9669682Z 
+2026-11-28T12:48:02.9670988Z      Running tests/setup_failure.rs (/home/runner/work/_temp/compat-target/debug/deps/setup_failure-81b48bbddacc188f)
+2026-11-28T12:48:02.9677059Z 
+2026-11-28T12:48:02.9677199Z running 14 tests
+2026-11-28T12:48:02.9688142Z test duplicate_keys_compare_decoded_java_units_not_encoding ... ok
+2026-11-28T12:48:02.9689002Z test all_prefix_truncations_of_populated_and_empty_maps_fail ... ok
+2026-11-28T12:48:02.9689989Z test executed_java_component_vectors_preserve_wire_data_not_semantic_normalization ... ok
+2026-11-28T12:48:02.9690632Z test list_and_compound_component_envelopes ... ok
+2026-11-28T12:48:02.9691236Z test literal_network_nbt_string_not_json_or_named_root ... ok
+2026-11-28T12:48:02.9691736Z test malformed_nbt_types_lengths_and_terminators ... ok
+2026-11-28T12:48:02.9692276Z test every_nbt_payload_type_and_numeric_bits_are_preserved ... ok
+2026-11-28T12:48:02.9692878Z test mutf8_preserves_null_supplementary_lone_surrogates_and_java_overlongs ... ok
+2026-11-28T12:48:02.9698951Z test depth_boundary_and_deep_attack_are_bounded ... ok
+2026-11-28T12:48:02.9701831Z test node_and_array_budgets_are_aggregate ... ok
+2026-11-28T12:48:02.9702327Z test structured_data_is_not_rendered_or_semantically_validated ... ok
+2026-11-28T12:48:02.9722166Z test string_budgets_are_per_string_and_aggregate_across_reasons_and_names ... ok
+2026-11-28T12:48:02.9722776Z test map_body_identifier_and_varint_limits ... ok
+2026-11-28T12:48:02.9831715Z test deterministic_malformed_smoke_corpus_does_not_panic ... ok
+2026-11-28T12:48:02.9832109Z 
+2026-11-28T12:48:02.9832426Z test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+2026-11-28T12:48:02.9832776Z 
+2026-11-28T12:48:02.9833462Z      Running tests/split.rs (/home/runner/work/_temp/compat-target/debug/deps/split-cac76c39e3ff6965)
+2026-11-28T12:48:02.9840464Z 
+2026-11-28T12:48:02.9840972Z running 37 tests
+2026-11-28T12:48:02.9843353Z test actual_array_prefix_not_raw_marker ... ok
+2026-11-28T12:48:02.9865692Z test clock_backwards_fails_closed ... ok
+2026-11-28T12:48:02.9866238Z test aggregate_part_budget ... ok
+2026-11-28T12:48:02.9882475Z test aggregate_part_budget_accepts_exact_maximum ... ok
+2026-11-28T12:48:02.9883170Z test close_is_terminal_and_fresh_instance_required ... ok
+2026-11-28T12:48:02.9895491Z test consecutive_packets_do_not_share_bytes ... ok
+2026-11-28T12:48:02.9924156Z test decode_error_clears_pending_assembly ... ok
+2026-11-28T12:48:02.9924795Z test elapsed_clock_near_u64_limit_does_not_overflow ... ok
+2026-11-28T12:48:02.9925537Z test flags_are_not_combinable ... ok
+2026-11-28T12:48:02.9925980Z test empty_fragments_rejected ... ok
+2026-11-28T12:48:02.9926431Z test every_truncation_rejected ... ok
+2026-11-28T12:48:02.9926994Z test inbound_new_assembly_gets_own_deadline_but_never_resets_epoch_clock ... ok
+2026-11-28T12:48:02.9927644Z test malformed_varints_and_trailing_bytes ... ok
+2026-11-28T12:48:02.9928146Z test more_parts_do_not_extend_deadline ... ok
+2026-11-28T12:48:02.9928674Z test new_first_cannot_silently_drop_previous_packet ... ok
+2026-11-28T12:48:02.9929193Z test orphan_middle_or_last_is_terminal ... ok
+2026-11-28T12:48:02.9929807Z test outbound_adjacent_thresholds_at_directional_content_saturation ... ok
+2026-11-28T12:48:02.9930481Z test outbound_configuration_only_and_invalid_thresholds_refuse ... ok
+2026-11-28T12:48:02.9931097Z test aggregate_byte_budget_and_no_partial_output ... ok
+2026-11-28T12:48:02.9937845Z test outbound_directional_caps_include_varint_and_marker ... ok
+2026-11-28T12:48:02.9945601Z test outbound_exact_part_limit_and_next_part_rejected_without_batch ... ok
+2026-11-28T12:48:02.9946571Z test outbound_fragmented_nonminimal_id_preserves_exact_original_encoding ... ok
+2026-11-28T12:48:02.9947580Z test outbound_invalid_ids_cannot_bypass_validation_by_requiring_fragmentation ... ok
+2026-11-28T12:48:02.9948428Z test outbound_keeps_full_five_byte_id_and_payload_bytes_without_padding ... ok
+2026-11-28T12:48:02.9949152Z test outbound_literal_array_length_varint_boundaries ... ok
+2026-11-28T12:48:02.9949717Z test outbound_literal_golden_both_directions ... ok
+2026-11-28T12:48:02.9950312Z test outbound_literal_id_spans_fragments_and_last_has_one_byte ... ok
+2026-11-28T12:48:02.9951087Z test outbound_rejects_empty_truncated_negative_and_overflow_ids_even_unsplit ... ok
+2026-11-28T12:48:03.0035577Z test outbound_clientbound_exact_aggregate_and_next_byte ... ok
+2026-11-28T12:48:03.0036391Z test outbound_unsplit_borrows_exact_original_including_nonminimal_id ... ok
+2026-11-28T12:48:03.0055715Z test outbound_unsplit_policy_is_not_overridden_by_directional_fragment_caps ... ok
+2026-11-28T12:48:03.0056295Z test per_part_budget ... ok
+2026-11-28T12:48:03.0056832Z test reconstructs_whole_packet_including_multibyte_id ... ok
+2026-11-28T12:48:03.0057297Z test timeout_applies_without_incoming_packet ... ok
+2026-11-28T12:48:03.0057848Z test inbound_irregular_growth_reaches_exact_aggregate_without_padding_or_leaks ... ok
+2026-11-28T12:48:03.0117045Z test outbound_serverbound_maximum_parts_is_stricter_than_aggregate ... ok
+2026-11-28T12:48:03.3534755Z test outbound_exhaustive_small_thresholds_lengths_and_remainders ... ok
+2026-11-28T12:48:03.3535355Z 
+2026-11-28T12:48:03.3535602Z test result: ok. 37 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.37s
+2026-11-28T12:48:03.3535850Z 
+2026-11-28T12:48:03.3546876Z    Doc-tests horizon_neoforge_compat
+2026-11-28T12:48:03.3832931Z 
+2026-11-28T12:48:03.3833236Z running 0 tests
+2026-11-28T12:48:03.3833435Z 
+2026-11-28T12:48:03.3833645Z test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+2026-11-28T12:48:03.3833927Z 
+2026-11-28T12:48:03.3978739Z    Compiling horizon-neoforge-compat v0.1.0 (/home/runner/work/horizon-neoforge-compat/horizon-neoforge-compat)
+2026-11-28T12:48:11.7142534Z     Finished `release` profile [optimized] target(s) in 8.32s
+2026-11-28T12:48:11.7148412Z      Running unittests src/lib.rs (/home/runner/work/_temp/compat-target/release/deps/horizon_neoforge_compat-6e4d02db2c5b290f)
+2026-11-28T12:48:11.7155178Z 
+2026-11-28T12:48:11.7155398Z running 0 tests
+2026-11-28T12:48:11.7155539Z 
+2026-11-28T12:48:11.7156024Z test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+2026-11-28T12:48:11.7156309Z 
+2026-11-28T12:48:11.7156685Z      Running unittests src/bin/codec-reference.rs (/home/runner/work/_temp/compat-target/release/deps/codec_reference-1080e7c9ea48315d)
+2026-11-28T12:48:11.7162564Z 
+2026-11-28T12:48:11.7162885Z running 3 tests
+2026-11-28T12:48:11.7164286Z test tests::bad_envelopes_and_models_refuse ... ok
+2026-11-28T12:48:11.7166263Z test tests::envelope_empty_maps ... ok
+2026-11-28T12:48:11.7166747Z test tests::envelope_preserves_empty_phases_and_unicode ... ok
+2026-11-28T12:48:11.7167108Z 
+2026-11-28T12:48:11.7167374Z test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+2026-11-28T12:48:11.7167692Z 
+2026-11-28T12:48:11.7168121Z      Running unittests src/bin/compat-inspect.rs (/home/runner/work/_temp/compat-target/release/deps/compat_inspect-f057b20fe1fca4c3)
+2026-11-28T12:48:11.7173025Z 
+2026-11-28T12:48:11.7173163Z running 0 tests
+2026-11-28T12:48:11.7173337Z 
+2026-11-28T12:48:11.7173601Z test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+2026-11-28T12:48:11.7173972Z 
+2026-11-28T12:48:11.7174302Z      Running tests/cli.rs (/home/runner/work/_temp/compat-target/release/deps/cli-29343f91492eee1c)
+2026-11-28T12:48:11.7180222Z 
+2026-11-28T12:48:11.7180415Z running 3 tests
+2026-11-28T12:48:11.7187602Z test bad_usage_has_nonzero_exit ... ok
+2026-11-28T12:48:11.7188766Z test demo_explicitly_does_not_join ... ok
+2026-11-28T12:48:11.7189145Z test fixture_inspection ... ok
+2026-11-28T12:48:11.7189332Z 
+2026-11-28T12:48:11.7189701Z test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+2026-11-28T12:48:11.7190052Z 
+2026-11-28T12:48:11.7191001Z      Running tests/core.rs (/home/runner/work/_temp/compat-target/release/deps/core-c0b94f4c2dd18f71)
+2026-11-28T12:48:11.7197604Z 
+2026-11-28T12:48:11.7197888Z running 30 tests
+2026-11-28T12:48:11.7205694Z test baseline_is_exact_not_wildcard ... ok
+2026-11-28T12:48:11.7206273Z test body_limit ... ok
+2026-11-28T12:48:11.7207102Z test common_submachine_replies_without_join_claim ... ok
+2026-11-28T12:48:11.7207683Z test dinnerbone_golden ... ok
+2026-11-28T12:48:11.7208188Z test dinnerbone_shorthand_and_empty ... ok
+2026-11-28T12:48:11.7208829Z test dinnerbone_union_unregister_and_no_negotiation_side_effect ... ok
+2026-11-28T12:48:11.7209478Z test duplicate_register_fails ... ok
+2026-11-28T12:48:11.7209974Z test every_prefix_truncation_rejected ... ok
+2026-11-28T12:48:11.7210544Z test extension_cannot_reserve_core_namespaces_or_duplicate ... ok
+2026-11-28T12:48:11.7211168Z test extension_dispatch_enforces_phase_size_and_failure ... ok
+2026-11-28T12:48:11.7211759Z test invalid_dinnerbone_is_not_silently_skipped ... ok
+2026-11-28T12:48:11.7212308Z test identifier_grammar ... ok
+2026-11-28T12:48:11.7212750Z test malformed_string_utf8_and_count ... ok
+2026-11-28T12:48:11.7213270Z test modded_and_unknown_tasks_never_acknowledged ... ok
+2026-11-28T12:48:11.7213822Z test maps_are_explicit_bidirectional_and_total ... ok
+2026-11-28T12:48:11.7214338Z test negative_and_large_counts ... ok
+2026-11-28T12:48:11.7214951Z test no_compatible_version_poisoned ... ok
+2026-11-28T12:48:11.7215446Z test overlong_varint_and_overflow ... ok
+2026-11-28T12:48:11.7216001Z test only_handler_backed_channels_advertised ... ok
+2026-11-28T12:48:11.7216581Z test register_before_version_and_repeated_version_refused ... ok
+2026-11-28T12:48:11.7217142Z test signed_varint_golden ... ok
+2026-11-28T12:48:11.7217595Z test register_golden ... ok
+2026-11-28T12:48:11.7218037Z test snapshot_duplicate_wire_id_refused ... ok
+2026-11-28T12:48:11.7218640Z test snapshot_duplicate_names_negative_ids_and_alias_cycles ... ok
+2026-11-28T12:48:11.7219267Z test snapshot_golden ... ok
+2026-11-28T12:48:11.7219706Z test trailing_bytes_rejected ... ok
+2026-11-28T12:48:11.7220221Z test unsupported_common_phase_and_version_refused ... ok
+2026-11-28T12:48:11.7220718Z test version_golden ... ok
+2026-11-28T12:48:11.7221435Z test bounded_deterministic_malformed_corpus_no_panics ... ok
+2026-11-28T12:48:11.7232421Z test channel_count_and_writer_body_bounds ... ok
+2026-11-28T12:48:11.7232818Z 
+2026-11-28T12:48:11.7233109Z test result: ok. 30 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+2026-11-28T12:48:11.7233432Z 
+2026-11-28T12:48:11.7234163Z      Running tests/feature_flags.rs (/home/runner/work/_temp/compat-target/release/deps/feature_flags-9871dbe36f86f063)
+2026-11-28T12:48:11.7240409Z 
+2026-11-28T12:48:11.7240570Z running 12 tests
+2026-11-28T12:48:11.7245426Z test both_missing_local_and_missing_remote_refused ... ok
+2026-11-28T12:48:11.7246056Z test close_and_fresh_epoch ... ok
+2026-11-28T12:48:11.7246437Z test constructor_checks_aggregate_bytes ... ok
+2026-11-28T12:48:11.7246845Z test duplicate_delivery_is_terminal ... ok
+2026-11-28T12:48:11.7247514Z test empty_equality_is_explicit_and_ack_has_no_count ... ok
+2026-11-28T12:48:11.7247867Z test literal_anchor_and_empty ... ok
+2026-11-28T12:48:11.7248219Z test duplicate_normalized_names_refused ... ok
+2026-11-28T12:48:11.7248542Z test every_prefix_and_trailing_refused ... ok
+2026-11-28T12:48:11.7248829Z test populated_exact_equality ... ok
+2026-11-28T12:48:11.7249139Z test malformed_input_poisons_task ... ok
+2026-11-28T12:48:11.7249447Z test wire_order_does_not_change_set ... ok
+2026-11-28T12:48:11.7250522Z test count_budget_and_constructor_bound ... ok
+2026-11-28T12:48:11.7250817Z 
+2026-11-28T12:48:11.7251577Z test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+2026-11-28T12:48:11.7251887Z 
+2026-11-28T12:48:11.7252590Z      Running tests/feature_flags_loader.rs (/home/runner/work/_temp/compat-target/release/deps/feature_flags_loader-515b6fb749dff40b)
+2026-11-28T12:48:11.7258907Z 
+2026-11-28T12:48:11.7259038Z running 13 tests
+2026-11-28T12:48:11.7261094Z test announced_channels_do_not_grant_task_pair ... ok
+2026-11-28T12:48:11.7261538Z test caller_cannot_replace_builtin_handlers ... ok
+2026-11-28T12:48:11.7261933Z test half_selected_pair_is_refused_atomically ... ok
+2026-11-28T12:48:11.7262292Z test duplicate_and_close_revoke_check ... ok
+2026-11-28T12:48:11.7262841Z test mismatch_or_malformed_revokes_grants_and_never_retries ... ok
+2026-11-28T12:48:11.7263418Z test nonempty_host_inventory_must_match ... ok
+2026-11-28T12:48:11.7263793Z test no_default_inventory_or_advertisement ... ok
+2026-11-28T12:48:11.7264190Z test only_selected_inbound_is_announced ... ok
+2026-11-28T12:48:11.7264543Z test no_pre_setup_or_wrong_direction ... ok
+2026-11-28T12:48:11.7265169Z test opt_in_offers_exact_real_handler_directions ... ok
+2026-11-28T12:48:11.7265601Z test optional_absence_does_not_enable_dispatch ... ok
+2026-11-28T12:48:11.7266005Z test sends_exact_empty_ack_after_real_equality_but_no_finish ... ok
+2026-11-28T12:48:11.7266361Z test unsupported_baseline_still_refused ... ok
+2026-11-28T12:48:11.7266585Z 
+2026-11-28T12:48:11.7266830Z test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+2026-11-28T12:48:11.7267191Z 
+2026-11-28T12:48:11.7267479Z      Running tests/loader.rs (/home/runner/work/_temp/compat-target/release/deps/loader-198b2e4f5788eb22)
+2026-11-28T12:48:11.7271622Z 
+2026-11-28T12:48:11.7271737Z running 13 tests
+2026-11-28T12:48:11.7273911Z test dinnerbone_cannot_grant_authority ... ok
+2026-11-28T12:48:11.7274307Z test baseline_and_close_are_strict ... ok
+2026-11-28T12:48:11.7274639Z test empty_setup_can_negotiate_but_never_join ... ok
+2026-11-28T12:48:11.7275615Z test decoded_setup_failure_is_terminal_and_retains_only_untrusted_data ... ok
+2026-11-28T12:48:11.7276105Z test invalid_phase_setup_is_not_silently_ignored ... ok
+2026-11-28T12:48:11.7276566Z test malformed_failure_never_exposes_partial_reasons_or_retries ... ok
+2026-11-28T12:48:11.7276991Z test no_setup_without_query ... ok
+2026-11-28T12:48:11.7277323Z test nonempty_server_query_refused ... ok
+2026-11-28T12:48:11.7277665Z test setup_failure_and_unknown_tasks_terminal ... ok
+2026-11-28T12:48:11.7278233Z test setup_failure_revokes_previously_accepted_handler_grants ... ok
+2026-11-28T12:48:11.7278687Z test wire_offer_direction_version_and_callback_are_real ... ok
+2026-11-28T12:48:11.7282179Z test epoch_budget_limits_repeated_announcements ... ok
+2026-11-28T12:48:11.7282682Z test repeated_and_malformed_messages_poison ... ok
+2026-11-28T12:48:11.7282876Z 
+2026-11-28T12:48:11.7283137Z test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+2026-11-28T12:48:11.7283509Z 
+2026-11-28T12:48:11.7284196Z      Running tests/modded.rs (/home/runner/work/_temp/compat-target/release/deps/modded-8f0068203bf80231)
+2026-11-28T12:48:11.7291039Z 
+2026-11-28T12:48:11.7291263Z running 14 tests
+2026-11-28T12:48:11.7295894Z test audited_enum_ordinals_and_phase_conversion ... ok
+2026-11-28T12:48:11.7301447Z test bad_booleans_flows_strings_and_ids ... ok
+2026-11-28T12:48:11.7301834Z test duplicate_phases_and_ids_never_overwrite ... ok
+2026-11-28T12:48:11.7302303Z test every_query_and_setup_truncation_and_trailing_byte ... ok
+2026-11-28T12:48:11.7302797Z test failure_is_explicitly_unsupported_terminal_not_a_fake_string_codec ... ok
+2026-11-28T12:48:11.7303291Z test literal_query_and_setup_vectors ... ok
+2026-11-28T12:48:11.7303687Z test mismatched_redundant_ids_rejected_both_directions ... ok
+2026-11-28T12:48:11.7304047Z test negative_overlarge_and_overflow_counts ... ok
+2026-11-28T12:48:11.7304362Z test payload_names_and_empty_maps ... ok
+2026-11-28T12:48:11.7304798Z test noncanonical_short_varints_accepted_but_writer_canonical ... ok
+2026-11-28T12:48:11.7305362Z test required_empty_version_and_unicode_version_are_wire_values ... ok
+2026-11-28T12:48:11.7305760Z test string_and_body_budgets_apply_to_decoders_and_writers ... ok
+2026-11-28T12:48:11.7306158Z test deterministic_malformed_corpus_never_panics_or_escapes_terminal_failure ... ok
+2026-11-28T12:48:11.7323834Z test entry_budget_boundary_and_cross_phase_total ... ok
+2026-11-28T12:48:11.7324049Z 
+2026-11-28T12:48:11.7324305Z test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+2026-11-28T12:48:11.7324550Z 
+2026-11-28T12:48:11.7325691Z      Running tests/negotiation.rs (/home/runner/work/_temp/compat-target/release/deps/negotiation-5acdea28360ef393)
+2026-11-28T12:48:11.7331999Z 
+2026-11-28T12:48:11.7332195Z running 10 tests
+2026-11-28T12:48:11.7334599Z test close_revokes_capabilities ... ok
+2026-11-28T12:48:11.7335391Z test mismatches_and_duplicates_do_not_partially_install ... ok
+2026-11-28T12:48:11.7335828Z test missing_callback_not_advertised ... ok
+2026-11-28T12:48:11.7336165Z test bootstrap_channel_cannot_be_replaced ... ok
+2026-11-28T12:48:11.7336598Z test optional_absence_is_not_authority ... ok
+2026-11-28T12:48:11.7337033Z test optional_does_not_relax_matching_flow_or_version ... ok
+2026-11-28T12:48:11.7337425Z test ordering_is_terminal ... ok
+2026-11-28T12:48:11.7337738Z test phase_direction_size_and_handler_failure_poison_epoch ... ok
+2026-11-28T12:48:11.7338059Z test required_absence_is_terminal ... ok
+2026-11-28T12:48:11.7338396Z test server_query_empty_is_not_server_offer ... ok
+2026-11-28T12:48:11.7338587Z 
+2026-11-28T12:48:11.7338777Z test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+2026-11-28T12:48:11.7339139Z 
+2026-11-28T12:48:11.7339399Z      Running tests/registry_sync.rs (/home/runner/work/_temp/compat-target/release/deps/registry_sync-d148e8ecc82673f0)
+2026-11-28T12:48:11.7343197Z 
+2026-11-28T12:48:11.7343295Z running 23 tests
+2026-11-28T12:48:11.7345879Z test aggregate_entry_budget_exact_boundary_and_cross_registry_overflow ... ok
+2026-11-28T12:48:11.7346719Z test aggregate_alias_budget_crosses_registries_and_accepts_exact_boundary ... ok
+2026-11-28T12:48:11.7347349Z test aggregate_wire_bytes_count_received_not_canonical_encoding ... ok
+2026-11-28T12:48:11.7347877Z test all_out_of_order_calls_poison_including_replays_after_commit ... ok
+2026-11-28T12:48:11.7348460Z test cross_registry_semantic_dependencies_must_be_validated ... ok
+2026-11-28T12:48:11.7349097Z test duplicate_start_names_rejected_on_wire_and_encode ... ok
+2026-11-28T12:48:11.7349665Z test caught_host_panics_cannot_reopen_epoch ... ok
+2026-11-28T12:48:11.7350103Z test duplicate_unexpected_and_missing_snapshots_are_terminal ... ok
+2026-11-28T12:48:11.7350589Z test empty_expected_set_still_requires_host_validation_and_commit ... ok
+2026-11-28T12:48:11.7351126Z test explicit_commit_failure_keeps_all_old_state_and_never_returns_ack ... ok
+2026-11-28T12:48:11.7351621Z test malformed_lifecycle_bodies_poison_without_commit ... ok
+2026-11-28T12:48:11.7352094Z test new_epoch_does_not_inherit_prior_staging_or_failure ... ok
+2026-11-28T12:48:11.7352514Z test no_publication_until_complete_atomic_barrier ... ok
+2026-11-28T12:48:11.7352872Z test per_snapshot_limits_not_relaxed_by_large_aggregate_budgets ... ok
+2026-11-28T12:48:11.7357987Z test start_count_and_body_boundaries ... ok
+2026-11-28T12:48:11.7360084Z test registry_budget_is_separate_from_wire_codec_limit ... ok
+2026-11-28T12:48:11.7360440Z test start_every_truncation_trailing_and_malformed ... ok
+2026-11-28T12:48:11.7360867Z test semantic_unknown_entry_refused_without_partial_publication ... ok
+2026-11-28T12:48:11.7361302Z test structural_alias_failures_never_reach_semantic_host ... ok
+2026-11-28T12:48:11.7361705Z test start_literal_wire_order_and_empty_codec ... ok
+2026-11-28T12:48:11.7362112Z test unsupported_expected_registry_fails_at_start ... ok
+2026-11-28T12:48:11.7362739Z test unsupported_host_refuses_even_empty_task ... ok
+2026-11-28T12:48:11.7447706Z test deterministic_malformed_smoke_corpus_has_no_panics ... ok
+2026-11-28T12:48:11.7448079Z 
+2026-11-28T12:48:11.7448333Z test result: ok. 23 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+2026-11-28T12:48:11.7448628Z 
+2026-11-28T12:48:11.7448989Z      Running tests/setup_failure.rs (/home/runner/work/_temp/compat-target/release/deps/setup_failure-97193444edea6925)
+2026-11-28T12:48:11.7455279Z 
+2026-11-28T12:48:11.7455502Z running 14 tests
+2026-11-28T12:48:11.7458327Z test duplicate_keys_compare_decoded_java_units_not_encoding ... ok
+2026-11-28T12:48:11.7460773Z test all_prefix_truncations_of_populated_and_empty_maps_fail ... ok
+2026-11-28T12:48:11.7461405Z test executed_java_component_vectors_preserve_wire_data_not_semantic_normalization ... ok
+2026-11-28T12:48:11.7462082Z test list_and_compound_component_envelopes ... ok
+2026-11-28T12:48:11.7462756Z test every_nbt_payload_type_and_numeric_bits_are_preserved ... ok
+2026-11-28T12:48:11.7470724Z test literal_network_nbt_string_not_json_or_named_root ... ok
+2026-11-28T12:48:11.7472341Z test malformed_nbt_types_lengths_and_terminators ... ok
+2026-11-28T12:48:11.7472781Z test depth_boundary_and_deep_attack_are_bounded ... ok
+2026-11-28T12:48:11.7473081Z test map_body_identifier_and_varint_limits ... ok
+2026-11-28T12:48:11.7473588Z test mutf8_preserves_null_supplementary_lone_surrogates_and_java_overlongs ... ok
+2026-11-28T12:48:11.7474034Z test structured_data_is_not_rendered_or_semantically_validated ... ok
+2026-11-28T12:48:11.7474492Z test string_budgets_are_per_string_and_aggregate_across_reasons_and_names ... ok
+2026-11-28T12:48:11.7475136Z test node_and_array_budgets_are_aggregate ... ok
+2026-11-28T12:48:11.7500027Z test deterministic_malformed_smoke_corpus_does_not_panic ... ok
+2026-11-28T12:48:11.7500337Z 
+2026-11-28T12:48:11.7500613Z test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+2026-11-28T12:48:11.7500984Z 
+2026-11-28T12:48:11.7502161Z      Running tests/split.rs (/home/runner/work/_temp/compat-target/release/deps/split-7561d9fbdb92fd89)
+2026-11-28T12:48:11.7508313Z 
+2026-11-28T12:48:11.7508550Z running 37 tests
+2026-11-28T12:48:11.7509185Z test actual_array_prefix_not_raw_marker ... ok
+2026-11-28T12:48:11.7516139Z test clock_backwards_fails_closed ... ok
+2026-11-28T12:48:11.7527546Z test close_is_terminal_and_fresh_instance_required ... ok
+2026-11-28T12:48:11.7528088Z test aggregate_part_budget ... ok
+2026-11-28T12:48:11.7528749Z test consecutive_packets_do_not_share_bytes ... ok
+2026-11-28T12:48:11.7529452Z test decode_error_clears_pending_assembly ... ok
+2026-11-28T12:48:11.7529898Z test elapsed_clock_near_u64_limit_does_not_overflow ... ok
+2026-11-28T12:48:11.7530300Z test every_truncation_rejected ... ok
+2026-11-28T12:48:11.7535577Z test empty_fragments_rejected ... ok
+2026-11-28T12:48:11.7536045Z test flags_are_not_combinable ... ok
+2026-11-28T12:48:11.7536632Z test inbound_new_assembly_gets_own_deadline_but_never_resets_epoch_clock ... ok
+2026-11-28T12:48:11.7537251Z test aggregate_part_budget_accepts_exact_maximum ... ok
+2026-11-28T12:48:11.7537779Z test malformed_varints_and_trailing_bytes ... ok
+2026-11-28T12:48:11.7538291Z test more_parts_do_not_extend_deadline ... ok
+2026-11-28T12:48:11.7538785Z test orphan_middle_or_last_is_terminal ... ok
+2026-11-28T12:48:11.7539350Z test new_first_cannot_silently_drop_previous_packet ... ok
+2026-11-28T12:48:11.7606124Z test aggregate_byte_budget_and_no_partial_output ... ok
+2026-11-28T12:48:11.7621568Z test outbound_configuration_only_and_invalid_thresholds_refuse ... ok
+2026-11-28T12:48:11.7622421Z test outbound_adjacent_thresholds_at_directional_content_saturation ... ok
+2026-11-28T12:48:11.7623165Z test outbound_exact_part_limit_and_next_part_rejected_without_batch ... ok
+2026-11-28T12:48:11.7623900Z test outbound_directional_caps_include_varint_and_marker ... ok
+2026-11-28T12:48:11.7624600Z test outbound_fragmented_nonminimal_id_preserves_exact_original_encoding ... ok
+2026-11-28T12:48:11.7625760Z test outbound_invalid_ids_cannot_bypass_validation_by_requiring_fragmentation ... ok
+2026-11-28T12:48:11.7626538Z test outbound_keeps_full_five_byte_id_and_payload_bytes_without_padding ... ok
+2026-11-28T12:48:11.7627214Z test outbound_literal_array_length_varint_boundaries ... ok
+2026-11-28T12:48:11.7627836Z test outbound_literal_golden_both_directions ... ok
+2026-11-28T12:48:11.7628470Z test outbound_literal_id_spans_fragments_and_last_has_one_byte ... ok
+2026-11-28T12:48:11.7629213Z test outbound_rejects_empty_truncated_negative_and_overflow_ids_even_unsplit ... ok
+2026-11-28T12:48:11.7630004Z test inbound_irregular_growth_reaches_exact_aggregate_without_padding_or_leaks ... ok
+2026-11-28T12:48:11.7630760Z test outbound_unsplit_borrows_exact_original_including_nonminimal_id ... ok
+2026-11-28T12:48:11.7645357Z test outbound_unsplit_policy_is_not_overridden_by_directional_fragment_caps ... ok
+2026-11-28T12:48:11.7675644Z test per_part_budget ... ok
+2026-11-28T12:48:11.7685690Z test reconstructs_whole_packet_including_multibyte_id ... ok
+2026-11-28T12:48:11.7686127Z test timeout_applies_without_incoming_packet ... ok
+2026-11-28T12:48:11.7686515Z test outbound_clientbound_exact_aggregate_and_next_byte ... ok
+2026-11-28T12:48:11.7769232Z test outbound_serverbound_maximum_parts_is_stricter_than_aggregate ... ok
+2026-11-28T12:48:11.8413169Z test outbound_exhaustive_small_thresholds_lengths_and_remainders ... ok
+2026-11-28T12:48:11.8413529Z 
+2026-11-28T12:48:11.8413844Z test result: ok. 37 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.09s
+2026-11-28T12:48:11.8414103Z 
+2026-11-28T12:48:11.8420979Z    Doc-tests horizon_neoforge_compat
+2026-11-28T12:48:11.8705953Z 
+2026-11-28T12:48:11.8706434Z running 0 tests
+2026-11-28T12:48:11.8706764Z 
+2026-11-28T12:48:11.8707096Z test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+2026-11-28T12:48:11.8707450Z 
+2026-11-28T12:48:11.9142383Z     Checking horizon-neoforge-compat v0.1.0 (/home/runner/work/horizon-neoforge-compat/horizon-neoforge-compat)
+2026-11-28T12:48:12.5423579Z     Finished `dev` profile [unoptimized] target(s) in 0.65s
+2026-11-28T12:48:12.5728086Z     Checking horizon-neoforge-compat v0.1.0 (/home/runner/work/horizon-neoforge-compat/horizon-neoforge-compat)
+2026-11-28T12:48:12.5728809Z  Documenting horizon-neoforge-compat v0.1.0 (/home/runner/work/horizon-neoforge-compat/horizon-neoforge-compat)
+2026-11-28T12:48:13.0310470Z     Finished `dev` profile [unoptimized] target(s) in 0.48s
+2026-11-28T12:48:13.0312589Z    Generated /home/runner/work/_temp/compat-target/doc/horizon_neoforge_compat/index.html and 2 other files
+2026-11-28T12:48:13.0352972Z ##[group]Run set -euo pipefail
+2026-11-28T12:48:13.0353274Z [36;1mset -euo pipefail[0m
+2026-11-28T12:48:13.0353504Z [36;1mgit init "$HORIZON_PIN"[0m
+2026-11-28T12:48:13.0353900Z [36;1mgit -C "$HORIZON_PIN" remote add origin https://github.com/rdbtCVS/horizon.git[0m
+2026-11-28T12:48:13.0354391Z [36;1mgit -C "$HORIZON_PIN" fetch --depth 1 origin ae632edf48f6cae3ba52a5c81523ec712488c9cc[0m
+2026-11-28T12:48:13.0354808Z [36;1mgit -C "$HORIZON_PIN" checkout --detach FETCH_HEAD[0m
+2026-11-28T12:48:13.0355654Z [36;1mtest "$(git -C "$HORIZON_PIN" rev-parse HEAD)" = ae632edf48f6cae3ba52a5c81523ec712488c9cc[0m
+2026-11-28T12:48:13.0356097Z [36;1mgit -C "$HORIZON_PIN" status --porcelain | tee ci-evidence/source-status.txt[0m
+2026-11-28T12:48:13.0379657Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-11-28T12:48:13.0380007Z env:
+2026-11-28T12:48:13.0380211Z   CARGO_TERM_COLOR: never
+2026-11-28T12:48:13.0380423Z   CARGO_INCREMENTAL: 0
+2026-11-28T12:48:13.0380782Z   CARGO_BUILD_JOBS: 2
+2026-11-28T12:48:13.0380984Z   CARGO_PROFILE_DEV_DEBUG: 0
+2026-11-28T12:48:13.0381242Z   CARGO_PROFILE_TEST_DEBUG: 0
+2026-11-28T12:48:13.0381626Z   CARGO_HOME: /home/runner/work/horizon-neoforge-compat/horizon-neoforge-compat/../neoforge-cargo
+2026-11-28T12:48:13.0382163Z   HORIZON_PIN: /home/runner/work/horizon-neoforge-compat/horizon-neoforge-compat/../horizon-pin
+2026-11-28T12:48:13.0382786Z   HORIZON_SCRATCH: /home/runner/work/horizon-neoforge-compat/horizon-neoforge-compat/../horizon-full
+2026-11-28T12:48:13.0383166Z   HORIZON_TELEMETRY_URL: off
+2026-11-28T12:48:13.0383424Z   RUSTFLAGS: -C debuginfo=0
+2026-11-28T12:48:13.0383649Z ##[endgroup]
+2026-11-28T12:48:13.0437241Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-11-28T12:48:13.0437901Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-11-28T12:48:13.0438368Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-11-28T12:48:13.0438699Z hint: call:
+2026-11-28T12:48:13.0438905Z hint:
+2026-11-28T12:48:13.0439164Z hint: 	git config --global init.defaultBranch <name>
+2026-11-28T12:48:13.0439477Z hint:
+2026-11-28T12:48:13.0439741Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-11-28T12:48:13.0440167Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-11-28T12:48:13.0440492Z hint:
+2026-11-28T12:48:13.0440694Z hint: 	git branch -m <name>
+2026-11-28T12:48:13.0440943Z hint:
+2026-11-28T12:48:13.0441225Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-11-28T12:48:13.0441685Z Initialized empty Git repository in /home/runner/work/horizon-neoforge-compat/horizon-pin/.git/
+2026-11-28T12:48:20.5539235Z From https://github.com/rdbtCVS/horizon
+2026-11-28T12:48:20.5539687Z  * branch            ae632edf48f6cae3ba52a5c81523ec712488c9cc -> FETCH_HEAD
+2026-11-28T12:48:21.3090839Z HEAD is now at ae632ed Server files: the old banned-players, ops and white-list lists are converted at startup, as vanilla (#17094)
+2026-11-28T12:48:21.5135762Z ##[group]Run set -euo pipefail
+2026-11-28T12:48:21.5136255Z [36;1mset -euo pipefail[0m
+2026-11-28T12:48:21.5136718Z [36;1mpython3 integration/check.py "$HORIZON_PIN" --rustc "$(command -v rustc)" \[0m
+2026-11-28T12:48:21.5137418Z [36;1m  2>&1 | tee ci-evidence/patch.txt[0m
+2026-11-28T12:48:21.5137935Z [36;1mpython3 integration/check_bridge.py --target x86_64-unknown-linux-gnu \[0m
+2026-11-28T12:48:21.5138517Z [36;1m  2>&1 | tee ci-evidence/companion-isolated.txt[0m
+2026-11-28T12:48:21.5164287Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-11-28T12:48:21.5164625Z env:
+2026-11-28T12:48:21.5164972Z   CARGO_TERM_COLOR: never
+2026-11-28T12:48:21.5165244Z   CARGO_INCREMENTAL: 0
+2026-11-28T12:48:21.5165471Z   CARGO_BUILD_JOBS: 2
+2026-11-28T12:48:21.5165718Z   CARGO_PROFILE_DEV_DEBUG: 0
+2026-11-28T12:48:21.5165964Z   CARGO_PROFILE_TEST_DEBUG: 0
+2026-11-28T12:48:21.5166438Z   CARGO_HOME: /home/runner/work/horizon-neoforge-compat/horizon-neoforge-compat/../neoforge-cargo
+2026-11-28T12:48:21.5166994Z   HORIZON_PIN: /home/runner/work/horizon-neoforge-compat/horizon-neoforge-compat/../horizon-pin
+2026-11-28T12:48:21.5167530Z   HORIZON_SCRATCH: /home/runner/work/horizon-neoforge-compat/horizon-neoforge-compat/../horizon-full
+2026-11-28T12:48:21.5167946Z   HORIZON_TELEMETRY_URL: off
+2026-11-28T12:48:21.5168199Z   RUSTFLAGS: -C debuginfo=0
+2026-11-28T12:48:21.5168427Z ##[endgroup]
+2026-11-28T12:48:21.5712771Z test_default_reconfiguration_still_uses_original_path (__main__.main.<locals>.Structure.test_default_reconfiguration_still_uses_original_path) ... ok
+2026-11-28T12:48:21.5716218Z test_finish_is_before_horizon_accept_and_writer_transition (__main__.main.<locals>.Structure.test_finish_is_before_horizon_accept_and_writer_transition) ... ERROR
+2026-11-28T12:48:21.5719205Z test_opt_in_and_offer_suppression (__main__.main.<locals>.Structure.test_opt_in_and_offer_suppression) ... ERROR
+2026-11-28T12:48:21.5721869Z test_route_precedes_horizon_special_cases_and_generic_dispatch (__main__.main.<locals>.Structure.test_route_precedes_horizon_special_cases_and_generic_dispatch) ... ERROR
+2026-11-28T12:48:21.5725235Z 
+2026-11-28T12:48:21.5725385Z ======================================================================
+2026-11-28T12:48:21.5726061Z ERROR: test_finish_is_before_horizon_accept_and_writer_transition (__main__.main.<locals>.Structure.test_finish_is_before_horizon_accept_and_writer_transition)
+2026-11-28T12:48:21.5726896Z ----------------------------------------------------------------------
+2026-11-28T12:48:21.5727222Z Traceback (most recent call last):
+2026-11-28T12:48:21.5727794Z   File "/home/runner/work/horizon-neoforge-compat/horizon-neoforge-compat/integration/check.py", line 91, in test_finish_is_before_horizon_accept_and_writer_transition
+2026-11-28T12:48:21.5728514Z     self.assertLess(body.index('endpoint.finish()'), body.index('negotiation.finish_allowing_silent_peer()'))
+2026-11-28T12:48:21.5728922Z                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-11-28T12:48:21.5729231Z ValueError: substring not found
+2026-11-28T12:48:21.5729395Z 
+2026-11-28T12:48:21.5729497Z ======================================================================
+2026-11-28T12:48:21.5729958Z ERROR: test_opt_in_and_offer_suppression (__main__.main.<locals>.Structure.test_opt_in_and_offer_suppression)
+2026-11-28T12:48:21.5730392Z ----------------------------------------------------------------------
+2026-11-28T12:48:21.5730675Z Traceback (most recent call last):
+2026-11-28T12:48:21.5731186Z   File "/home/runner/work/horizon-neoforge-compat/horizon-neoforge-compat/integration/check.py", line 86, in test_opt_in_and_offer_suppression
+2026-11-28T12:48:21.5731851Z     branch = net.split('if early.is_some() => {', 1)[1].split('p.channel == crate::build_mismatch::CHANNEL')[0]
+2026-11-28T12:48:21.5732241Z              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^
+2026-11-28T12:48:21.5732543Z IndexError: list index out of range
+2026-11-28T12:48:21.5732718Z 
+2026-11-28T12:48:21.5732930Z ======================================================================
+2026-11-28T12:48:21.5733509Z ERROR: test_route_precedes_horizon_special_cases_and_generic_dispatch (__main__.main.<locals>.Structure.test_route_precedes_horizon_special_cases_and_generic_dispatch)
+2026-11-28T12:48:21.5734085Z ----------------------------------------------------------------------
+2026-11-28T12:48:21.5734419Z Traceback (most recent call last):
+2026-11-28T12:48:21.5735172Z   File "/home/runner/work/horizon-neoforge-compat/horizon-neoforge-compat/integration/check.py", line 75, in test_route_precedes_horizon_special_cases_and_generic_dispatch
+2026-11-28T12:48:21.5735802Z     positions = [body.index(x) for x in [
+2026-11-28T12:48:21.5736107Z                  ^^^^^^^^^^^^^
+2026-11-28T12:48:21.5736348Z ValueError: substring not found
+2026-11-28T12:48:21.5736487Z 
+2026-11-28T12:48:21.5736660Z ----------------------------------------------------------------------
+2026-11-28T12:48:21.5736966Z Ran 4 tests in 0.001s
+2026-11-28T12:48:21.5737086Z 
+2026-11-28T12:48:21.5737197Z FAILED (errors=3)
+2026-11-28T12:48:21.5737565Z PASS: HEAD ae632edf48f6cae3ba52a5c81523ec712488c9cc, 14 provenance hashes + 15 integration hashes
+2026-11-28T12:48:21.5738021Z PASS: clean application, reverse check, duplicate application refused
+2026-11-28T12:48:21.6713559Z Traceback (most recent call last):
+2026-11-28T12:48:21.6714221Z   File "/home/runner/work/horizon-neoforge-compat/horizon-neoforge-compat/integration/check.py", line 137, in <module>
+2026-11-28T12:48:21.6714792Z     main()
+2026-11-28T12:48:21.6715388Z   File "/home/runner/work/horizon-neoforge-compat/horizon-neoforge-compat/integration/check.py", line 101, in main
+2026-11-28T12:48:21.6715877Z     assert unittest.TextTestRunner(verbosity=2).run(suite).wasSuccessful()
+2026-11-28T12:48:21.6716240Z            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-11-28T12:48:21.6716514Z AssertionError
+2026-11-28T12:48:21.6848614Z ##[error]Process completed with exit code 1.
+2026-11-28T12:48:21.6891980Z ##[group]Run mkdir -p ci-evidence
+2026-11-28T12:48:21.6892303Z [36;1mmkdir -p ci-evidence[0m
+2026-11-28T12:48:21.6892602Z [36;1mif [ -f "$HORIZON_SCRATCH/full-check.log" ]; then[0m
+2026-11-28T12:48:21.6892986Z [36;1m  cp "$HORIZON_SCRATCH/full-check.log" ci-evidence/full-check.txt[0m
+2026-11-28T12:48:21.6893296Z [36;1mfi[0m
+2026-11-28T12:48:21.6893651Z [36;1mdf -h "$RUNNER_TEMP" > ci-evidence/disk-after.txt[0m
+2026-11-28T12:48:21.6894000Z [36;1mprintf '%s\n' "Commit: $GITHUB_SHA" "Run: $GITHUB_RUN_ID" \[0m
+2026-11-28T12:48:21.6894417Z [36;1m  'This job does not test a NeoForge server join or semantic content application.' \[0m
+2026-11-28T12:48:21.6895024Z [36;1m  > ci-evidence/scope.txt[0m
+2026-11-28T12:48:21.6915128Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-11-28T12:48:21.6915491Z env:
+2026-11-28T12:48:21.6915729Z   CARGO_TERM_COLOR: never
+2026-11-28T12:48:21.6915963Z   CARGO_INCREMENTAL: 0
+2026-11-28T12:48:21.6916182Z   CARGO_BUILD_JOBS: 2
+2026-11-28T12:48:21.6916536Z   CARGO_PROFILE_DEV_DEBUG: 0
+2026-11-28T12:48:21.6916761Z   CARGO_PROFILE_TEST_DEBUG: 0
+2026-11-28T12:48:21.6917175Z   CARGO_HOME: /home/runner/work/horizon-neoforge-compat/horizon-neoforge-compat/../neoforge-cargo
+2026-11-28T12:48:21.6917687Z   HORIZON_PIN: /home/runner/work/horizon-neoforge-compat/horizon-neoforge-compat/../horizon-pin
+2026-11-28T12:48:21.6918206Z   HORIZON_SCRATCH: /home/runner/work/horizon-neoforge-compat/horizon-neoforge-compat/../horizon-full
+2026-11-28T12:48:21.6918650Z   HORIZON_TELEMETRY_URL: off
+2026-11-28T12:48:21.6918876Z   RUSTFLAGS: -C debuginfo=0
+2026-11-28T12:48:21.6919132Z ##[endgroup]
+2026-11-28T12:48:21.7014793Z ##[group]Run actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+2026-11-28T12:48:21.7015366Z with:
+2026-11-28T12:48:21.7015652Z   name: horizon-full-647f4300b365b2739657bb450b0e780b53273d35-1
+2026-11-28T12:48:21.7015972Z   path: ci-evidence/*.txt
+2026-11-28T12:48:21.7016214Z   retention-days: 7
+2026-11-28T12:48:21.7016449Z   if-no-files-found: warn
+2026-11-28T12:48:21.7016666Z   compression-level: 6
+2026-11-28T12:48:21.7016906Z   overwrite: false
+2026-11-28T12:48:21.7017155Z   include-hidden-files: false
+2026-11-28T12:48:21.7017394Z env:
+2026-11-28T12:48:21.7017607Z   CARGO_TERM_COLOR: never
+2026-11-28T12:48:21.7017809Z   CARGO_INCREMENTAL: 0
+2026-11-28T12:48:21.7018139Z   CARGO_BUILD_JOBS: 2
+2026-11-28T12:48:21.7018367Z   CARGO_PROFILE_DEV_DEBUG: 0
+2026-11-28T12:48:21.7018607Z   CARGO_PROFILE_TEST_DEBUG: 0
+2026-11-28T12:48:21.7019000Z   CARGO_HOME: /home/runner/work/horizon-neoforge-compat/horizon-neoforge-compat/../neoforge-cargo
+2026-11-28T12:48:21.7019601Z   HORIZON_PIN: /home/runner/work/horizon-neoforge-compat/horizon-neoforge-compat/../horizon-pin
+2026-11-28T12:48:21.7020122Z   HORIZON_SCRATCH: /home/runner/work/horizon-neoforge-compat/horizon-neoforge-compat/../horizon-full
+2026-11-28T12:48:21.7020521Z   HORIZON_TELEMETRY_URL: off
+2026-11-28T12:48:21.7020825Z   RUSTFLAGS: -C debuginfo=0
+2026-11-28T12:48:21.7021056Z ##[endgroup]
+2026-11-28T12:48:21.8256634Z (node:4015) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-11-28T12:48:21.8257206Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-11-28T12:48:21.8314293Z With the provided path, there will be 8 files uploaded
+2026-11-28T12:48:21.8319701Z Artifact name is valid!
+2026-11-28T12:48:21.8320408Z Root directory input is valid!
+2026-11-28T12:48:22.3724444Z Beginning upload of artifact content to blob storage
+2026-11-28T12:48:22.3934279Z (node:4015) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+2026-11-28T12:48:22.7253394Z Uploaded bytes 7581
+2026-11-28T12:48:22.8147522Z Finished uploading artifact content to blob storage!
+2026-11-28T12:48:22.8148600Z SHA256 digest of uploaded artifact zip is 331b2e7ae38d8bde42f40198475028bd365fd7fc27c866f6939257a3fd103ec2
+2026-11-28T12:48:22.8149273Z Finalizing artifact upload
+2026-11-28T12:48:23.1860157Z Artifact horizon-full-647f4300b365b2739657bb450b0e780b53273d35-1.zip successfully finalized. Artifact ID 15263518915
+2026-11-28T12:48:23.1860923Z Artifact horizon-full-647f4300b365b2739657bb450b0e780b53273d35-1 has been successfully uploaded! Final size is 7581 bytes. Artifact ID is 15263518915
+2026-11-28T12:48:23.1864376Z Artifact download URL: https://github.com/horizon-rust-mod-rewrites/horizon-neoforge-compat/actions/runs/46146363170/artifacts/15263518915
+2026-11-28T12:48:23.2031397Z Post job cleanup.
+2026-11-28T12:48:23.2683645Z [command]/usr/bin/git version
+2026-11-28T12:48:23.2711765Z git version 2.56.1
+2026-11-28T12:48:23.2738429Z Temporarily overriding HOME='/home/runner/work/_temp/4b924de0-3dfa-49e5-b3e2-06623a9be550' before making global git config changes
+2026-11-28T12:48:23.2739591Z Adding repository directory to the temporary git global config as a safe directory
+2026-11-28T12:48:23.2740613Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/horizon-neoforge-compat/horizon-neoforge-compat
+2026-11-28T12:48:23.2768522Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-11-28T12:48:23.2796387Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-11-28T12:48:23.2957589Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-11-28T12:48:23.2975122Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-11-28T12:48:23.3147292Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-11-28T12:48:23.3179153Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-11-28T12:48:23.3514646Z Cleaning up orphan processes
+2026-11-28T12:48:23.3801326Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@11d5960a326750d5838078e36cf38b85af677262, actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
