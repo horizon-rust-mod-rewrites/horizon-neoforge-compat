@@ -1,3 +1,41 @@
+# Active continuation — shared adapter domain and admission fences (hosted validation pending)
+
+Continues verified remote HEAD458ce6fcc552086f9bebd0bfbfd2e58142448201 without replacing newer work.
+The patch now gives both Session phase transitions, translation and generated-queue
+access one shared transaction domain. Explicit NeoForge configure opts into keeping
+that domain through each whole admitted reply batch and real socket write completion.
+Queued batches capture physical-adapter + monotonic phase-incarnation fences at
+admission, and refuse stale/wrong-connection/unfenced execution. New opaque prepared
+originals retain that same fence and use direct framing, not a second translation.
+Reconstructed-original phase checks and adaptation share a transaction as well.
+Ordinary vanilla/Horizon emission does not acquire the new domain across socket I/O.
+Cancellation retains its independent physical closer so blocked emission can unwind.
+
+Five new actual-protocol regressions cover both transitions/queue drains blocked by
+the same domain, emission/preparation ordering, re-entry/wrong-connection staleness,
+zero-output stale/unfenced/finish batch refusal, and TCP compression/encryption matrix.
+Existing policy/bootstrap entry tests now establish real protocol767 configuration
+instead of using unadapted memory connections. Driver minima require all17 owner /
+22 protocol-framing regressions (previous minima did not require all new a1 tests).
+Local patch/reverse/restoration+endpoint9/table1 and Python driver35/metadata28 pass.
+Full actual-client typecheck and these new socket/owner tests are PENDING until this
+new source's own standard hosted workflow finishes; do NOT infer they ran locally.
+
+Early inspection is no longer approval-blocked: prior a1fdf5c full run46163205119
+was observed IN_PROGRESS in its full engine step, not successful. Its metadata runs
+46163205043/46163209959 succeeded. Retain its exact-SHA artifact on completion.
+
+This is substantive central serialization work, NOT full owner completion. Dispatch,
+all generic prepared jobs/adapter-generated queues across epochs, negotiated split
+grants and routing, connection-wide login/play resource policy, asynchronous host
+completion and profile-safe reconnect still need completion/proof. Legacy Vec-returning
+preparation/detached framing seams remain caller-serialized and grant no authority.
+Both finish refusals and default split/flags opt-outs remain. **30/100; CANNOT JOIN.**
+No partial credit, rubric changes, mod rewrites, live tests, merge, force-push,
+visibility or schedule changes. Every published commit has required AI attribution.
+
+--- Prior checkpoint follows ---
+
 # Current milestone attempt — full owner not yet complete
 
 Published runtime [`a1fdf5c`](https://github.com/horizon-rust-mod-rewrites/horizon-neoforge-compat/commit/a1fdf5c83a36f3035b94a12a9477c4cef19d097f)

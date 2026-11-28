@@ -265,7 +265,7 @@ diff --git a/crates/horizon-client/src/net.rs b/crates/horizon-client/src/net.rs
  fn deliver(send: &ingress::Producer<Event>, lang: &Language, event: Event) -> Result<(), Reason> {
      send.send_waiting(event)
          .map_err(|refused| refusal(refused, lang))
-@@ -1750,18 +1915,97 @@
+@@ -1750,18 +1915,102 @@
      // The connection's first configuration, not a reconfiguration from play.
      initial: bool,
  ) -> Result<Dynamic, Reason> {
@@ -319,6 +319,11 @@ diff --git a/crates/horizon-client/src/net.rs b/crates/horizon-client/src/net.rs
      let mut registries = Dynamic::default();
      let mut content_verified = false;
      payloads.begin_configuration();
++    if early_profile.is_some() {
++        reader
++            .order_configuration()
++            .map_err(|error| Reason::plain(format!("configuration/order: {error}")))?;
++    }
 +    // Fresh owner per epoch; the stack guard resets it on every return path.
 +    // Begin BEFORE any Horizon offer or receive dispatch. The owner is the single
 +    // serialization domain for the early path: it tags work with this epoch,
@@ -367,7 +372,7 @@ diff --git a/crates/horizon-client/src/net.rs b/crates/horizon-client/src/net.rs
              None => Err(Reason::plain("Disconnected")),
          }
      };
-@@ -1793,19 +2037,105 @@
+@@ -1793,19 +2042,105 @@
      };
      // With only engine declarations the client waits for the server's query, so a vanilla
      // server is sent nothing new.
@@ -480,7 +485,7 @@ diff --git a/crates/horizon-client/src/net.rs b/crates/horizon-client/src/net.rs
              cfg::Clientbound::CustomPayload(p) if p.channel == crate::build_mismatch::CHANNEL => {
                  server_build = crate::build_mismatch::decode(&p.data);
              }
-@@ -1945,6 +2275,14 @@
+@@ -1945,6 +2280,14 @@
                  let _ = send.send(Event::ServerLinks(p.links));
              }
              cfg::Clientbound::Transfer(p) => {
@@ -495,7 +500,7 @@ diff --git a/crates/horizon-client/src/net.rs b/crates/horizon-client/src/net.rs
                  let _ = send.send(Event::Transfer {
                      host: p.host,
                      port: p.port,
-@@ -1953,6 +2291,17 @@
+@@ -1953,6 +2296,17 @@
              }
              cfg::Clientbound::Disconnect(d) => return Err(Reason::tag(&d.reason, lang)),
              cfg::Clientbound::FinishConfiguration(_) => {
@@ -513,7 +518,7 @@ diff --git a/crates/horizon-client/src/net.rs b/crates/horizon-client/src/net.rs
                  // A Horizon server that never sent on horizon:payloads predates the
                  // negotiation: play on with nothing negotiated, as on a vanilla server.
                  // Only on the first configuration: a server that goes silent when it
-@@ -1995,6 +2344,11 @@
+@@ -1995,6 +2349,11 @@
                      })
                      .map_err(Reason::plain)?;
                  return Ok(registries);
@@ -1534,7 +1539,7 @@ diff --git a/crates/horizon-client/src/net/ordered_owner_tests.rs b/crates/horiz
 new file mode 100644
 --- /dev/null
 +++ b/crates/horizon-client/src/net/ordered_owner_tests.rs
-@@ -0,0 +1,748 @@
+@@ -0,0 +1,773 @@
 +// SPDX-License-Identifier: LGPL-3.0-or-later
 +//! Engine tests for the ordered connection owner. These drive the actual
 +//! `configure_with_profile` entry point and the real `Connection`/`QueuedWriter`
@@ -1598,6 +1603,33 @@ new file mode 100644
 +
 +/// Drive the real configure entry point with an owner and assert the owner's
 +/// serialization, batch emission, finish refusal and epoch reset on exit.
++
++fn ordered_configured_pair() -> (Connection, Connection) {
++    let (a, b) = horizon_protocol::connection::Pipe::pair();
++    let mut client = Connection::local(a);
++    let mut peer = Connection::local(b);
++    client.adapt(horizon_protocol::adapter::ServerVersion::V1_21_1);
++    client
++        .send(
++            &handshake::Serverbound::Intention(handshake::Intention {
++                protocol: PROTOCOL_VERSION,
++                host: "localhost".into(),
++                port: 25565,
++                intent: handshake::LOGIN,
++            })
++            .encode(),
++        )
++        .unwrap();
++    peer.recv().unwrap();
++    peer.send(&[2]).unwrap();
++    client.recv().unwrap();
++    client
++        .send(&login::Serverbound::LoginAcknowledged(Empty).encode())
++        .unwrap();
++    peer.recv().unwrap();
++    (client, peer)
++}
++
 +#[test]
 +fn owner_drives_real_configure_with_batch_reply_refusal_and_reset() {
 +    use horizon_world::native_load_context::DataLoadOrigin;
@@ -2039,10 +2071,9 @@ new file mode 100644
 +        Profile::neoforge("1.21.1", 767, "21.1.248", [7; 32], vec![], Arc::new(Refuse)).unwrap();
 +    let payloads =
 +        crate::raw_payloads::Transport::capture(crate::raw_payloads::Side::Client).unwrap();
-+    let (client, peer) = horizon_protocol::connection::Pipe::pair();
-+    let (mut reader, writer) = Connection::local(client).split();
++    let (client, mut peer) = ordered_configured_pair();
++    let (mut reader, writer) = client.split();
 +    let writer = Arc::new(Mutex::new(Some(QueuedWriter::new(writer).unwrap())));
-+    let mut peer = Connection::local(peer);
 +    peer.reader
 +        .set_read_timeout(Some(Duration::from_millis(50)))
 +        .unwrap();
@@ -2144,10 +2175,9 @@ new file mode 100644
 +        .unwrap();
 +    let payloads =
 +        crate::raw_payloads::Transport::capture(crate::raw_payloads::Side::Client).unwrap();
-+    let (client, server) = horizon_protocol::connection::Pipe::pair();
-+    let (mut reader, writer) = Connection::local(client).split();
++    let (client, mut peer) = ordered_configured_pair();
++    let (mut reader, writer) = client.split();
 +    let writer = Arc::new(Mutex::new(Some(QueuedWriter::new(writer).unwrap())));
-+    let mut peer = Connection::local(server);
 +    peer.reader
 +        .set_read_timeout(Some(Duration::from_secs(2)))
 +        .unwrap();
@@ -2286,6 +2316,15 @@ new file mode 100644
 diff --git a/crates/horizon-client/src/net/queued_writer.rs b/crates/horizon-client/src/net/queued_writer.rs
 --- a/crates/horizon-client/src/net/queued_writer.rs
 +++ b/crates/horizon-client/src/net/queued_writer.rs
+@@ -5,7 +5,7 @@
+ use horizon_protocol::{
+     Error, Result,
+     adapter::ServerVersion,
+-    connection::{Closer, ConnWriter, Framing},
++    connection::{Closer, ConfigurationFence, ConfigurationOrder, ConnWriter, Framing},
+     frame::FrameSize,
+ };
+ use mod_api::{PayloadFrameStage, PayloadId, PayloadSendError, SendPacketError};
 @@ -14,7 +14,64 @@
      atomic::{AtomicBool, Ordering},
  };
@@ -2351,7 +2390,7 @@ diff --git a/crates/horizon-client/src/net/queued_writer.rs b/crates/horizon-cli
 
  const CAPACITY: usize = 16 * 1024 * 1024;
  // Covers the pending transaction journal record as well as the queue's own node.
-@@ -22,6 +79,13 @@
+@@ -22,6 +79,14 @@
  enum WriteJob {
      Packet(Vec<u8>),
      Contents(Vec<u8>),
@@ -2360,20 +2399,32 @@ diff --git a/crates/horizon-client/src/net/queued_writer.rs b/crates/horizon-cli
 +    /// failure tears the connection down rather than acknowledging a partial batch.
 +    Batch {
 +        bodies: Vec<Vec<u8>>,
++        fence: Option<ConfigurationFence>,
 +        complete: SyncSender<Completion>,
 +    },
      Disconnect(Vec<u8>),
  }
 
-@@ -33,6 +97,7 @@
+@@ -33,8 +98,10 @@
      // ConnWriter::send_contents returns after write_all; it does not flush.
      probe: Arc<[std::sync::atomic::AtomicUsize; 4]>,
      sender: Mutex<Option<Sender<WriteJob>>>,
 +    receipts: std::sync::atomic::AtomicUsize,
      worker: Mutex<Option<JoinHandle<ConnWriter>>>,
      framing: Framing,
++    configuration_order: ConfigurationOrder,
      closer: Arc<Closer>,
-@@ -171,6 +236,11 @@
+     alive: Arc<AtomicBool>,
+     retired: AtomicBool,
+@@ -155,6 +222,7 @@
+     }
+     pub(crate) fn new(mut writer: ConnWriter) -> Result<Self> {
+         let framing = writer.framing();
++        let configuration_order = writer.configuration_order();
+         let closer = Arc::new(writer.closer()?);
+         let alive = Arc::new(AtomicBool::new(true));
+         let version = writer.server_version();
+@@ -171,6 +239,11 @@
              .name("horizon-net-write".into())
              .spawn(move || {
                  while let Ok(job) = receiver.recv() {
@@ -2385,7 +2436,7 @@ diff --git a/crates/horizon-client/src/net/queued_writer.rs b/crates/horizon-cli
                      let disconnect = matches!(&job, WriteJob::Disconnect(_));
                      #[cfg(any(test, feature = "test-payload-probe"))]
                      {
-@@ -178,6 +248,7 @@
+@@ -178,6 +251,7 @@
                              WriteJob::Packet(b)
                              | WriteJob::Contents(b)
                              | WriteJob::Disconnect(b) => b.len(),
@@ -2393,22 +2444,16 @@ diff --git a/crates/horizon-client/src/net/queued_writer.rs b/crates/horizon-cli
                          };
                          writing[0].fetch_add(1, Ordering::Relaxed);
                          writing[2].store(bytes, Ordering::Relaxed);
-@@ -186,6 +257,25 @@
+@@ -186,6 +260,19 @@
                      let result = match job {
                          WriteJob::Packet(body) | WriteJob::Disconnect(body) => writer.send(&body),
                          WriteJob::Contents(contents) => writer.send_contents(&contents),
-+                        WriteJob::Batch { bodies, complete } => {
-+                            let mut outcome = Ok(());
-+                            for body in &bodies {
-+                                if !running.load(Ordering::Acquire) {
-+                                    outcome = Err(Error::new("configuration write cancelled"));
-+                                    break;
-+                                }
-+                                outcome = writer.send(body);
-+                                if outcome.is_err() {
-+                                    break;
-+                                }
-+                            }
++                        WriteJob::Batch {
++                            bodies,
++                            fence,
++                            complete,
++                        } => {
++                            let outcome = writer.send_configuration_batch(&bodies, fence);
 +                            // A capacity-one receipt cannot block this worker.
 +                            // Failure or cancellation remains terminal below.
 +                            let reported =
@@ -2419,7 +2464,7 @@ diff --git a/crates/horizon-client/src/net/queued_writer.rs b/crates/horizon-cli
                      };
                      #[cfg(any(test, feature = "test-payload-probe"))]
                      {
-@@ -208,6 +298,7 @@
+@@ -208,10 +295,12 @@
              #[cfg(any(test, feature = "test-payload-probe"))]
              probe,
              sender: Mutex::new(Some(sender)),
@@ -2427,7 +2472,12 @@ diff --git a/crates/horizon-client/src/net/queued_writer.rs b/crates/horizon-cli
              worker: Mutex::new(Some(worker)),
              retired: AtomicBool::new(false),
              terminal: AtomicBool::new(false),
-@@ -222,6 +313,11 @@
+             framing,
++            configuration_order,
+             closer,
+             alive,
+             version,
+@@ -222,6 +311,11 @@
      /// Stop acceptance, cancel unpublished reservations and drain published writes.
      pub(crate) fn drain_and_take(&self) -> Result<ConnWriter> {
          let mut sender = self.sender.lock().unwrap();
@@ -2439,7 +2489,7 @@ diff --git a/crates/horizon-client/src/net/queued_writer.rs b/crates/horizon-cli
          self.retired.store(true, Ordering::Release);
          sender.take();
          drop(sender);
-@@ -274,6 +370,37 @@
+@@ -274,6 +368,45 @@
          };
          match sender.try_send(WriteJob::Packet(owned), capacity) {
              Ok(()) => Ok(()),
@@ -2460,12 +2510,20 @@ diff --git a/crates/horizon-client/src/net/queued_writer.rs b/crates/horizon-cli
 +            return Err(Error::new("client writer disconnected"));
 +        }
 +        let capacity = batch_charge(&bodies)?;
++        let fence = self.configuration_order.capture()?;
 +        let (complete, completion) = mpsc::sync_channel(1);
 +        let sender = self.sender.lock().unwrap();
 +        let Some(sender) = sender.as_ref() else {
 +            return Err(Error::new("writer retired"));
 +        };
-+        match sender.try_send(WriteJob::Batch { bodies, complete }, capacity) {
++        match sender.try_send(
++            WriteJob::Batch {
++                bodies,
++                fence,
++                complete,
++            },
++            capacity,
++        ) {
 +            Ok(()) => {
 +                self.receipts.fetch_add(1, Ordering::AcqRel);
 +                Ok(WriteReceipt {
@@ -2477,7 +2535,7 @@ diff --git a/crates/horizon-client/src/net/queued_writer.rs b/crates/horizon-cli
              Err(TrySendError::Full(_)) => {
                  self.alive.store(false, Ordering::Release);
                  self.closer.close();
-@@ -340,6 +467,9 @@
+@@ -340,6 +473,9 @@
              WriteJob::Packet(bytes) | WriteJob::Contents(bytes) | WriteJob::Disconnect(bytes) => {
                  bytes.capacity()
              }
@@ -2490,7 +2548,155 @@ diff --git a/crates/horizon-client/src/net/queued_writer.rs b/crates/horizon-cli
 diff --git a/crates/horizon-protocol/src/adapter/session.rs b/crates/horizon-protocol/src/adapter/session.rs
 --- a/crates/horizon-protocol/src/adapter/session.rs
 +++ b/crates/horizon-protocol/src/adapter/session.rs
-@@ -545,3 +545,90 @@
+@@ -8,8 +8,8 @@
+ use std::{
+     collections::{HashMap, VecDeque},
+     sync::{
+-        Arc, Mutex,
+-        atomic::{AtomicBool, AtomicU8, Ordering},
++        Arc, Mutex, MutexGuard,
++        atomic::{AtomicBool, AtomicU8, AtomicU64, Ordering},
+     },
+ };
+
+@@ -42,6 +42,9 @@
+
+ /// Shared by a connection's reader and writer.
+ pub struct Session {
++    order: Mutex<()>,
++    generation: AtomicU64,
++    ordered_configuration: AtomicBool,
+     pub version: ServerVersion,
+     /// Dimension of the last play login or respawn, for older packets with only a local block position.
+     pub(super) dimension: Mutex<String>,
+@@ -71,9 +74,63 @@
+     pub(super) outgoing: Mutex<Vec<Vec<u8>>>,
+ }
+
++/// A transaction over BOTH phases, translation and the queues translation creates.
++/// Never acquire this while holding a queue mutex. Socket cancellation is lock-free.
++/// Callers must not recursively call Session's public translation/queue methods.
++pub(crate) struct SessionOrder<'a> {
++    session: &'a Session,
++    _guard: MutexGuard<'a, ()>,
++}
++impl SessionOrder<'_> {
++    pub(crate) fn generation(&self) -> u64 {
++        self.session.generation.load(Ordering::Acquire)
++    }
++    pub(crate) fn configuration(&self) -> bool {
++        self.session.reading() == State::Configuration
++            && self.session.writing() == State::Configuration
++            && self.generation() != u64::MAX
++    }
++    pub(crate) fn clientbound(&self, id: i32, payload: Vec<u8>) -> Result<Option<(i32, Vec<u8>)>> {
++        self.session.clientbound_ordered(id, payload)
++    }
++    pub(crate) fn serverbound(&self, body: &[u8]) -> Result<Option<Vec<u8>>> {
++        self.session.serverbound_ordered(body)
++    }
++    pub(crate) fn next_incoming(&self) -> Option<(i32, Vec<u8>)> {
++        self.session.next_incoming_ordered()
++    }
++    pub(crate) fn take_outgoing(&self) -> Vec<Vec<u8>> {
++        self.session.take_outgoing_ordered()
++    }
++    pub(crate) fn enable_configuration(&self) -> Result<()> {
++        if self.session.version != ServerVersion::V1_21_1 || !self.configuration() {
++            return Err(crate::Error::new(
++                "ordered configuration requires both protocol 767 phases",
++            ));
++        }
++        self.session
++            .ordered_configuration
++            .store(true, Ordering::Release);
++        Ok(())
++    }
++}
++
+ impl Session {
++    pub(crate) fn ordered(&self) -> SessionOrder<'_> {
++        SessionOrder {
++            session: self,
++            _guard: self.order.lock().unwrap(),
++        }
++    }
++    pub(crate) fn configuration_is_ordered(&self) -> bool {
++        self.ordered_configuration.load(Ordering::Acquire)
++    }
++
+     pub fn new(version: ServerVersion) -> Self {
+         Self {
++            order: Mutex::new(()),
++            generation: AtomicU64::new(0),
++            ordered_configuration: AtomicBool::new(false),
+             version,
+             dimension: Mutex::new("minecraft:overworld".into()),
+             local_player: Mutex::new(None),
+@@ -103,9 +160,25 @@
+         from_u8(self.writing.load(Ordering::Acquire))
+     }
+     fn set_reading(&self, state: State) {
++        if self.reading() != state {
++            // Saturation is terminal for new fences; never recycle an epoch.
++            let _ = self
++                .generation
++                .fetch_update(Ordering::AcqRel, Ordering::Acquire, |value| {
++                    Some(value.saturating_add(1))
++                });
++        }
+         self.reading.store(to_u8(state), Ordering::Release);
+     }
+     fn set_writing(&self, state: State) {
++        if self.writing() != state {
++            // Saturation is terminal for new fences; never recycle an epoch.
++            let _ = self
++                .generation
++                .fetch_update(Ordering::AcqRel, Ordering::Acquire, |value| {
++                    Some(value.saturating_add(1))
++                });
++        }
+         self.writing.store(to_u8(state), Ordering::Release);
+     }
+
+@@ -143,6 +216,9 @@
+     /// A packet the server sent, as the pinned version numbers and lays it out. `None` drops it: Horizon
+     /// knows no such packet.
+     pub fn clientbound(&self, id: i32, payload: Vec<u8>) -> Result<Option<(i32, Vec<u8>)>> {
++        self.ordered().clientbound(id, payload)
++    }
++    fn clientbound_ordered(&self, id: i32, payload: Vec<u8>) -> Result<Option<(i32, Vec<u8>)>> {
+         let state = self.reading();
+         let recipe_book = if self.version.at_most(ServerVersion::V1_20_3) {
+             63
+@@ -210,6 +286,9 @@
+     /// A packet body (VarInt id + payload) Horizon sends, as this server numbers and lays it out. `None`:
+     /// the server has no such packet, so nothing is sent.
+     pub fn serverbound(&self, body: &[u8]) -> Result<Option<Vec<u8>>> {
++        self.ordered().serverbound(body)
++    }
++    fn serverbound_ordered(&self, body: &[u8]) -> Result<Option<Vec<u8>>> {
+         let state = self.writing();
+         let mut r = Reader::new(body);
+         let id = r.varint()?;
+@@ -240,10 +319,16 @@
+
+     /// A packet the translation made that Horizon reads next, already in the pinned version's numbering.
+     pub fn next_incoming(&self) -> Option<(i32, Vec<u8>)> {
++        self.ordered().next_incoming()
++    }
++    fn next_incoming_ordered(&self) -> Option<(i32, Vec<u8>)> {
+         self.incoming.lock().unwrap().pop_front()
+     }
+     /// Bodies the translation added after the packet just sent, in the server's numbering.
+     pub fn take_outgoing(&self) -> Vec<Vec<u8>> {
++        self.ordered().take_outgoing()
++    }
++    fn take_outgoing_ordered(&self) -> Vec<Vec<u8>> {
+         std::mem::take(&mut *self.outgoing.lock().unwrap())
+     }
+
+@@ -545,3 +630,90 @@
          assert_eq!(sent, vec![49, 7]);
      }
  }
@@ -2641,7 +2847,56 @@ diff --git a/crates/horizon-protocol/src/connection.rs b/crates/horizon-protocol
      memory: bool,
      stream: Stream,
      encrypt: Option<Cfb8>,
-@@ -278,10 +299,15 @@
+@@ -135,6 +156,48 @@
+     /// Set on a server for a client of an older release: what is sent is renumbered.
+     older_client: Option<Arc<crate::adapter::ClientSession>>,
+ }
++/// A physical connection's adapter fence source, shared with the queued writer.
++#[derive(Clone)]
++pub struct ConfigurationOrder {
++    adapter: Option<Arc<crate::adapter::Session>>,
++    terminal: Arc<AtomicBool>,
++}
++/// Non-forgeable, connection-specific incarnation. Never authorizes split traffic.
++pub struct ConfigurationFence {
++    adapter: Arc<crate::adapter::Session>,
++    generation: u64,
++}
++impl ConfigurationOrder {
++    /// Capture at admission, not later when a queued job happens to execute.
++    /// Ordinary vanilla/Horizon routes deliberately have no configuration fence.
++    pub fn capture(&self) -> Result<Option<ConfigurationFence>> {
++        if self.terminal.load(Ordering::Acquire) {
++            return Err(Error::new("closed configuration order"));
++        }
++        let Some(adapter) = self
++            .adapter
++            .as_ref()
++            .filter(|a| a.configuration_is_ordered())
++        else {
++            return Ok(None);
++        };
++        let order = adapter.ordered();
++        if self.terminal.load(Ordering::Acquire) || !order.configuration() {
++            return Err(Error::new("configuration admission outside its epoch"));
++        }
++        Ok(Some(ConfigurationFence {
++            adapter: adapter.clone(),
++            generation: order.generation(),
++        }))
++    }
++}
++/// A mapped original plus its exact physical adapter and phase incarnation.
++/// The bytes cannot be extracted and accidentally passed through translation twice.
++pub struct PreparedConfiguration {
++    body: Vec<u8>,
++    fence: ConfigurationFence,
++}
++
+ /// `InetAddress.getByName` under Java's default `java.net.preferIPv6Addresses=false`: IPv4
+ /// addresses first, whatever order the system resolver gives (macOS lists IPv6 first). Vanilla
+ /// connects to that first address only; the rest stay here as fallbacks.
+@@ -278,10 +341,15 @@
      }
      fn over(stream: Stream) -> Result<Self> {
          let counters = Arc::new(Counters::default());
@@ -2657,7 +2912,7 @@ diff --git a/crates/horizon-protocol/src/connection.rs b/crates/horizon-protocol
                  memory,
                  stream,
                  buffer: Vec::new(),
-@@ -295,6 +321,8 @@
+@@ -295,6 +363,8 @@
                  older_client: None,
              },
              writer: ConnWriter {
@@ -2666,7 +2921,7 @@ diff --git a/crates/horizon-protocol/src/connection.rs b/crates/horizon-protocol
                  memory,
                  stream: write,
                  encrypt: None,
-@@ -359,7 +387,14 @@
+@@ -359,7 +429,14 @@
      /// goes in through [`ConnReader::read_from`]; [`ConnWriter::frame_into`]
      /// makes what is to be sent. Their own reads and writes fail from now on.
      pub fn detach(mut self) -> (Socket, ConnReader, ConnWriter) {
@@ -2682,7 +2937,7 @@ diff --git a/crates/horizon-protocol/src/connection.rs b/crates/horizon-protocol
          let socket = match std::mem::replace(&mut self.reader.stream, Stream::Detached) {
              Stream::Tcp(s) => Socket::Tcp(s),
              Stream::Memory(p) => Socket::Memory(p),
-@@ -394,6 +429,11 @@
+@@ -394,17 +471,133 @@
      }
      /// Read exactly `len` bytes as they are, with no framing.
      pub fn read_raw(&mut self, len: usize) -> Result<Vec<u8>> {
@@ -2694,7 +2949,22 @@ diff --git a/crates/horizon-protocol/src/connection.rs b/crates/horizon-protocol
          let mut out = vec![0u8; len];
          self.stream.read_exact(&mut out)?;
          Ok(out)
-@@ -403,8 +443,105 @@
+     }
++    /// Opt in the exact early NeoForge adapter before admitting configuration work.
++    /// Both adapter transitions and generated queues share its transaction domain.
++    pub fn order_configuration(&self) -> Result<()> {
++        if self.terminal.load(Ordering::Acquire) {
++            return Err(Error::new("closed configuration transport"));
++        }
++        self.adapter
++            .as_ref()
++            .ok_or_else(|| Error::new("ordered configuration requires adapter"))?
++            .ordered()
++            .enable_configuration()
++    }
++
+     /// Whether this reader uses the engine's in-memory transport.
+     pub fn is_memory(&self) -> bool {
          self.memory
      }
 
@@ -2749,9 +3019,10 @@ diff --git a/crates/horizon-protocol/src/connection.rs b/crates/horizon-protocol
 +            .adapter
 +            .as_ref()
 +            .ok_or_else(|| Error::new("reconstructed packet requires protocol 767 adapter"))?;
-+        if session.version != ServerVersion::V1_21_1
-+            || session.reading() != State::Configuration
-+            || session.writing() != State::Configuration
++        let order = session.ordered();
++        if self.terminal.load(Ordering::Acquire)
++            || session.version != ServerVersion::V1_21_1
++            || !order.configuration()
 +        {
 +            return Err(Error::new(
 +                "reconstructed packet outside protocol 767 configuration",
@@ -2786,7 +3057,7 @@ diff --git a/crates/horizon-protocol/src/connection.rs b/crates/horizon-protocol
 +            // registries/tags, no phase transition, and no unknown passthrough.
 +            _ => return Err(Error::new("unsupported reconstructed configuration packet")),
 +        }
-+        session
++        order
 +            .clientbound(id, body[at..].to_vec())?
 +            .ok_or_else(|| Error::new("reconstructed configuration packet was dropped"))
 +    }
@@ -2800,7 +3071,7 @@ diff --git a/crates/horizon-protocol/src/connection.rs b/crates/horizon-protocol
          if let Some(packet) = self.adapter.as_ref().and_then(|a| a.next_incoming()) {
              return Ok(packet);
          }
-@@ -416,6 +553,7 @@
+@@ -416,6 +609,7 @@
              return Ok(packet);
          }
          loop {
@@ -2808,7 +3079,24 @@ diff --git a/crates/horizon-protocol/src/connection.rs b/crates/horizon-protocol
              match self.next()? {
                  Next::Packet((id, payload)) if self.older_client.is_some() => {
                      let client = self.older_client.as_ref().expect("checked");
-@@ -443,6 +581,10 @@
+@@ -426,10 +620,14 @@
+                 Next::Packet(packet) => match &self.adapter {
+                     None => return Ok(packet),
+                     Some(a) => {
+-                        if let Some(packet) = a.clientbound(packet.0, packet.1)? {
++                        let order = a.ordered();
++                        if self.terminal.load(Ordering::Acquire) {
++                            return Err(Error::new("closed connection transport"));
++                        }
++                        if let Some(packet) = order.clientbound(packet.0, packet.1)? {
+                             return Ok(packet);
+                         }
+-                        if let Some(packet) = a.next_incoming() {
++                        if let Some(packet) = order.next_incoming() {
+                             return Ok(packet);
+                         }
+                     }
+@@ -443,6 +641,10 @@
      /// more: for a detached reader, after [`Self::read_from`]. Only an older
      /// client's renumbering applies (a server's connection has no other).
      pub fn buffered(&mut self) -> Result<Option<(i32, Vec<u8>)>> {
@@ -2819,7 +3107,7 @@ diff --git a/crates/horizon-protocol/src/connection.rs b/crates/horizon-protocol
          if let Some(packet) = self
              .older_client
              .as_ref()
-@@ -451,6 +593,7 @@
+@@ -451,6 +653,7 @@
              return Ok(Some(packet));
          }
          loop {
@@ -2827,7 +3115,7 @@ diff --git a/crates/horizon-protocol/src/connection.rs b/crates/horizon-protocol
              match self.next()? {
                  Next::Packet((id, payload)) if self.older_client.is_some() => {
                      let client = self.older_client.as_ref().expect("checked");
-@@ -468,6 +611,14 @@
+@@ -468,6 +671,14 @@
      /// buffer: the bytes read, 0 at the end of the stream, or its error
      /// (`WouldBlock` when nothing waits).
      pub fn read_from(&mut self, source: &mut impl Read) -> std::io::Result<usize> {
@@ -2842,7 +3130,7 @@ diff --git a/crates/horizon-protocol/src/connection.rs b/crates/horizon-protocol
          let wanted = match self.next_header() {
              Ok(Some((prefix, len))) => prefix + len,
              _ => 0,
-@@ -514,14 +665,11 @@
+@@ -514,14 +725,11 @@
                  if body.is_empty() {
                      return Ok(None);
                  }
@@ -2860,7 +3148,7 @@ diff --git a/crates/horizon-protocol/src/connection.rs b/crates/horizon-protocol
                  body.drain(..at);
                  Ok(Some((id, body)))
              }
-@@ -530,6 +678,16 @@
+@@ -530,6 +738,16 @@
      /// Read once from the stream into the buffer, with room for at least
      /// `frame` bytes of unconsumed data (a whole frame, once its length is known).
      fn fill(&mut self, frame: usize) -> Result<()> {
@@ -2877,7 +3165,7 @@ diff --git a/crates/horizon-protocol/src/connection.rs b/crates/horizon-protocol
          let mut stream = std::mem::replace(&mut self.stream, Stream::Detached);
          let read = self.fill_from(&mut stream, frame);
          self.stream = stream;
-@@ -581,7 +739,29 @@
+@@ -581,7 +799,29 @@
      }
      /// A [`Closer`] for this connection.
      pub fn closer(&self) -> Result<Closer> {
@@ -2908,7 +3196,7 @@ diff --git a/crates/horizon-protocol/src/connection.rs b/crates/horizon-protocol
      }
      pub fn set_read_timeout(&self, timeout: Option<Duration>) -> Result<()> {
          Ok(self.stream.set_read_timeout(timeout)?)
-@@ -615,6 +795,9 @@
+@@ -615,6 +855,9 @@
      /// Remove this exact writer, leaving an explicitly disconnected placeholder.
      pub fn take(&mut self) -> Self {
          let placeholder = Self {
@@ -2918,7 +3206,7 @@ diff --git a/crates/horizon-protocol/src/connection.rs b/crates/horizon-protocol
              memory: self.memory,
              stream: Stream::Detached,
              encrypt: None,
-@@ -628,7 +811,13 @@
+@@ -628,7 +871,13 @@
 
      /// An independent shutdown handle for this writer.
      pub fn closer(&self) -> Result<Closer> {
@@ -2933,7 +3221,7 @@ diff --git a/crates/horizon-protocol/src/connection.rs b/crates/horizon-protocol
      }
      /// Encode frame contents for this transport. Memory packets bypass network
      /// compression and its size limits; use this before `frame_into` when detached.
-@@ -671,6 +860,9 @@
+@@ -671,6 +920,9 @@
      /// Write bytes as they are, with no framing: the legacy server list ping
      /// (`LegacyServerPinger`) is not a framed protocol.
      pub fn write_raw(&mut self, data: &[u8]) -> Result<()> {
@@ -2943,7 +3231,7 @@ diff --git a/crates/horizon-protocol/src/connection.rs b/crates/horizon-protocol
          self.stream.write_all(data)?;
          self.stream.flush()?;
          Ok(())
-@@ -697,8 +889,89 @@
+@@ -697,8 +949,195 @@
      pub fn for_client_is_plain(&self) -> bool {
          self.older_client.is_none()
      }
@@ -2961,7 +3249,6 @@ diff --git a/crates/horizon-protocol/src/connection.rs b/crates/horizon-protocol
 +    /// Detached network writers are supported; private memory framing is not.
 +    /// Errors leave this writer/session untouched; the caller owns close/reset.
 +    pub fn prepare_serverbound_configuration(&self, body: &[u8]) -> Result<Vec<u8>> {
-+        use crate::{State, adapter::ServerVersion, packets::configuration as cfg};
 +        if self.terminal.load(Ordering::Acquire) {
 +            return Err(Error::new("closed outbound configuration transport"));
 +        }
@@ -2972,10 +3259,21 @@ diff --git a/crates/horizon-protocol/src/connection.rs b/crates/horizon-protocol
 +            .adapter
 +            .as_ref()
 +            .ok_or_else(|| Error::new("outbound original requires protocol 767 adapter"))?;
-+        if session.version != ServerVersion::V1_21_1
-+            || session.reading() != State::Configuration
-+            || session.writing() != State::Configuration
-+        {
++        let order = session.ordered();
++        self.prepare_configuration_body(body, session, order.configuration())
++    }
++
++    fn prepare_configuration_body(
++        &self,
++        body: &[u8],
++        session: &crate::adapter::Session,
++        configuration: bool,
++    ) -> Result<Vec<u8>> {
++        use crate::{State, adapter::ServerVersion, packets::configuration as cfg};
++        if self.terminal.load(Ordering::Acquire) {
++            return Err(Error::new("closed outbound configuration transport"));
++        }
++        if session.version != ServerVersion::V1_21_1 || !configuration {
 +            return Err(Error::new(
 +                "outbound original outside protocol 767 configuration",
 +            ));
@@ -3025,6 +3323,102 @@ diff --git a/crates/horizon-protocol/src/connection.rs b/crates/horizon-protocol
 +        Ok(out)
 +    }
 +
++    pub fn configuration_order(&self) -> ConfigurationOrder {
++        ConfigurationOrder {
++            adapter: self.adapter.clone(),
++            terminal: self.terminal.clone(),
++        }
++    }
++    /// Prepare without losing identity or phase incarnation. No socket/counter effects.
++    pub fn prepare_ordered_configuration(&self, body: &[u8]) -> Result<PreparedConfiguration> {
++        if self.memory || self.older_client.is_some() || self.terminal.load(Ordering::Acquire) {
++            return Err(Error::new("unsupported ordered configuration transport"));
++        }
++        let session = self
++            .adapter
++            .as_ref()
++            .ok_or_else(|| Error::new("missing configuration adapter"))?;
++        let order = session.ordered();
++        if !session.configuration_is_ordered() {
++            return Err(Error::new("configuration ordering not enabled"));
++        }
++        let body = self.prepare_configuration_body(body, session, order.configuration())?;
++        Ok(PreparedConfiguration {
++            body,
++            fence: ConfigurationFence {
++                adapter: session.clone(),
++                generation: order.generation(),
++            },
++        })
++    }
++    /// Emit a prepared original directly: never map an already mapped id again.
++    pub fn send_prepared_configuration(&mut self, prepared: PreparedConfiguration) -> Result<()> {
++        let session = self
++            .adapter
++            .clone()
++            .ok_or_else(|| Error::new("missing configuration adapter"))?;
++        let order = session.ordered();
++        if !Arc::ptr_eq(&session, &prepared.fence.adapter)
++            || !order.configuration()
++            || order.generation() != prepared.fence.generation
++            || self.terminal.load(Ordering::Acquire)
++        {
++            return Err(Error::new("stale prepared configuration original"));
++        }
++        self.send_contents(&self.contents(&prepared.body)?)
++    }
++    /// One admitted batch, one adapter transaction through actual write_all completion.
++    /// Cancellation never needs this mutex, so it can unblock a stalled socket write.
++    pub fn send_configuration_batch(
++        &mut self,
++        bodies: &[Vec<u8>],
++        fence: Option<ConfigurationFence>,
++    ) -> Result<()> {
++        let Some(fence) = fence else {
++            // A job captured before opt-in must not gain authority at execution.
++            if self
++                .adapter
++                .as_ref()
++                .is_some_and(|a| a.configuration_is_ordered())
++            {
++                return Err(Error::new("unfenced configuration batch"));
++            }
++            for body in bodies {
++                self.send(body)?;
++            }
++            return Ok(());
++        };
++        let session = self
++            .adapter
++            .clone()
++            .ok_or_else(|| Error::new("missing configuration adapter"))?;
++        let order = session.ordered();
++        if !Arc::ptr_eq(&session, &fence.adapter)
++            || !order.configuration()
++            || order.generation() != fence.generation
++            || self.terminal.load(Ordering::Acquire)
++        {
++            return Err(Error::new("stale configuration batch"));
++        }
++        for body in bodies {
++            // Early reply batches cannot contain a phase transition. Validate
++            // before any packet escapes, not halfway through a batch.
++            let (id, _) = packet_id(body)?;
++            if id == crate::ids::configuration::serverbound::FINISH_CONFIGURATION {
++                return Err(Error::new("configuration batch cannot finish"));
++            }
++        }
++        for body in bodies {
++            if let Some(body) = order.serverbound(body)? {
++                self.send_contents(&self.contents(&body)?)?;
++            }
++            for body in order.take_outgoing() {
++                self.send_contents(&self.contents(&body)?)?;
++            }
++        }
++        Ok(())
++    }
++
      /// Send one packet body (VarInt id + payload).
      pub fn send(&mut self, body: &[u8]) -> Result<()> {
 +        if self.terminal.load(Ordering::Acquire) {
@@ -3033,7 +3427,27 @@ diff --git a/crates/horizon-protocol/src/connection.rs b/crates/horizon-protocol
          if self.older_client.is_some() {
              for body in self.for_client(body)? {
                  self.send_contents(&self.contents(&body)?)?;
-@@ -718,6 +991,9 @@
+@@ -706,6 +1145,19 @@
+             return Ok(());
+         }
+         if let Some(a) = self.adapter.clone() {
++            if a.configuration_is_ordered() {
++                let order = a.ordered();
++                if self.terminal.load(Ordering::Acquire) {
++                    return Err(Error::new("closed connection transport"));
++                }
++                if let Some(body) = order.serverbound(body)? {
++                    self.send_contents(&self.contents(&body)?)?;
++                }
++                for body in order.take_outgoing() {
++                    self.send_contents(&self.contents(&body)?)?;
++                }
++                return Ok(());
++            }
+             if let Some(body) = a.serverbound(body)? {
+                 self.send_contents(&self.contents(&body)?)?;
+             }
+@@ -718,6 +1170,9 @@
      }
      /// Send a frame whose contents [`Self::contents`] made for this transport.
      pub fn send_contents(&mut self, contents: &[u8]) -> Result<()> {
@@ -3043,7 +3457,7 @@ diff --git a/crates/horizon-protocol/src/connection.rs b/crates/horizon-protocol
          let mut framed = Vec::with_capacity(contents.len() + 3);
          self.frame_into(contents, &mut framed);
          self.stream.write_all(&framed)?;
-@@ -786,6 +1062,10 @@
+@@ -786,6 +1241,10 @@
              .fetch_add((out.len() - at) as i64, Ordering::Relaxed);
      }
      pub fn shutdown(&self) {
@@ -3054,7 +3468,7 @@ diff --git a/crates/horizon-protocol/src/connection.rs b/crates/horizon-protocol
          self.stream.shutdown();
      }
  }
-@@ -818,6 +1098,8 @@
+@@ -818,6 +1277,8 @@
 
      fn writer(encrypted: bool) -> ConnWriter {
          ConnWriter {
@@ -3063,7 +3477,7 @@ diff --git a/crates/horizon-protocol/src/connection.rs b/crates/horizon-protocol
              memory: false,
              stream: Stream::Detached,
              encrypt: encrypted.then(|| Cfb8::new(&[7; 16], &[9; 16])),
-@@ -1315,3 +1597,745 @@
+@@ -1315,3 +1776,947 @@
          assert!(Connection::from_stream(stream).is_ok());
      }
  }
@@ -3807,5 +4221,207 @@ diff --git a/crates/horizon-protocol/src/connection.rs b/crates/horizon-protocol
 +            "real finish translation must queue incoming packets"
 +        );
 +        assert_eq!(drain(session), expected);
++    }
++
++    #[test]
++    fn ordered_prepared_original_is_physical_and_reentry_fenced() {
++        let (mut client, _peer) = outbound_configured();
++        let (mut successor, _next_peer) = outbound_configured();
++        client.reader.order_configuration().unwrap();
++        successor.reader.order_configuration().unwrap();
++        let prepared = client
++            .writer
++            .prepare_ordered_configuration(&[7, 0])
++            .unwrap();
++        let before = outbound_counters(&successor);
++        assert!(
++            successor
++                .writer
++                .send_prepared_configuration(prepared)
++                .is_err()
++        );
++        assert_eq!(outbound_counters(&successor), before);
++        let prepared = client
++            .writer
++            .prepare_ordered_configuration(&[7, 0])
++            .unwrap();
++        let session = client.writer.adapter.clone().unwrap();
++        configuration_reentry(&session);
++        let before = outbound_counters(&client);
++        assert!(client.writer.send_prepared_configuration(prepared).is_err());
++        assert_eq!(outbound_counters(&client), before);
++        // A newly prepared original in the new incarnation is usable.
++        let fresh = client
++            .writer
++            .prepare_ordered_configuration(&[7, 0])
++            .unwrap();
++        client.writer.send_prepared_configuration(fresh).unwrap();
++    }
++
++    fn configuration_reentry(session: &crate::adapter::Session) {
++        session.clientbound(3, vec![]).unwrap(); // wire finish -> reading Play
++        session.serverbound(&[3]).unwrap(); // pinned finish -> writing Play
++        let wire = (0..256)
++            .find(|id| {
++                session.version.clientbound_id(State::Play, *id)
++                    == Some(crate::ids::play::clientbound::START_CONFIGURATION)
++            })
++            .unwrap();
++        session.clientbound(wire, vec![]).unwrap();
++        let mut ack = crate::buf::Writer::new();
++        ack.varint(crate::ids::play::serverbound::CONFIGURATION_ACKNOWLEDGED);
++        session.serverbound(&ack.data).unwrap();
++        assert_eq!(session.reading(), State::Configuration);
++        assert_eq!(session.writing(), State::Configuration);
++    }
++
++    #[test]
++    fn ordered_batch_rejects_stale_unfenced_and_finish_before_any_output() {
++        let (mut client, _peer) = outbound_configured();
++        client.reader.order_configuration().unwrap();
++        let fence = client.writer.configuration_order().capture().unwrap();
++        let session = client.writer.adapter.clone().unwrap();
++        configuration_reentry(&session);
++        let before = outbound_counters(&client);
++        assert!(
++            client
++                .writer
++                .send_configuration_batch(&[vec![7, 0]], fence)
++                .is_err()
++        );
++        assert!(
++            client
++                .writer
++                .send_configuration_batch(&[vec![7, 0]], None)
++                .is_err()
++        );
++        let fence = client.writer.configuration_order().capture().unwrap();
++        assert!(
++            client
++                .writer
++                .send_configuration_batch(&[vec![7, 0], vec![3]], fence)
++                .is_err()
++        );
++        assert_eq!(outbound_counters(&client), before);
++    }
++
++    #[test]
++    fn ordered_adapter_domain_blocks_both_transitions_and_queue_drains() {
++        use std::sync::mpsc;
++        let (client, _peer) = outbound_configured();
++        client.reader.order_configuration().unwrap();
++        let session = client.writer.adapter.clone().unwrap();
++        // Hold the real shared domain; public adapter entry points on other
++        // executors must not cross it, even if their direction differs.
++        let order = session.ordered();
++        let mut threads = Vec::new();
++        let mut results = Vec::new();
++        for operation in 0..4 {
++            let session = session.clone();
++            let (started, ready) = mpsc::sync_channel(1);
++            let (done, result) = mpsc::sync_channel(1);
++            threads.push(std::thread::spawn(move || {
++                started.send(()).unwrap();
++                match operation {
++                    0 => {
++                        session.clientbound(3, vec![]).unwrap();
++                    }
++                    1 => {
++                        session.serverbound(&[3]).unwrap();
++                    }
++                    2 => {
++                        session.next_incoming();
++                    }
++                    _ => {
++                        session.take_outgoing();
++                    }
++                }
++                done.send(()).unwrap();
++            }));
++            ready.recv_timeout(Duration::from_secs(2)).unwrap();
++            assert!(result.recv_timeout(Duration::from_millis(25)).is_err());
++            results.push(result);
++        }
++        assert!(order.configuration());
++        drop(order);
++        for result in results {
++            result.recv_timeout(Duration::from_secs(2)).unwrap();
++        }
++        for thread in threads {
++            thread.join().unwrap();
++        }
++        assert_eq!(session.reading(), State::Play);
++        assert_eq!(session.writing(), State::Play);
++    }
++
++    #[test]
++    fn ordered_emission_and_preparation_wait_for_same_adapter_domain() {
++        use std::sync::mpsc;
++        let (client, mut peer) = outbound_configured();
++        client.reader.order_configuration().unwrap();
++        let session = client.writer.adapter.clone().unwrap();
++        let fence = client.writer.configuration_order().capture().unwrap();
++        let (reader, mut writer) = client.split();
++        let order = session.ordered();
++        let (started, ready) = mpsc::sync_channel(1);
++        let (done, result) = mpsc::sync_channel(1);
++        let thread = std::thread::spawn(move || {
++            started.send(()).unwrap();
++            writer
++                .send_configuration_batch(&[vec![7, 0], vec![7, 0]], fence)
++                .unwrap();
++            let prepared = writer.prepare_ordered_configuration(&[7, 0]).unwrap();
++            writer.send_prepared_configuration(prepared).unwrap();
++            done.send(()).unwrap();
++            writer
++        });
++        ready.recv_timeout(Duration::from_secs(2)).unwrap();
++        assert!(result.recv_timeout(Duration::from_millis(25)).is_err());
++        // Neither a queue drain nor the opposite phase can run during emission.
++        drop(order);
++        for _ in 0..3 {
++            assert_eq!(peer.recv().unwrap(), (7, vec![0]));
++        }
++        result.recv_timeout(Duration::from_secs(2)).unwrap();
++        drop(thread.join().unwrap());
++        drop(reader);
++    }
++
++    #[test]
++    fn ordered_configuration_tcp_batch_and_prepared_compression_encryption_matrix() {
++        for compression in [false, true] {
++            for encryption in [false, true] {
++                let (mut client, mut peer) = outbound_configured();
++                client.reader.order_configuration().unwrap();
++                if compression {
++                    client.set_compression(8);
++                    peer.set_compression(8);
++                }
++                if encryption {
++                    client.enable_encryption(&[11; 16]);
++                    peer.enable_encryption(&[11; 16]);
++                }
++                let payload = cfg::Serverbound::CustomPayload(cfg::CustomPayload {
++                    channel: "test:ordered".into(),
++                    data: vec![33; 128],
++                })
++                .encode();
++                let prepared = client
++                    .writer
++                    .prepare_ordered_configuration(&payload)
++                    .unwrap();
++                let before = outbound_counters(&client);
++                client.writer.send_prepared_configuration(prepared).unwrap();
++                assert_eq!(peer.recv().unwrap(), (2, payload[1..].to_vec()));
++                let fence = client.writer.configuration_order().capture().unwrap();
++                client
++                    .writer
++                    .send_configuration_batch(&[payload.clone(), vec![7, 0]], fence)
++                    .unwrap();
++                assert_eq!(peer.recv().unwrap(), (2, payload[1..].to_vec()));
++                assert_eq!(peer.recv().unwrap(), (7, vec![0]));
++                assert_eq!(outbound_counters(&client)[1] - before[1], 3);
++            }
++        }
 +    }
 +}
