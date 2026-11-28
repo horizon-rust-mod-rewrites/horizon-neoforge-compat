@@ -208,6 +208,7 @@ def main():
     for package, test_filter, minimum_passed in [
         ('horizon-client-lib', 'neoforge_compat_bridge::tests::', 16),
         ('horizon-client-lib', 'early_configuration', 9),
+        ('horizon-client-lib', 'ordered_owner_tests', 4),
         ('horizon-protocol', 'neoforge_configuration_framing_tests', 14),
         ('horizon-client-lib', 'net::tests::', 81),
     ]:
