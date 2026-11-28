@@ -1,3 +1,29 @@
+# Terminal reader follow-up — awaiting exact-SHA hosted validation
+
+Previous source dabf9c5b86e1c92442b1019abbef3b6da51ff4cc PASSED full standard
+hosted run46159257282. Artifact digest verified:
+c94cfb0cdd34814351be40d3e0b36d2edacdaab41d3cc8ce24fdadc042397667.
+16 companion /9 early /11 owner /14 protocol /81 net passed,3 ignored; core172
+each debug/release, strict checks, driver35 and fixtures6. Metadata46159261398
+also passed. Its retained evidence is parked for the final separate evidence
+commit; do NOT infer this following source change passed from that older result.
+
+Independent post-test review found a real uncovered teardown edge: missing shared
+writer could return before constructing the previous close guard, and a closer
+alone did not discard already buffered reader bytes. Follow-up adds a terminal
+ConnReader shutdown boundary, uses a guard owning the reader borrow through the
+actual configure call, constructs it before checking shared writer presence, and
+invalidates buffered/raw old-epoch reads on every early exit. Default route keeps
+cleanup disabled. Missing-writer actual-entry regression added, previous refusal
+tests now assert terminal reader invalidation. Owner suite now requires12 passes.
+No new split/flag opt-in, no finish removal, no tracker credit: still30/100.
+
+Local core172 each debug/release, strictClippy/fmt/docs, endpoint/table/isolated
+companion and patch/source checks previously passed with Rust1.97/musl/direct
+linker. Full engine requires hostedCI; update exact new evidence after its run.
+
+--- Earlier active handoff follows ---
+
 # Active continuation — 2026-11-28: awaited early writes (awaiting full CI)
 
 Verified remote HEAD 647f4300b365b2739657bb450b0e780b53273d35 before editing.
