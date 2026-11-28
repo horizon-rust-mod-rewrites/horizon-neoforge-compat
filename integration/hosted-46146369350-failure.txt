@@ -1,0 +1,314 @@
+ï»¿2026-11-28T12:47:14.1110325Z Current runner version: '2.338.2'
+2026-11-28T12:47:14.1128019Z ##[group]Runner Image Provisioner
+2026-11-28T12:47:14.1128674Z Hosted Compute Agent
+2026-11-28T12:47:14.1129483Z Version: 20261111.635
+2026-11-28T12:47:14.1129973Z Commit: b8a594ea514ff44cadb5342986c68b1eac6e22ed
+2026-11-28T12:47:14.1130535Z Build Date: 2026-11-11T01:49:01Z
+2026-11-28T12:47:14.1131024Z Worker ID: {6c9779cb-b425-4814-968f-a92ed91e444a}
+2026-11-28T12:47:14.1131525Z Region: us-west-2
+2026-11-28T12:47:14.1131942Z Cloud: AWS
+2026-11-28T12:47:14.1132317Z ##[endgroup]
+2026-11-28T12:47:14.1133452Z ##[group]Operating System
+2026-11-28T12:47:14.1133906Z Ubuntu
+2026-11-28T12:47:14.1134292Z 24.04.5
+2026-11-28T12:47:14.1134684Z LTS
+2026-11-28T12:47:14.1135041Z ##[endgroup]
+2026-11-28T12:47:14.1135426Z ##[group]Runner Image
+2026-11-28T12:47:14.1135842Z Image: ubuntu-24.04
+2026-11-28T12:47:14.1136248Z Version: 20261122.23.1
+2026-11-28T12:47:14.1137165Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20261122.23/images/ubuntu/Ubuntu2404-Readme.md
+2026-11-28T12:47:14.1138243Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20261122.23
+2026-11-28T12:47:14.1138979Z ##[endgroup]
+2026-11-28T12:47:14.1139975Z ##[group]GITHUB_TOKEN Permissions
+2026-11-28T12:47:14.1141508Z Contents: read
+2026-11-28T12:47:14.1141904Z Metadata: read
+2026-11-28T12:47:14.1142305Z ##[endgroup]
+2026-11-28T12:47:14.1143756Z Secret source: Actions
+2026-11-28T12:47:14.1144414Z Cache mode: write
+2026-11-28T12:47:14.1144891Z Prepare workflow directory
+2026-11-28T12:47:14.1373389Z Prepare all required actions
+2026-11-28T12:47:14.1408204Z Getting action download info
+2026-11-28T12:47:14.4948729Z Download action repository 'actions/checkout@11d5960a326750d5838078e36cf38b85af677262' (SHA:11d5960a326750d5838078e36cf38b85af677262)
+2026-11-28T12:47:15.7172194Z Complete job name: metadata-only
+2026-11-28T12:47:15.7797631Z ##[group]Run actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+2026-11-28T12:47:15.7798506Z with:
+2026-11-28T12:47:15.7798969Z   persist-credentials: false
+2026-11-28T12:47:15.7799840Z   repository: horizon-rust-mod-rewrites/horizon-neoforge-compat
+2026-11-28T12:47:15.7803487Z   token: ***
+2026-11-28T12:47:15.7803903Z   ssh-strict: true
+2026-11-28T12:47:15.7804327Z   ssh-user: git
+2026-11-28T12:47:15.7804747Z   clean: true
+2026-11-28T12:47:15.7805182Z   sparse-checkout-cone-mode: true
+2026-11-28T12:47:15.7805708Z   fetch-depth: 1
+2026-11-28T12:47:15.7806121Z   fetch-tags: false
+2026-11-28T12:47:15.7806534Z   show-progress: true
+2026-11-28T12:47:15.7806985Z   lfs: false
+2026-11-28T12:47:15.7807422Z   submodules: false
+2026-11-28T12:47:15.7807889Z   set-safe-directory: true
+2026-11-28T12:47:15.7808367Z   allow-unsafe-pr-checkout: false
+2026-11-28T12:47:15.7809213Z ##[endgroup]
+2026-11-28T12:47:19.0630435Z Syncing repository: horizon-rust-mod-rewrites/horizon-neoforge-compat
+2026-11-28T12:47:19.0632085Z ##[group]Getting Git version info
+2026-11-28T12:47:19.0632603Z Working directory is '/home/runner/work/horizon-neoforge-compat/horizon-neoforge-compat'
+2026-11-28T12:47:19.0633305Z [command]/usr/bin/git version
+2026-11-28T12:47:19.3319935Z git version 2.56.1
+2026-11-28T12:47:19.3332371Z ##[endgroup]
+2026-11-28T12:47:19.3343794Z Temporarily overriding HOME='/home/runner/work/_temp/1b07ce0e-51a1-4ee0-b6e4-98d8ee3b9595' before making global git config changes
+2026-11-28T12:47:19.3344545Z Adding repository directory to the temporary git global config as a safe directory
+2026-11-28T12:47:19.3347887Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/horizon-neoforge-compat/horizon-neoforge-compat
+2026-11-28T12:47:19.4076593Z Deleting the contents of '/home/runner/work/horizon-neoforge-compat/horizon-neoforge-compat'
+2026-11-28T12:47:19.4079842Z ##[group]Initializing the repository
+2026-11-28T12:47:19.4083625Z [command]/usr/bin/git init /home/runner/work/horizon-neoforge-compat/horizon-neoforge-compat
+2026-11-28T12:47:19.4600800Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-11-28T12:47:19.4601850Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-11-28T12:47:19.4602334Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-11-28T12:47:19.4602783Z hint: call:
+2026-11-28T12:47:19.4603025Z hint:
+2026-11-28T12:47:19.4603361Z hint: 	git config --global init.defaultBranch <name>
+2026-11-28T12:47:19.4603737Z hint:
+2026-11-28T12:47:19.4604040Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-11-28T12:47:19.4604509Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-11-28T12:47:19.4604872Z hint:
+2026-11-28T12:47:19.4605128Z hint: 	git branch -m <name>
+2026-11-28T12:47:19.4605416Z hint:
+2026-11-28T12:47:19.4605741Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-11-28T12:47:19.4621965Z Initialized empty Git repository in /home/runner/work/horizon-neoforge-compat/horizon-neoforge-compat/.git/
+2026-11-28T12:47:19.4630057Z [command]/usr/bin/git remote add origin https://github.com/horizon-rust-mod-rewrites/horizon-neoforge-compat
+2026-11-28T12:47:19.4682566Z ##[endgroup]
+2026-11-28T12:47:19.4683241Z ##[group]Disabling automatic garbage collection
+2026-11-28T12:47:19.4685908Z [command]/usr/bin/git config --local gc.auto 0
+2026-11-28T12:47:19.4709397Z ##[endgroup]
+2026-11-28T12:47:19.4710072Z ##[group]Setting up auth
+2026-11-28T12:47:19.4714956Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-11-28T12:47:19.4744603Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-11-28T12:47:19.8309985Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-11-28T12:47:19.8334748Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-11-28T12:47:19.8510338Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-11-28T12:47:19.8511962Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-11-28T12:47:19.8658817Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-11-28T12:47:19.8682899Z ##[endgroup]
+2026-11-28T12:47:19.8683320Z ##[group]Fetching the repository
+2026-11-28T12:47:19.8695591Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +42259ce4766907dc02ba9099a74a73a4eb55a785:refs/remotes/pull/1/merge
+2026-11-28T12:47:20.3821472Z From https://github.com/horizon-rust-mod-rewrites/horizon-neoforge-compat
+2026-11-28T12:47:20.3822157Z  * [new ref]         42259ce4766907dc02ba9099a74a73a4eb55a785 -> pull/1/merge
+2026-11-28T12:47:20.3824667Z ##[endgroup]
+2026-11-28T12:47:20.3825104Z ##[group]Determining the checkout info
+2026-11-28T12:47:20.3826751Z ##[endgroup]
+2026-11-28T12:47:20.3840925Z [command]/usr/bin/git sparse-checkout disable
+2026-11-28T12:47:20.3950232Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-11-28T12:47:20.3971256Z ##[group]Checking out the ref
+2026-11-28T12:47:20.3972083Z [command]/usr/bin/git checkout --progress --force refs/remotes/pull/1/merge
+2026-11-28T12:47:20.4058783Z Note: switching to 'refs/remotes/pull/1/merge'.
+2026-11-28T12:47:20.4059391Z 
+2026-11-28T12:47:20.4059803Z You are in 'detached HEAD' state. You can look around, make experimental
+2026-11-28T12:47:20.4060361Z changes and commit them, and you can discard any commits you make in this
+2026-11-28T12:47:20.4060919Z state without impacting any branches by switching back to a branch.
+2026-11-28T12:47:20.4061321Z 
+2026-11-28T12:47:20.4061561Z If you want to create a new branch to retain commits you create, you may
+2026-11-28T12:47:20.4062410Z do so (now or later) by using -c with the switch command. Example:
+2026-11-28T12:47:20.4062729Z 
+2026-11-28T12:47:20.4062946Z   git switch -c <new-branch-name>
+2026-11-28T12:47:20.4063162Z 
+2026-11-28T12:47:20.4063334Z Or undo this operation with:
+2026-11-28T12:47:20.4063667Z 
+2026-11-28T12:47:20.4063816Z   git switch -
+2026-11-28T12:47:20.4064043Z 
+2026-11-28T12:47:20.4064297Z Turn off this advice by setting config variable advice.detachedHead to false
+2026-11-28T12:47:20.4064672Z 
+2026-11-28T12:47:20.4065096Z HEAD is now at 42259ce Merge 647f4300b365b2739657bb450b0e780b53273d35 into 5df54856212fcf66432edbbd6e08df56b438b3be
+2026-11-28T12:47:20.4075075Z ##[endgroup]
+2026-11-28T12:47:20.4112278Z [command]/usr/bin/git log -1 --format=%H
+2026-11-28T12:47:20.4130399Z 42259ce4766907dc02ba9099a74a73a4eb55a785
+2026-11-28T12:47:20.4139489Z ##[group]Removing auth
+2026-11-28T12:47:20.4140921Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-11-28T12:47:20.4164007Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-11-28T12:47:20.4317182Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-11-28T12:47:20.4340059Z http.https://github.com/.extraheader
+2026-11-28T12:47:20.4345293Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+2026-11-28T12:47:20.4366273Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-11-28T12:47:20.4508938Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-11-28T12:47:20.4530703Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-11-28T12:47:20.4672239Z ##[endgroup]
+2026-11-28T12:47:20.4835868Z ##[group]Run python3 progress/report.py --check
+2026-11-28T12:47:20.4836337Z [36;1mpython3 progress/report.py --check[0m
+2026-11-28T12:47:20.4836724Z [36;1mpython3 -m unittest discover -s progress -p 'test_*.py' -v[0m
+2026-11-28T12:47:20.4837103Z [36;1msha256sum --check SHA256SUMS[0m
+2026-11-28T12:47:20.9537934Z shell: /usr/bin/bash -e {0}
+2026-11-28T12:47:20.9538304Z ##[endgroup]
+2026-11-28T12:47:20.9854103Z PASS: progress metadata/report consistent (not runtime validation)
+2026-11-28T12:47:21.0717770Z test_absolute_traversal_and_backslash_paths_refuse (test_report.ReportTests.test_absolute_traversal_and_backslash_paths_refuse) ... ok
+2026-11-28T12:47:21.0735884Z test_baseline_valid_and_thirty_percent (test_report.ReportTests.test_baseline_valid_and_thirty_percent) ... ok
+2026-11-28T12:47:21.0738296Z test_boolean_weight_is_not_integer (test_report.ReportTests.test_boolean_weight_is_not_integer) ... ok
+2026-11-28T12:47:21.1025845Z test_check_mode_passes_without_writing (test_report.ReportTests.test_check_mode_passes_without_writing) ... ok
+2026-11-28T12:47:21.1310416Z test_check_mode_refuses_stale_output_without_writing (test_report.ReportTests.test_check_mode_refuses_stale_output_without_writing) ... ok
+2026-11-28T12:47:21.1329995Z test_complete_cannot_depend_on_incomplete (test_report.ReportTests.test_complete_cannot_depend_on_incomplete) ... ok
+2026-11-28T12:47:21.1332497Z test_completed_row_needs_evidence (test_report.ReportTests.test_completed_row_needs_evidence) ... ok
+2026-11-28T12:47:21.1352412Z test_cycle_refuses (test_report.ReportTests.test_cycle_refuses) ... ok
+2026-11-28T12:47:21.1366070Z test_duplicate_dependencies_refuse (test_report.ReportTests.test_duplicate_dependencies_refuse) ... ok
+2026-11-28T12:47:21.1371977Z test_duplicate_section_ids_refuse (test_report.ReportTests.test_duplicate_section_ids_refuse) ... ok
+2026-11-28T12:47:21.1375845Z test_duplicate_task_ids_refuse (test_report.ReportTests.test_duplicate_task_ids_refuse) ... ok
+2026-11-28T12:47:21.1377247Z test_exact_baseline_is_required (test_report.ReportTests.test_exact_baseline_is_required) ... ok
+2026-11-28T12:47:21.1381991Z test_external_symlink_refuses (test_report.ReportTests.test_external_symlink_refuses) ... ok
+2026-11-28T12:47:21.1384929Z test_invalid_checkpoint_sha_refuses (test_report.ReportTests.test_invalid_checkpoint_sha_refuses) ... ok
+2026-11-28T12:47:21.1386128Z test_invalid_execution_identity_refuses (test_report.ReportTests.test_invalid_execution_identity_refuses) ... ok
+2026-11-28T12:47:21.1652667Z test_invalid_json_cli_fails_without_rewriting (test_report.ReportTests.test_invalid_json_cli_fails_without_rewriting) ... ok
+2026-11-28T12:47:21.1654000Z test_invalid_run_url_refuses (test_report.ReportTests.test_invalid_run_url_refuses) ... ok
+2026-11-28T12:47:21.1657463Z test_missing_evidence_refuses (test_report.ReportTests.test_missing_evidence_refuses) ... ok
+2026-11-28T12:47:21.1912611Z test_non_object_json_cli_fails_without_traceback_or_rewriting (test_report.ReportTests.test_non_object_json_cli_fails_without_traceback_or_rewriting) ... ok
+2026-11-28T12:47:21.1914512Z test_non_object_metadata_root_refuses (test_report.ReportTests.test_non_object_metadata_root_refuses) ... ok
+2026-11-28T12:47:21.1930306Z test_non_object_validation_records_refuse (test_report.ReportTests.test_non_object_validation_records_refuse) ... ok
+2026-11-28T12:47:21.1954318Z test_partial_and_blocked_rows_earn_zero (test_report.ReportTests.test_partial_and_blocked_rows_earn_zero) ... ok
+2026-11-28T12:47:21.1991945Z test_report_is_deterministic_and_contains_no_ready_claim (test_report.ReportTests.test_report_is_deterministic_and_contains_no_ready_claim) ... ok
+2026-11-28T12:47:21.2010478Z test_required_gate_cannot_disappear (test_report.ReportTests.test_required_gate_cannot_disappear) ... ok
+2026-11-28T12:47:21.2046187Z test_unknown_or_self_dependency_refuses (test_report.ReportTests.test_unknown_or_self_dependency_refuses) ... ok
+2026-11-28T12:47:21.2048341Z test_unknown_status_refuses (test_report.ReportTests.test_unknown_status_refuses) ... ok
+2026-11-28T12:47:21.2067408Z test_weights_must_total_one_hundred (test_report.ReportTests.test_weights_must_total_one_hundred) ... ok
+2026-11-28T12:47:21.2069871Z test_zero_and_negative_weights_refuse (test_report.ReportTests.test_zero_and_negative_weights_refuse) ... ok
+2026-11-28T12:47:21.2070410Z 
+2026-11-28T12:47:21.2090255Z ----------------------------------------------------------------------
+2026-11-28T12:47:21.2091001Z Ran 28 tests in 0.136s
+2026-11-28T12:47:21.2091273Z 
+2026-11-28T12:47:21.2091505Z OK
+2026-11-28T12:47:21.2169893Z .github/workflows/compat-progress.yml: OK
+2026-11-28T12:47:21.2170390Z .github/workflows/horizon-full.yml: OK
+2026-11-28T12:47:21.2170793Z .gitignore: OK
+2026-11-28T12:47:21.2171164Z AGENTS.md: OK
+2026-11-28T12:47:21.2171483Z COMPATIBILITY_PROGRESS.md: OK
+2026-11-28T12:47:21.2171829Z Cargo.lock: OK
+2026-11-28T12:47:21.2172110Z Cargo.toml: OK
+2026-11-28T12:47:21.2172382Z LICENSE: OK
+2026-11-28T12:47:21.2172702Z NEXT_AGENT.md: OK
+2026-11-28T12:47:21.2173037Z README.md: OK
+2026-11-28T12:47:21.2173363Z THIRD_PARTY_NOTICES.md: OK
+2026-11-28T12:47:21.2173691Z docs/FEATURE_FLAGS.md: OK
+2026-11-28T12:47:21.2174026Z docs/HANDOFF.md: OK
+2026-11-28T12:47:21.2174355Z docs/HORIZON_INTEGRATION.md: OK
+2026-11-28T12:47:21.2174694Z docs/PROGRESS.md: OK
+2026-11-28T12:47:21.2180170Z docs/SPLIT.md: OK
+2026-11-28T12:47:21.2180596Z docs/VALIDATION.md: OK
+2026-11-28T12:47:21.2180957Z docs/WIRE.md: OK
+2026-11-28T12:47:21.2181522Z docs/continuation-history-2026-11-28.md: OK
+2026-11-28T12:47:21.2181976Z docs/horizon-continuation.md: OK
+2026-11-28T12:47:21.2182466Z docs/horizon-split-outbound-seam.md: OK
+2026-11-28T12:47:21.2182894Z docs/horizon-split-seam.md: OK
+2026-11-28T12:47:21.2183268Z docs/java-reference.md: OK
+2026-11-28T12:47:21.2183785Z sha256sum: WARNING: 3 computed checksums did NOT match
+2026-11-28T12:47:21.2184247Z docs/ordered-connection-owner.md: OK
+2026-11-28T12:47:21.2184677Z docs/validation-continuation.txt: OK
+2026-11-28T12:47:21.2185327Z docs/validation-current.txt: OK
+2026-11-28T12:47:21.2185729Z docs/validation-feature-flags.txt: OK
+2026-11-28T12:47:21.2186164Z docs/validation.txt: OK
+2026-11-28T12:47:21.2186713Z fixtures/common-register-demo.bin: OK
+2026-11-28T12:47:21.2187203Z fixtures/common-register-empty-play.bin: OK
+2026-11-28T12:47:21.2187698Z fixtures/common-version-signed.bin: OK
+2026-11-28T12:47:21.2188071Z fixtures/common-version-v1.bin: OK
+2026-11-28T12:47:21.2188485Z fixtures/dinnerbone-demo.bin: OK
+2026-11-28T12:47:21.2188978Z fixtures/frozen-items.bin: OK
+2026-11-28T12:47:21.2189565Z fixtures/generate.py: OK
+2026-11-28T12:47:21.2189962Z integration/LICENSES/GPL-3.0.txt: OK
+2026-11-28T12:47:21.2190339Z integration/LICENSES/LGPL-3.0.txt: OK
+2026-11-28T12:47:21.2190706Z integration/NOTICE.md: OK
+2026-11-28T12:47:21.2191062Z integration/README.md: OK
+2026-11-28T12:47:21.2191409Z integration/bridge-validation.txt: OK
+2026-11-28T12:47:21.2191841Z integration/bridge_contract_tests.rs: OK
+2026-11-28T12:47:21.2192242Z integration/cargo-check.txt: OK
+2026-11-28T12:47:21.2192950Z integration/check.py: OK
+2026-11-28T12:47:21.2193324Z integration/check_bridge.py: OK
+2026-11-28T12:47:21.2193672Z integration/check_full.py: FAILED
+2026-11-28T12:47:21.2194053Z integration/compat_bridge.rs: OK
+2026-11-28T12:47:21.2194408Z integration/continuation-bridge.txt: OK
+2026-11-28T12:47:21.2194872Z integration/continuation-check.txt: OK
+2026-11-28T12:47:21.2195302Z integration/continuation-full-preflight.txt: OK
+2026-11-28T12:47:21.2195700Z integration/continuation-tooling.txt: OK
+2026-11-28T12:47:21.2196129Z integration/horizon-early-configuration.patch: FAILED
+2026-11-28T12:47:21.2196563Z integration/hosted-46081103967-full-check.txt: OK
+2026-11-28T12:47:21.2196971Z integration/hosted-46081103967-full-driver.txt: OK
+2026-11-28T12:47:21.2197418Z integration/hosted-46081103967-scope.txt: OK
+2026-11-28T12:47:21.2197852Z integration/hosted-46082288102-companion-preflight.txt: OK
+2026-11-28T12:47:21.2198297Z integration/hosted-46082288102-core.txt: OK
+2026-11-28T12:47:21.2198979Z integration/hosted-46082288102-full-check.txt: OK
+2026-11-28T12:47:21.2199653Z integration/hosted-46082288102-full-driver.txt: OK
+2026-11-28T12:47:21.2200118Z integration/hosted-46082288102-scope.txt: OK
+2026-11-28T12:47:21.2200503Z integration/hosted-46083513758-core.txt: OK
+2026-11-28T12:47:21.2200917Z integration/hosted-46083513758-full-check.txt: OK
+2026-11-28T12:47:21.2201367Z integration/hosted-46083513758-full-driver.txt: OK
+2026-11-28T12:47:21.2201810Z integration/hosted-46083513758-scope.txt: OK
+2026-11-28T12:47:21.2202229Z integration/hosted-46084373021-core.txt: OK
+2026-11-28T12:47:21.2202641Z integration/hosted-46084373021-full-check.txt: OK
+2026-11-28T12:47:21.2203092Z integration/hosted-46084373021-full-driver.txt: OK
+2026-11-28T12:47:21.2203507Z integration/hosted-46084373021-scope.txt: OK
+2026-11-28T12:47:21.2203890Z integration/hosted-46085995030-core.txt: OK
+2026-11-28T12:47:21.2204284Z integration/hosted-46085995030-scope.txt: OK
+2026-11-28T12:47:21.2204678Z integration/hosted-46087222005-core.txt: OK
+2026-11-28T12:47:21.2205051Z integration/hosted-46087222005-full-check.txt: OK
+2026-11-28T12:47:21.2205504Z integration/hosted-46087222005-full-driver.txt: OK
+2026-11-28T12:47:21.2205929Z integration/hosted-46087222005-scope.txt: OK
+2026-11-28T12:47:21.2206391Z integration/hosted-46087488085-fmt-failure.txt: OK
+2026-11-28T12:47:21.2206779Z integration/hosted-46087704109-core.txt: OK
+2026-11-28T12:47:21.2207165Z integration/hosted-46087704109-full-check.txt: OK
+2026-11-28T12:47:21.2207637Z integration/hosted-46087704109-full-driver.txt: OK
+2026-11-28T12:47:21.2208093Z integration/hosted-46087704109-scope.txt: OK
+2026-11-28T12:47:21.2208504Z integration/hosted-46137932076-core.txt: OK
+2026-11-28T12:47:21.2208932Z integration/hosted-46137932076-full-check.txt: OK
+2026-11-28T12:47:21.2210513Z integration/hosted-46137932076-full-driver.txt: OK
+2026-11-28T12:47:21.2211000Z integration/hosted-46137932076-scope.txt: OK
+2026-11-28T12:47:21.2211470Z integration/make_patch.py: FAILED
+2026-11-28T12:47:21.2212037Z integration/source-hashes.json: OK
+2026-11-28T12:47:21.2212415Z integration/validation.txt: OK
+2026-11-28T12:47:21.2212774Z progress/compatibility.json: OK
+2026-11-28T12:47:21.2213137Z progress/report.py: OK
+2026-11-28T12:47:21.2213488Z progress/test_report.py: OK
+2026-11-28T12:47:21.2213819Z progress/validation.txt: OK
+2026-11-28T12:47:21.2214190Z provenance/feature-flags.json: OK
+2026-11-28T12:47:21.2214536Z provenance/horizon.json: OK
+2026-11-28T12:47:21.2214960Z provenance/modded-codecs.json: OK
+2026-11-28T12:47:21.2215331Z provenance/modded-codecs.md: OK
+2026-11-28T12:47:21.2215682Z provenance/neoforge-21.1.248.json: OK
+2026-11-28T12:47:21.2216078Z provenance/setup-failure.md: OK
+2026-11-28T12:47:21.2216428Z provenance/split.json: OK
+2026-11-28T12:47:21.2216778Z provenance/verify_upstream.py: OK
+2026-11-28T12:47:21.2217156Z src/bin/codec-reference.rs: OK
+2026-11-28T12:47:21.2217512Z src/bin/compat-inspect.rs: OK
+2026-11-28T12:47:21.2217849Z src/codec.rs: OK
+2026-11-28T12:47:21.2218149Z src/extension.rs: OK
+2026-11-28T12:47:21.2218496Z src/feature_flags.rs: OK
+2026-11-28T12:47:21.2218822Z src/lib.rs: OK
+2026-11-28T12:47:21.2219359Z src/loader.rs: OK
+2026-11-28T12:47:21.2219675Z src/modded.rs: OK
+2026-11-28T12:47:21.2219952Z src/negotiation.rs: OK
+2026-11-28T12:47:21.2220225Z src/registry.rs: OK
+2026-11-28T12:47:21.2220571Z src/registry_sync.rs: OK
+2026-11-28T12:47:21.2220885Z src/session.rs: OK
+2026-11-28T12:47:21.2221173Z src/setup_failure.rs: OK
+2026-11-28T12:47:21.2221482Z src/split.rs: OK
+2026-11-28T12:47:21.2221756Z tests/cli.rs: OK
+2026-11-28T12:47:21.2222092Z tests/core.rs: OK
+2026-11-28T12:47:21.2222375Z tests/feature_flags.rs: OK
+2026-11-28T12:47:21.2222821Z tests/feature_flags_loader.rs: OK
+2026-11-28T12:47:21.2223151Z tests/loader.rs: OK
+2026-11-28T12:47:21.2223430Z tests/modded.rs: OK
+2026-11-28T12:47:21.2223755Z tests/negotiation.rs: OK
+2026-11-28T12:47:21.2224079Z tests/reference/CodecReference.java: OK
+2026-11-28T12:47:21.2224438Z tests/reference/audit_minecraft.py: OK
+2026-11-28T12:47:21.2225044Z tests/reference/differential.py: OK
+2026-11-28T12:47:21.2225433Z tests/reference/prepare.py: OK
+2026-11-28T12:47:21.2225832Z tests/reference/results.json: OK
+2026-11-28T12:47:21.2226186Z tests/reference/validation.txt: OK
+2026-11-28T12:47:21.2226539Z tests/registry_sync.rs: OK
+2026-11-28T12:47:21.2226906Z tests/setup_failure.rs: OK
+2026-11-28T12:47:21.2227240Z tests/split.rs: OK
+2026-11-28T12:47:21.2236641Z ##[error]Process completed with exit code 1.
+2026-11-28T12:47:21.2343337Z Post job cleanup.
+2026-11-28T12:47:21.3002733Z [command]/usr/bin/git version
+2026-11-28T12:47:21.3030132Z git version 2.56.1
+2026-11-28T12:47:21.3055385Z Temporarily overriding HOME='/home/runner/work/_temp/00fecc28-3ba0-45b5-baf5-1b54444060e7' before making global git config changes
+2026-11-28T12:47:21.3056603Z Adding repository directory to the temporary git global config as a safe directory
+2026-11-28T12:47:21.3058057Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/horizon-neoforge-compat/horizon-neoforge-compat
+2026-11-28T12:47:21.3093249Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-11-28T12:47:21.3116680Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-11-28T12:47:21.3301110Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-11-28T12:47:21.3326661Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-11-28T12:47:21.3489735Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-11-28T12:47:21.3520549Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-11-28T12:47:21.3801385Z Cleaning up orphan processes
+2026-11-28T12:47:21.4086669Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@11d5960a326750d5838078e36cf38b85af677262. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/

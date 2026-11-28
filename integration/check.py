@@ -73,9 +73,9 @@ def main():
             def test_route_precedes_horizon_special_cases_and_generic_dispatch(self):
                 body = net[net.index('fn configure_with_profile('):]
                 positions = [body.index(x) for x in [
-                    '.map(early_configuration::Profile::begin)',
+                    'ordered_owner::OrderedOwner::new(epoch, profile, None)',
                     'negotiation.initial()',
-                    'cfg::Clientbound::CustomPayload(p) if early.is_some()',
+                    'cfg::Clientbound::CustomPayload(p) if owner.is_some()',
                     'p.channel == crate::build_mismatch::CHANNEL',
                     'let Some(p) = receive_application(']]
                 self.assertEqual(positions, sorted(positions))
@@ -83,14 +83,14 @@ def main():
                 self.assertIn('if early_profile.is_none()\n        && payloads.local.has_mod_declarations()', net)
                 self.assertIn('early_profile: Option<early_configuration::Profile>', net)
                 self.assertIn('c.adapt(horizon_protocol::adapter::ServerVersion::V1_21_1)', net)
-                branch = net.split('if early.is_some() => {', 1)[1].split('p.channel == crate::build_mismatch::CHANNEL')[0]
+                branch = net.split('if owner.is_some() => {', 1)[1].split('p.channel == crate::build_mismatch::CHANNEL')[0]
                 self.assertNotIn('send_control(', branch)
                 self.assertNotIn('receive_application(', branch)
             def test_finish_is_before_horizon_accept_and_writer_transition(self):
                 body = net.split('cfg::Clientbound::FinishConfiguration(_) => {', 1)[1]
-                self.assertLess(body.index('endpoint.finish()'), body.index('negotiation.finish_allowing_silent_peer()'))
-                self.assertLess(body.index('endpoint.finish()'), body.index('w.transition_protocol('))
-                self.assertIn('return match endpoint.finish()', body)
+                self.assertLess(body.index('owner.finish()'), body.index('negotiation.finish_allowing_silent_peer()'))
+                self.assertLess(body.index('owner.finish()'), body.index('w.transition_protocol('))
+                self.assertIn('return match owner.finish()', body)
                 self.assertIn('modded_play_boundary_not_implemented', early)
                 self.assertIn('self.bridge.reset()', early)
             def test_default_reconfiguration_still_uses_original_path(self):

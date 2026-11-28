@@ -1,3 +1,40 @@
+# Active continuation — 2026-11-28: awaited early writes (awaiting full CI)
+
+Verified remote HEAD 647f4300b365b2739657bb450b0e780b53273d35 before editing.
+Preserved merged owner work. Actual latest full46146363170 and metadata46146369350
+FAILED: obsolete structural assertions and three stale checksum entries. Retained
+raw failed job logs; fixed assertions without weakening ordering/finish checks.
+Full compilation never began in those runs; older 7becb05 is not owner evidence.
+
+Substantive patch work now pending exact-SHA hosted engine validation:
+- Whole-batch worker completion receipts (write_all, NOT peer ack/flush), bounded
+  waits, cancellation/Drop closes actual transport, no shared-writer lock held
+  across waits; early keepalive/pong and Loader replies all await this barrier.
+- Include retained outer/inner capacities + overhead in batch admission, count
+  cap, zero exposure on refusal. Retirement refuses outstanding receipts.
+- Stop draining queued jobs after cancellation. Early terminal RAII closes both
+  physical directions even on factory/bootstrap failure; bridge resets immediately
+  and once on terminate, not only eventual Drop. Poll deadlines on ordinary traffic.
+- Repair two inconsistent inherited owner tests; add seven adversarial worker/
+  actual-entry regressions incl TCP compression/encryption matrix. Selected owner
+  suite now requires >=11 passes. Engine tests have NOT yet executed for this work.
+
+30/100 remains unchanged; owner is STILL PARTIAL. Both adapter phase transitions,
+prepared originals/adapter queues, detached socket ownership, profile-safe play
+re-entry/transfer, real split grants and connection-wide budgets remain unsolved.
+No new split/flag opt-in, no finish removal, no mod rewrites, no live join.
+
+Local resources reassessed: bounded hash-verified Rust1.97.0 components installed;
+no system C linker, so checks use musl + shipped direct linker. One duplicate-copy
+disk exhaustion was recovered by moving scratch components; no repository files
+were lost. Sparse upstream HEAD is exact pin; all29 audited file hashes pass.
+Local actual core debug, isolated companion17, endpoint8 + table1, four structural
+assertions and apply/reverse/restore pass. Full actual engine is only hosted due
+local disk/native dependencies. Local tests are not full owner runtime evidence.
+Check exact new Actions evidence first; fix genuine failures before further work.
+
+--- Prior handoff below (historical where contradicted above) ---
+
 # Completion tracking checkpoint — 2026-11-28
 
 See [COMPATIBILITY_PROGRESS.md](COMPATIBILITY_PROGRESS.md): initial rubric v1
