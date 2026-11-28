@@ -1,3 +1,34 @@
+# Newest checkpoint: real CI failure fixed, exact terminal-ingress success retained
+
+Continue the SAME open draft PR #1 and branch; verify remote HEAD before editing
+and publishing. Every commit requires AI-Assisted-By: QX AI assistant. No merge,
+force push, visibility change, new schedule or cadence change. Baseline unchanged.
+
+Actual run 46084373021 completed SUCCESS for tested SHA
+`7d053a65902af967c053ab65c32c6d59c058d444`. Artifact SHA256 verified:
+`c86d2d8a09dfd5edc3ae6c532e1153772abf1a8d5e7706a4d8799fdcc61f60a3`.
+Retained integration/hosted-46084373021-{core,full-check,full-driver,scope}.txt.
+Full patched client + actual companion compiled: 14 companion, 9 early
+configuration, 6 protocol framing, 81 network-filter passed / 3 ignored.
+Core 153 EACH debug/release, strict Clippy/fmt/docs, 35 Python/six fixtures passed.
+Selected suites only; NOT whole upstream tests, UI or a live NeoForge join.
+
+Own outbound-SHA run 46085995030 FAILED for
+`77e9cb53b0f58632e4767d7293b5ad0c3f08f009`: two rustfmt differences in
+ tests/split.rs (around lines 281/371). Exact failure text retained in
+integration/hosted-46085995030-core.txt, scope separately; artifact digest verified
+`6d28d44ac3de89369df28c175160c40f814f6d2c000eeb501a9496da0a2f143c`.
+This checkpoint applies precisely those formatting changes. Outbound Rust tests,
+Clippy, and full integration STILL require a newer successful run. Do not call
+this formatting failure a compile/test failure or infer outbound success from 7d.
+
+Further substantive work is being prepared separately: concrete actual-dependency
+outbound preparation, actual TCP tests, fallible inbound growth and edge tests.
+Not part of this checkpoint. Both finish refusals and default split/feature opt-in
+remain; no host implementation inventory invented. STILL CANNOT JOIN.
+
+--- Earlier checkpoints (historical where contradicted) ---
+
 # Credit-conscious continuation: start here
 
 Continue existing draft PR #1, branch

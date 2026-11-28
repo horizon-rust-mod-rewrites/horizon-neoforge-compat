@@ -1,3 +1,16 @@
+# Latest continuation truth — read NEXT_AGENT.md first
+
+Run 46084373021 PASSED at exact SHA 7d053a65902af967c053ab65c32c6d59c058d444:
+14 actual companion / 9 early configuration / 6 protocol framing / 81 network
+filter passed, 3 ignored; core 153 each debug/release, strict Clippy/fmt/docs.
+Retained own-SHA text is in integration/hosted-46084373021-*.txt. Selected suites,
+NOT all upstream tests, UI or live join. Newer outbound SHA 77e9cb5 FAILED its
+own run 46085995030 on two formatting differences; fix is recorded in NEXT_AGENT.
+That outbound work remains unvalidated until its own newer successful run.
+Both finish refusals remain. Default split/flags remain disabled. CANNOT JOIN.
+
+--- Historical checkpoints follow; newest NEXT_AGENT entry takes precedence ---
+
 # Full hosted validation PASSED — 2026-11-27
 
 Run: https://github.com/horizon-rust-mod-rewrites/horizon-neoforge-compat/actions/runs/46079113415

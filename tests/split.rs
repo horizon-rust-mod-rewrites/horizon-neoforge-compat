@@ -281,7 +281,8 @@ fn outbound_configuration_only_and_invalid_thresholds_refuse() {
         }
         assert!(OutboundSplitter::new(flow, ConnectionProtocol::Configuration, 27).is_ok());
         assert!(
-            OutboundSplitter::new(flow, ConnectionProtocol::Configuration, MAX_PACKET_BYTES).is_ok()
+            OutboundSplitter::new(flow, ConnectionProtocol::Configuration, MAX_PACKET_BYTES)
+                .is_ok()
         );
     }
 }
@@ -371,7 +372,12 @@ fn outbound_directional_caps_include_varint_and_marker() {
     let original = vec![0x55; 2 * 1_048_576 + 1];
     for (flow, cap, content, prefix) in [
         (Flow::Serverbound, 32_767, 32_763, [0xfc, 0xff, 0x01, 1]),
-        (Flow::Clientbound, 1_048_576, 1_048_572, [0xfd, 0xff, 0x3f, 1]),
+        (
+            Flow::Clientbound,
+            1_048_576,
+            1_048_572,
+            [0xfd, 0xff, 0x3f, 1],
+        ),
     ] {
         let bodies = split_bodies(outbound(flow, 2 * 1_048_576).encode(&original).unwrap());
         assert_eq!(bodies[0].len(), cap);
