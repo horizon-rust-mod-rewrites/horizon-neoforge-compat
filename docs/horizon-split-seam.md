@@ -1,3 +1,28 @@
+# Latest exact-SHA hosted validation: outbound milestone PASSED
+
+Run: https://github.com/horizon-rust-mod-rewrites/horizon-neoforge-compat/actions/runs/46087704109
+Tested compatibility SHA: `fb0294b4976bd78d4ee4cbfce44a6f049e0a4307`.
+Horizon pin: `ae632edf48f6cae3ba52a5c81523ec712488c9cc`.
+Artifact SHA-256 verified: `357207d45ab75c4e2cf94485f31f661915498617bb9fc51db73e570ed3670f5f`.
+Retained `integration/hosted-46087704109-{core,full-check,full-driver,scope}.txt`.
+
+- Full actual patched client + companion typechecks passed; pinned lock audit passed.
+- **16 actual companion**, **9 early configuration**, **14 protocol framing**,
+  **81 network-filter passed / 3 ignored**. Selected suites, NOT all upstream tests.
+- **171 core tests EACH debug and release**, including **36 split tests**;
+  strict Clippy, fmt, warning-denied docs, 35 Python tests and six fixtures passed.
+- New actual outbound preparation tests and the TCP split/compression/encryption
+  matrix REALLY executed. No production split route, Java split equivalence,
+  complete loader tasks, semantic content application, UI or live join is proven.
+
+Default split/feature-flag opt-ins remain disabled. Both finish refusals remain.
+**The client STILL CANNOT JOIN.** Newer evidence/documentation-only commits do not
+change the tested source and deliberately do not trigger another full build.
+See NEXT_AGENT.md for precise continuation priorities. Older contradictory
+counts/pending statements below are historical, not current validation status.
+
+---
+
 # Latest reader validation and complementary outbound work
 
 Run 46084373021 completed SUCCESS at exact compatibility SHA

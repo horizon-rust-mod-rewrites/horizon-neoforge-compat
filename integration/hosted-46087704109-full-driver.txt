@@ -1,0 +1,12 @@
+Disk preflight: 89,568,075,776 free bytes; reservation 6,442,450,944 bytes; additional source copy 0 bytes
+PASS: HEAD ae632edf48f6cae3ba52a5c81523ec712488c9cc, 14 provenance hashes + 15 integration hashes
+Preflight: 12354 verified source blobs, 0 missing; 189,381,347 materialized source bytes
+Disk preflight: 89,568,071,680 free bytes; reservation 6,442,450,944 bytes; additional source copy 189,381,347 bytes
++ cargo check --target x86_64-unknown-linux-gnu --locked -p horizon-client-lib --no-default-features
++ cargo check --target x86_64-unknown-linux-gnu --offline -p horizon-client-lib --no-default-features
++ cargo test --target x86_64-unknown-linux-gnu --locked --offline -p horizon-client-lib --no-default-features --lib neoforge_compat_bridge::tests::
++ cargo test --target x86_64-unknown-linux-gnu --locked --offline -p horizon-client-lib --no-default-features --lib early_configuration
++ cargo test --target x86_64-unknown-linux-gnu --locked --offline -p horizon-protocol --no-default-features --lib neoforge_configuration_framing_tests
++ cargo test --target x86_64-unknown-linux-gnu --locked --offline -p horizon-client-lib --no-default-features --lib net::tests::
+PASS: HEAD ae632edf48f6cae3ba52a5c81523ec712488c9cc, 14 provenance hashes + 15 integration hashes
+PASS: full patched client + actual companion typecheck, engine/TCP/vanilla-Horizon tests. NOT a NeoForge server join or semantic content validation.
