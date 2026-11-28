@@ -1,7 +1,7 @@
 diff --git a/crates/horizon-client/src/net.rs b/crates/horizon-client/src/net.rs
 --- a/crates/horizon-client/src/net.rs
 +++ b/crates/horizon-client/src/net.rs
-@@ -7,6 +7,10 @@
+@@ -7,6 +7,14 @@
  //! (crate::auth): the login joins the server through the session service and
  //! encrypts the connection (ClientHandshakePacketListenerImpl.handleHello).
  use crate::auth::AuthSession;
@@ -9,13 +9,29 @@ diff --git a/crates/horizon-client/src/net.rs b/crates/horizon-client/src/net.rs
 +#[cfg(test)]
 +#[path = "net/early_configuration_net_tests.rs"]
 +mod early_configuration_net_tests;
++pub mod ordered_owner;
++#[cfg(test)]
++#[path = "net/ordered_owner_tests.rs"]
++mod ordered_owner_tests;
  pub mod ingress;
  mod known_packs;
  use known_packs::{fill_known_entries, select_known_packs};
-@@ -320,6 +324,30 @@
+@@ -278,6 +286,9 @@
+ fn next_serial() -> u64 {
+     NEXT_SERIAL.fetch_add(1, Ordering::Relaxed)
+ }
++/// The next configuration owner [`ordered_owner::Epoch`] tag. Monotonic and
++/// never reused within a process, so stale callbacks and timers are refused.
++static NEXT_OWNER_EPOCH: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(1);
+ use std::path::PathBuf;
+
+ impl Session {
+@@ -318,6 +329,30 @@
+     ) -> Self {
+         Self::start(
              address, name, auth, info, lang, None, None, resources, false,
-         )
-     }
++        )
++    }
 +    /// Explicit early NeoForge endpoint. This bootstrap milestone intentionally
 +    /// refuses finish: it does not supply modded play/content conversion.
 +    pub fn connect_neoforge(
@@ -38,12 +54,10 @@ diff --git a/crates/horizon-client/src/net.rs b/crates/horizon-client/src/net.rs
 +            resources,
 +            false,
 +            Some(profile),
-+        )
-+    }
+         )
+     }
      /// `ClientHandshakePacketListenerImpl.handleHello`: LAN entries can continue
-     /// after session authentication fails; the server still decides whether to admit them.
-     /// Only for entries selected from LAN discovery, not addresses classified by IP.
-@@ -412,6 +440,22 @@
+@@ -412,6 +447,22 @@
          cookies: Option<Cookies>,
          resources: Arc<ItemData>,
          lan: bool,
@@ -66,7 +80,7 @@ diff --git a/crates/horizon-client/src/net.rs b/crates/horizon-client/src/net.rs
      ) -> Self {
          let (send, events) = event_channel();
          let payload_events = send.clone();
-@@ -462,6 +506,7 @@
+@@ -462,6 +513,7 @@
                      &thread_recorder,
                      &thread_payloads,
                      &thread_reached,
@@ -74,7 +88,7 @@ diff --git a/crates/horizon-client/src/net.rs b/crates/horizon-client/src/net.rs
                  )
              });
              thread_payloads.close();
-@@ -1084,6 +1129,7 @@
+@@ -1084,6 +1136,7 @@
      recorder: &RecorderSlot,
      payloads: &Arc<crate::raw_payloads::Transport>,
      reached: &AtomicU8,
@@ -82,7 +96,7 @@ diff --git a/crates/horizon-client/src/net.rs b/crates/horizon-client/src/net.rs
  ) -> Result<Reason, Reason> {
      let (host, port, mut c) = if let Some(pipe) = local {
          (address.to_owned(), 0, Connection::local(pipe))
-@@ -1129,7 +1175,11 @@
+@@ -1129,7 +1182,11 @@
                  .write_raw(&token)
                  .map_err(|e| Reason::plain(e.to_string()))?;
          }
@@ -95,7 +109,7 @@ diff --git a/crates/horizon-client/src/net.rs b/crates/horizon-client/src/net.rs
              && let Some(version) = older_server(address)
          {
              log::info!("Joining {address} as a {} server", version.name());
-@@ -1241,21 +1291,23 @@
+@@ -1241,21 +1298,23 @@
      status(send, &tr(lang, "connect.joining"));
      // ClientHandshakePacketListenerImpl.handleLoginFinished: the brand, then
      // the client information.
@@ -129,7 +143,7 @@ diff --git a/crates/horizon-client/src/net.rs b/crates/horizon-client/src/net.rs
          &mut reader,
          shared_writer,
          configuring,
-@@ -1265,6 +1317,7 @@
+@@ -1265,6 +1324,7 @@
          resources,
          payloads,
          true,
@@ -137,7 +151,64 @@ diff --git a/crates/horizon-client/src/net.rs b/crates/horizon-client/src/net.rs
      )?;
      deliver(
          send,
-@@ -1750,18 +1803,56 @@
+@@ -1639,6 +1699,56 @@
+ /// while a world's first view streams in no longer ends the connection (#18380).
+ /// Events main already dropped under pressure keep `send`, so keepalives are still
+ /// answered behind them.
++/// Map an owner error to a bounded transport reason with channel context. The
++/// owner's error already carries a stable diagnostic; the channel is peer input,
++/// so it is bounded/escaped by the same identifier policy the endpoint uses.
++fn owner_error(error: &horizon_protocol::Error, channel: &str) -> String {
++    let channel = if channel.len() <= 256
++        && channel.split_once(':').is_some_and(|(ns, path)| {
++            !ns.is_empty()
++                && !path.is_empty()
++                && ns.bytes().all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || b"_.-".contains(&b))
++                && path.bytes().all(|b| {
++                    b.is_ascii_lowercase() || b.is_ascii_digit() || b"_.-/".contains(&b)
++                })
++        }) {
++        channel.to_owned()
++    } else {
++        "<invalid-channel>".to_owned()
++    };
++    format!("configuration/{channel}: {error}")
++}
++
++/// Emit a validated bridge reply batch atomically and in order through the queued
++/// writer. One reservation and one queue job carry the whole batch, so nothing
++/// interleaves and a mid-batch write failure tears the connection down.
++fn emit_reply_batch(
++    writer: &Arc<Mutex<Option<QueuedWriter>>>,
++    lang: &Language,
++    replies: Vec<early_configuration::Reply>,
++) -> Result<(), Reason> {
++    if replies.is_empty() {
++        return Ok(());
++    }
++    let mut bodies = Vec::with_capacity(replies.len());
++    for reply in replies {
++        let packet = cfg::Serverbound::CustomPayload(cfg::CustomPayload {
++            channel: reply.channel,
++            data: reply.body,
++        });
++        let body = packet
++            .try_encode()
++            .map_err(|error| Reason::plain(format!("configuration/encode: {error}")))?;
++        bodies.push(body);
++    }
++    match writer.lock().unwrap().as_mut() {
++        Some(w) => w
++            .send_batch(bodies)
++            .map_err(|error| Reason::plain(connection_lost(error, lang))),
++        None => Err(Reason::plain("Disconnected")),
++    }
++}
++
+ fn deliver(send: &ingress::Producer<Event>, lang: &Language, event: Event) -> Result<(), Reason> {
+     send.send_waiting(event)
+         .map_err(|refused| refusal(refused, lang))
+@@ -1750,18 +1860,72 @@
      // The connection's first configuration, not a reconfiguration from play.
      initial: bool,
  ) -> Result<Dynamic, Reason> {
@@ -171,12 +242,28 @@ diff --git a/crates/horizon-client/src/net.rs b/crates/horizon-client/src/net.rs
      let mut registries = Dynamic::default();
      let mut content_verified = false;
      payloads.begin_configuration();
-+    // Fresh bridge per epoch; the stack guard resets it on every return path.
-+    // Begin BEFORE any Horizon offer or receive dispatch.
-+    let mut early = early_profile
-+        .map(early_configuration::Profile::begin)
-+        .transpose()
-+        .map_err(|error| Reason::plain(format!("configuration/bootstrap: {error:?}")))?;
++    // Fresh owner per epoch; the stack guard resets it on every return path.
++    // Begin BEFORE any Horizon offer or receive dispatch. The owner is the single
++    // serialization domain for the early path: it tags work with this epoch,
++    // drives the split idle deadline from the read-timeout path, and resets the
++    // bridge on drop. Split authority is never granted here (no host inventory).
++    let mut owner = match early_profile {
++        Some(profile) => {
++            let epoch = ordered_owner::Epoch(
++                NEXT_OWNER_EPOCH.fetch_add(1, Ordering::Relaxed),
++            );
++            // Wake periodically so a partial split assembly expires on its idle
++            // deadline even when no further packet arrives. Early path only.
++            reader
++                .set_read_timeout(Some(Duration::from_millis(500)))
++                .map_err(|error| Reason::plain(connection_lost(error, lang)))?;
++            Some(
++                ordered_owner::OrderedOwner::new(epoch, profile, None)
++                    .map_err(|error| Reason::plain(format!("configuration/bootstrap: {error}")))?,
++            )
++        }
++        None => None,
++    };
      let mut negotiation =
          horizon_protocol::payload_negotiation::Negotiation::new(payloads.local.manifest.clone());
      crate::datapack_net::clear_received();
@@ -198,7 +285,7 @@ diff --git a/crates/horizon-client/src/net.rs b/crates/horizon-client/src/net.rs
              None => Err(Reason::plain("Disconnected")),
          }
      };
-@@ -1793,7 +1884,8 @@
+@@ -1793,19 +1957,75 @@
      };
      // With only engine declarations the client waits for the server's query, so a vanilla
      // server is sent nothing new.
@@ -208,13 +295,27 @@ diff --git a/crates/horizon-client/src/net.rs b/crates/horizon-client/src/net.rs
          && let Some(control) = negotiation.initial()
      {
          send_control(control, &mut build_sent)?;
-@@ -1802,10 +1894,33 @@
-         let (id, payload) = reader
-             .recv()
-             .map_err(|e| Reason::plain(connection_lost(e, lang)))?;
+     }
+     loop {
+-        let (id, payload) = reader
+-            .recv()
+-            .map_err(|e| Reason::plain(connection_lost(e, lang)))?;
 -        match cfg::Clientbound::decode_with_payload_codecs(id, &payload, &payloads.local.codecs)
 -            .map_err(|e| Reason::plain(connection_lost(e, lang)))?
 -        {
++        let (id, payload) = match reader.recv() {
++            Ok(packet) => packet,
++            // Early path only: a read timeout drives the owner's idle deadline so
++            // a partial split assembly expires without any further input.
++            Err(error) if owner.is_some() && error.is_timed_out() => {
++                let owner = owner.as_mut().expect("guarded owner");
++                owner
++                    .poll_idle()
++                    .map_err(|error| Reason::plain(format!("configuration/idle: {error}")))?;
++                continue;
++            }
++            Err(error) => return Err(Reason::plain(connection_lost(error, lang))),
++        };
 +        let packet = if early_profile.is_some() {
 +            cfg::Clientbound::decode(id, &payload)
 +        } else {
@@ -225,51 +326,74 @@ diff --git a/crates/horizon-client/src/net.rs b/crates/horizon-client/src/net.rs
              cfg::Clientbound::KeepAlive(k) => reply(cfg::Serverbound::KeepAlive(k))?,
 +            // Before EVERY Horizon special case and generic application routing.
 +            // Brand stays engine-owned but can never activate Horizon offers here.
-+            cfg::Clientbound::CustomPayload(p) if early.is_some() => {
++            cfg::Clientbound::CustomPayload(p) if owner.is_some() => {
 +                if p.channel == "minecraft:brand" {
 +                    receive_brand(&p, send);
 +                    continue;
 +                }
-+                let replies = early
-+                    .as_mut()
-+                    .expect("guarded endpoint")
++                let owner = owner.as_mut().expect("guarded owner");
++                match owner
 +                    .receive(&p.channel, &p.data)
-+                    .map_err(|error| Reason::plain(error.at_payload(&p.channel)))?;
-+                for response in replies {
-+                    reply(cfg::Serverbound::CustomPayload(cfg::CustomPayload {
-+                        channel: response.channel,
-+                        data: response.body,
-+                    }))?;
++                    .map_err(|error| Reason::plain(owner_error(&error, &p.channel)))?
++                {
++                    ordered_owner::Step::Partial => {}
++                    ordered_owner::Step::Assembled(original) => {
++                        // Decode the reconstructed original exactly once with the
++                        // real protocol-767 decoder, then dispatch the inner payload.
++                        let (rid, rbody) = reader
++                            .decode_reassembled_configuration(original)
++                            .map_err(|error| Reason::plain(format!("configuration/split: {error}")))?;
++                        let packet = cfg::Clientbound::decode(rid, &rbody)
++                            .map_err(|error| Reason::plain(format!("configuration/split: {error}")))?;
++                        let cfg::Clientbound::CustomPayload(inner) = packet else {
++                            return Err(Reason::plain(
++                                "configuration/split: reconstructed non-payload packet",
++                            ));
++                        };
++                        if inner.channel == ordered_owner::SPLIT_CHANNEL {
++                            return Err(Reason::plain(
++                                "configuration/split: recursive reconstructed split packet",
++                            ));
++                        }
++                        let replies = owner
++                            .dispatch(&inner.channel, &inner.data)
++                            .map_err(|error| Reason::plain(owner_error(&error, &inner.channel)))?;
++                        emit_reply_batch(writer, lang, replies)?;
++                    }
++                    ordered_owner::Step::Replies(replies) => {
++                        emit_reply_batch(writer, lang, replies)?;
++                    }
 +                }
 +            }
              cfg::Clientbound::CustomPayload(p) if p.channel == crate::build_mismatch::CHANNEL => {
                  server_build = crate::build_mismatch::decode(&p.data);
              }
-@@ -1953,6 +2068,18 @@
+@@ -1953,6 +2173,19 @@
              }
              cfg::Clientbound::Disconnect(d) => return Err(Reason::tag(&d.reason, lang)),
              cfg::Clientbound::FinishConfiguration(_) => {
-+                if let Some(endpoint) = early.as_mut() {
++                if let Some(owner) = owner.as_mut() {
 +                    // Adapter reading may already be Play. On error immediately
 +                    // unwind and shut down: no ack, writer transition or next read.
-+                    return match endpoint.finish() {
++                    // The owner still retains the hard modded-play safety latch.
++                    return match owner.finish() {
 +                        Err(error) => {
-+                            Err(Reason::plain(format!("configuration/finish: {error:?}")))
++                            Err(Reason::plain(format!("configuration/finish: {error}")))
 +                        }
 +                        Ok(()) => {
-+                            unreachable!("early endpoint retains the modded-play safety latch")
++                            unreachable!("owner retains the modded-play safety latch")
 +                        }
 +                    };
 +                }
                  // A Horizon server that never sent on horizon:payloads predates the
                  // negotiation: play on with nothing negotiated, as on a vanilla server.
                  // Only on the first configuration: a server that goes silent when it
-@@ -1995,6 +2122,11 @@
+@@ -1995,6 +2228,11 @@
                      })
                      .map_err(Reason::plain)?;
                  return Ok(registries);
 +            }
-+            cfg::Clientbound::Unknown(id, _) if early.is_some() => {
++            cfg::Clientbound::Unknown(id, _) if owner.is_some() => {
 +                return Err(Reason::plain(format!(
 +                    "configuration/packet/{id}: unsupported_packet"
 +                )));
@@ -932,6 +1056,636 @@ new file mode 100644
 +    assert_eq!(observed.received.lock().unwrap().len(), 2);
 +    std::fs::remove_dir_all(root).unwrap();
 +}
+diff --git a/crates/horizon-client/src/net/ordered_owner.rs b/crates/horizon-client/src/net/ordered_owner.rs
+new file mode 100644
+--- /dev/null
++++ b/crates/horizon-client/src/net/ordered_owner.rs
+@@ -0,0 +1,202 @@
++// SPDX-License-Identifier: LGPL-3.0-or-later
++//! Single ordered connection owner for the explicit NeoForge configuration path.
++//!
++//! This is the serialization domain the early endpoint previously lacked: one
++//! owner per configuration epoch that tags every operation with that epoch,
++//! serializes split reassembly with the connection's socket ingress, drives an
++//! idle deadline for partial assembly even when no packet arrives, and terminally
++//! tears the epoch down (dropping partial assembly and resetting the bridge) on
++//! any failure, disconnect, transfer or reconfiguration.
++//!
++//! The owner does not own the socket reader: the configure loop reads the socket
++//! and, on a completed reassembly, decodes the reconstructed original exactly
++//! once with the real protocol-767 decoder before handing the inner payload back
++//! to [`OrderedOwner::dispatch`]. This keeps a single reader and a single
++//! serialization domain rather than a second façade over the same connection.
++//!
++//! The engine stays dependency-free: split reassembly is provided through the
++//! local [`Reassembly`] trait. Production installs none (split authority is never
++//! granted without a genuine negotiated grant and host inventory), so the owner
++//! never reassembles by default. The compatibility companion supplies a real
++//! bounded reassembler for tests and future authority.
++//!
++//! The engine's hard finish latch is unchanged: [`OrderedOwner::finish`] still
++//! refuses, so this owner can never fabricate a configuration acknowledgement or
++//! expose modded content to vanilla translation. Default connections never build
++//! an owner; only an explicitly selected `early_configuration::Profile` does.
++use std::time::Instant;
++
++use horizon_protocol::Error;
++
++use super::early_configuration::{Endpoint, Profile, Reply};
++
++/// The registered split transport channel. A local constant so the engine patch
++/// stays dependency-free; the compatibility crate uses the same literal.
++pub(crate) const SPLIT_CHANNEL: &str = "neoforge:split";
++
++/// A bounded inbound split reassembler, supplied by the compatibility layer. One
++/// instance per epoch/direction. `now_ms` is a host monotonic elapsed-millisecond
++/// clock, never wall time. An error is terminal for the epoch.
++pub trait Reassembly: Send {
++    /// Feed one split fragment body. Returns the whole original once the final
++    /// fragment arrives, else `None` for a partial fragment.
++    fn receive(&mut self, body: &[u8], now_ms: u64) -> std::result::Result<Option<Vec<u8>>, String>;
++    /// Drive the absolute idle deadline even when no packet arrives.
++    fn check_deadline(&mut self, now_ms: u64) -> std::result::Result<(), String>;
++    /// Drop partial state. Called on terminal teardown.
++    fn close(&mut self);
++}
++
++/// The owner's monotonic epoch tag. A fresh value is minted for each
++/// configuration; stale callbacks, timers and prepared work carry an older tag
++/// and are refused by [`OrderedOwner::active`].
++#[derive(Clone, Copy, Debug, PartialEq, Eq)]
++pub(crate) struct Epoch(pub u64);
++
++/// What one inbound payload produced under the owner.
++pub(crate) enum Step {
++    /// A bridge reply batch the caller must emit atomically and in order.
++    Replies(Vec<Reply>),
++    /// A completed split assembly: the caller decodes this original exactly once
++    /// with the real decoder, then calls [`OrderedOwner::dispatch`] on the inner
++    /// custom payload.
++    Assembled(Vec<u8>),
++    /// A partial split fragment was accepted; no original is ready yet.
++    Partial,
++}
++
++/// One owner for one configuration epoch. It owns the early bridge endpoint and,
++/// when authority is installed, the inbound reassembler; both are released when
++/// the owner drops, resetting the bridge on every exit path.
++pub(crate) struct OrderedOwner<'a> {
++    epoch: Epoch,
++    endpoint: Endpoint<'a>,
++    reassembly: Option<Box<dyn Reassembly>>,
++    /// Owner creation instant, the base for the monotonic millisecond clock the
++    /// reassembler's absolute idle deadline is measured against.
++    base: Instant,
++    terminated: bool,
++}
++
++impl<'a> OrderedOwner<'a> {
++    /// Begin a new epoch. `reassembly` is `Some` only from a genuine negotiated
++    /// split grant; production passes `None`.
++    pub(crate) fn new(
++        epoch: Epoch,
++        profile: &'a Profile,
++        reassembly: Option<Box<dyn Reassembly>>,
++    ) -> horizon_protocol::Result<Self> {
++        Ok(Self {
++            epoch,
++            endpoint: profile.begin().map_err(|failure| {
++                Error::new(format!("configuration/bootstrap: {failure:?}"))
++            })?,
++            reassembly,
++            base: Instant::now(),
++            terminated: false,
++        })
++    }
++
++    pub(crate) fn epoch(&self) -> Epoch {
++        self.epoch
++    }
++
++    pub(crate) fn is_terminated(&self) -> bool {
++        self.terminated
++    }
++
++    /// Whether `tag` is this owner's live epoch. Stale work is refused.
++    pub(crate) fn active(&self, tag: Epoch) -> bool {
++        !self.terminated && tag == self.epoch
++    }
++
++    fn now_ms(&self) -> u64 {
++        // Monotonic elapsed milliseconds, never wall time. Saturating keeps a
++        // very long-lived owner from wrapping the reassembler's clock.
++        u64::try_from(self.base.elapsed().as_millis()).unwrap_or(u64::MAX)
++    }
++
++    /// Handle one inbound configuration custom payload under this epoch. With
++    /// split authority, a `neoforge:split` fragment is reassembled; every other
++    /// payload (and all payloads without authority) goes straight to the bridge.
++    pub(crate) fn receive(&mut self, channel: &str, body: &[u8]) -> horizon_protocol::Result<Step> {
++        if self.terminated {
++            return Err(Error::new("terminated owner epoch"));
++        }
++        if channel == SPLIT_CHANNEL && self.reassembly.is_some() {
++            let now = self.now_ms();
++            let reassembler = self.reassembly.as_mut().expect("checked");
++            let assembled = reassembler.receive(body, now);
++            let assembled = assembled.map_err(|error| self.fail(Error::new(error)))?;
++            return Ok(match assembled {
++                Some(original) => Step::Assembled(original),
++                None => Step::Partial,
++            });
++        }
++        let result = self.endpoint.receive(channel, body);
++        result
++            .map(Step::Replies)
++            .map_err(|error| self.fail(Error::new(format!("{:?}", error.0))))
++    }
++
++    /// Dispatch the inner custom payload of a reconstructed original the caller
++    /// decoded exactly once. Used only after [`Step::Assembled`].
++    pub(crate) fn dispatch(
++        &mut self,
++        channel: &str,
++        body: &[u8],
++    ) -> horizon_protocol::Result<Vec<Reply>> {
++        if self.terminated {
++            return Err(Error::new("terminated owner epoch"));
++        }
++        let result = self.endpoint.receive(channel, body);
++        result.map_err(|error| self.fail(Error::new(format!("{:?}", error.0))))
++    }
++
++    /// Drive the idle deadline for a partial split assembly. The caller invokes
++    /// this from its read-timeout path so a partial assembly expires even when no
++    /// further packet arrives. Ordinary traffic does not extend the absolute
++    /// deadline; the reassembler enforces that from its own start instant.
++    pub(crate) fn poll_idle(&mut self) -> horizon_protocol::Result<()> {
++        if self.terminated {
++            return Err(Error::new("terminated owner epoch"));
++        }
++        let Some(reassembler) = self.reassembly.as_mut() else {
++            return Ok(());
++        };
++        let now = u64::try_from(self.base.elapsed().as_millis()).unwrap_or(u64::MAX);
++        let result = reassembler.check_deadline(now);
++        result.map_err(|error| self.fail(Error::new(error)))
++    }
++
++    /// The finish barrier. Still a hard refusal at this milestone: the owner has
++    /// no bidirectional modded content conversion or play route, so it can never
++    /// acknowledge configuration completion.
++    pub(crate) fn finish(&mut self) -> horizon_protocol::Result<()> {
++        if self.terminated {
++            return Err(Error::new("terminated owner epoch"));
++        }
++        let result = self.endpoint.finish();
++        result.map_err(|error| self.fail(Error::new(format!("{:?}", error.0))))
++    }
++
++    /// Terminal teardown: poison the epoch, drop partial assembly and reset the
++    /// bridge. Idempotent; also runs on Drop so every exit path cleans up.
++    pub(crate) fn terminate(&mut self) {
++        self.terminated = true;
++        if let Some(mut reassembler) = self.reassembly.take() {
++            reassembler.close();
++        }
++    }
++
++    fn fail(&mut self, error: Error) -> Error {
++        self.terminate();
++        error
++    }
++}
++
++impl Drop for OrderedOwner<'_> {
++    fn drop(&mut self) {
++        self.terminate();
++    }
++}
+diff --git a/crates/horizon-client/src/net/ordered_owner_tests.rs b/crates/horizon-client/src/net/ordered_owner_tests.rs
+new file mode 100644
+--- /dev/null
++++ b/crates/horizon-client/src/net/ordered_owner_tests.rs
+@@ -0,0 +1,330 @@
++// SPDX-License-Identifier: LGPL-3.0-or-later
++//! Engine tests for the ordered connection owner. These drive the actual
++//! `configure_with_profile` entry point and the real `Connection`/`QueuedWriter`
++//! with synthetic transports; they are NOT a live NeoForge join. The owner's hard
++//! finish latch and default-off split authority are asserted throughout.
++//!
++//! The configure-entry test needs no companion. The owner-direct split tests use
++//! the real compatibility reassembler and are compiled only when the companion is
++//! wired (`compat_isolated` is NOT set), matching the existing companion tests.
++use super::*;
++use early_configuration::{Bridge, Factory, Failure, Profile, Reply};
++use std::sync::atomic::AtomicUsize;
++
++#[derive(Default)]
++struct Observed {
++    starts: AtomicUsize,
++    resets: AtomicUsize,
++    received: Mutex<Vec<(String, Vec<u8>)>>,
++}
++struct VersionOnly(Arc<Observed>);
++impl Bridge for VersionOnly {
++    fn receive(&mut self, channel: &str, body: &[u8]) -> early_configuration::Result<Vec<Reply>> {
++        self.0
++            .received
++            .lock()
++            .unwrap()
++            .push((channel.into(), body.to_vec()));
++        if channel != "c:version" || body != [1, 1] {
++            return Err(Failure("unsupported_test_task"));
++        }
++        Ok(vec![Reply {
++            channel: channel.into(),
++            body: vec![1, 1],
++        }])
++    }
++    fn finish(&mut self) -> early_configuration::Result<()> {
++        Err(Failure("required_tasks_pending"))
++    }
++    fn reset(&mut self) {
++        self.0.resets.fetch_add(1, Ordering::Relaxed);
++    }
++}
++impl Factory for Arc<Observed> {
++    fn create(&self, _: [u8; 32]) -> early_configuration::Result<Box<dyn Bridge>> {
++        self.starts.fetch_add(1, Ordering::Relaxed);
++        Ok(Box::new(VersionOnly(self.clone())))
++    }
++}
++
++fn profile(observed: &Arc<Observed>) -> Profile {
++    Profile::neoforge(
++        "1.21.1",
++        767,
++        "21.1.248",
++        [7; 32],
++        vec![],
++        Arc::new(observed.clone()),
++    )
++    .unwrap()
++}
++
++/// Drive the real configure entry point with an owner and assert the owner's
++/// serialization, batch emission, finish refusal and epoch reset on exit.
++#[test]
++fn owner_drives_real_configure_with_batch_reply_refusal_and_reset() {
++    use horizon_world::native_load_context::DataLoadOrigin;
++    let root = std::env::temp_dir().join(format!("horizon-owner-{}", next_serial()));
++    std::fs::create_dir_all(&root).unwrap();
++    std::fs::write(root.join("items.json"), "{}").unwrap();
++    let resources = crate::test_resources::item_data(&root, DataLoadOrigin::ClientPreload).unwrap();
++    let observed = Arc::new(Observed::default());
++    let profile = profile(&observed);
++    let payloads =
++        crate::raw_payloads::Transport::capture(crate::raw_payloads::Side::Client).unwrap();
++    let (client, server) = horizon_protocol::connection::Pipe::pair();
++    let mut client = Connection::local(client);
++    client.adapt(horizon_protocol::adapter::ServerVersion::V1_21_1);
++    let mut server = Connection::local(server);
++    server
++        .reader
++        .set_read_timeout(Some(Duration::from_millis(50)))
++        .unwrap();
++    client
++        .send(
++            &handshake::Serverbound::Intention(handshake::Intention {
++                protocol: PROTOCOL_VERSION,
++                host: "localhost".into(),
++                port: 25565,
++                intent: handshake::LOGIN,
++            })
++            .encode(),
++        )
++        .unwrap();
++    server.recv().unwrap();
++    server.send(&[2]).unwrap();
++    client.recv().unwrap();
++    client
++        .send(&login::Serverbound::LoginAcknowledged(Empty).encode())
++        .unwrap();
++    server.recv().unwrap();
++    let (mut reader, writer) = client.split();
++    let writer = Arc::new(Mutex::new(Some(QueuedWriter::new(writer).unwrap())));
++    let configuring = Arc::new(AtomicBool::new(true));
++    let (send, _events) = event_channel();
++    // Brand must not activate Horizon offers; c:version is the only supported task.
++    let mut brand = horizon_protocol::buf::Writer::new();
++    brand.string("horizon");
++    for (channel, data) in [("minecraft:brand", brand.data), ("c:version", vec![1, 1])] {
++        server
++            .send(
++                &cfg::Clientbound::CustomPayload(cfg::CustomPayload {
++                    channel: channel.into(),
++                    data,
++                })
++                .encode(),
++            )
++            .unwrap();
++    }
++    server
++        .send(&cfg::Clientbound::FinishConfiguration(Empty).encode())
++        .unwrap();
++    // A later packet the refusing engine must never read.
++    server.send(&[0]).unwrap();
++    let result = configure_with_profile(
++        &mut reader,
++        &writer,
++        &configuring,
++        &Language::new(),
++        &send,
++        &Cookies::default(),
++        &resources,
++        &payloads,
++        true,
++        Some(&profile),
++    );
++    assert!(
++        result.err().unwrap().text.contains("required_tasks_pending"),
++        "owner finish must still refuse"
++    );
++    assert!(configuring.load(Ordering::Acquire));
++    assert!(payloads.epoch().is_none(), "no fabricated Horizon acceptance");
++    let drained = writer
++        .lock()
++        .unwrap()
++        .as_ref()
++        .unwrap()
++        .drain_and_take()
++        .unwrap();
++    // The c:version reply crossed the real queued writer as one batch.
++    let (id, bytes) = server.recv().unwrap();
++    assert_eq!(id, 2);
++    let cfg::Serverbound::CustomPayload(reply) = cfg::Serverbound::decode(id, &bytes).unwrap() else {
++        panic!("expected loader reply");
++    };
++    assert_eq!((reply.channel.as_str(), reply.data.as_slice()), ("c:version", &[1, 1][..]));
++    assert!(server.recv().is_err(), "no finish ack or Horizon offer");
++    // The engine returned without consuming the following packet.
++    assert_eq!(reader.recv().unwrap(), (0, vec![]));
++    drained.shutdown();
++    // A fresh owner epoch was created and reset exactly once on exit.
++    assert_eq!(observed.starts.load(Ordering::Relaxed), 1);
++    assert_eq!(observed.resets.load(Ordering::Relaxed), 1);
++    std::fs::remove_dir_all(root).unwrap();
++}
++
++// Owner-direct split tests require the real compatibility reassembler, supplied
++// only when the companion is wired (not in the isolated dependency-free run).
++#[allow(unexpected_cfgs)]
++#[cfg(not(compat_isolated))]
++mod companion {
++    use super::*;
++    use horizon_neoforge_compat::{
++        modded::{ConnectionProtocol, Flow},
++        split::{OutboundPacket, OutboundSplitter, Reassembler},
++    };
++
++    /// Adapt the compatibility reassembler to the engine's local trait.
++    struct CompatReassembly(Reassembler);
++    impl ordered_owner::Reassembly for CompatReassembly {
++        fn receive(
++            &mut self,
++            body: &[u8],
++            now_ms: u64,
++        ) -> std::result::Result<Option<Vec<u8>>, String> {
++            self.0.receive(body, now_ms).map_err(|e| e.to_string())
++        }
++        fn check_deadline(&mut self, now_ms: u64) -> std::result::Result<(), String> {
++            self.0.check_deadline(now_ms).map_err(|e| e.to_string())
++        }
++        fn close(&mut self) {
++            self.0.close();
++        }
++    }
++
++    fn configured_pair() -> (Connection, Connection) {
++        let (client, server) = horizon_protocol::connection::Pipe::pair();
++        let mut client = Connection::local(client);
++        let mut server = Connection::local(server);
++        client.adapt(horizon_protocol::adapter::ServerVersion::V1_21_1);
++        client
++            .send(
++                &handshake::Serverbound::Intention(handshake::Intention {
++                    protocol: PROTOCOL_VERSION,
++                    host: "localhost".into(),
++                    port: 25565,
++                    intent: handshake::LOGIN,
++                })
++                .encode(),
++            )
++            .unwrap();
++        server.recv().unwrap();
++        server.send(&[2]).unwrap();
++        client.recv().unwrap();
++        client
++            .send(&login::Serverbound::LoginAcknowledged(Empty).encode())
++            .unwrap();
++        server.recv().unwrap();
++        (client, server)
++    }
++
++    fn fragment(marker: u8, content: &[u8]) -> Vec<u8> {
++        let mut w = horizon_protocol::buf::Writer::new();
++        w.varint((content.len() + 1) as i32);
++        w.bytes(&[marker]);
++        w.bytes(content);
++        w.data
++    }
++
++    fn owner_with_authority<'a>(
++        epoch: ordered_owner::Epoch,
++        profile: &'a Profile,
++    ) -> ordered_owner::OrderedOwner<'a> {
++        ordered_owner::OrderedOwner::new(
++            epoch,
++            profile,
++            Some(Box::new(CompatReassembly(Reassembler::new()))),
++        )
++        .unwrap()
++    }
++
++    /// With genuine (test-granted) split authority, the owner reassembles a
++    /// fragmented original, the caller decodes it exactly once, and the inner
++    /// payload is dispatched.
++    #[test]
++    fn owner_reassembles_split_then_dispatches_exactly_once() {
++        let (mut client, mut server) = configured_pair();
++        let observed = Arc::new(Observed::default());
++        let profile = profile(&observed);
++        let epoch = ordered_owner::Epoch(7);
++        let mut owner = owner_with_authority(epoch, &profile);
++        let packet = cfg::Clientbound::CustomPayload(cfg::CustomPayload {
++            channel: "neoforge:register".into(),
++            data: vec![0],
++        })
++        .encode();
++        // Queue a real socket packet that must NOT be consumed while reassembling.
++        server.send(&[14, 0]).unwrap();
++        let mut assembled = None;
++        for (index, part) in [fragment(1, &packet[..1]), fragment(2, &packet[1..])]
++            .into_iter()
++            .enumerate()
++        {
++            match owner.receive(ordered_owner::SPLIT_CHANNEL, &part).unwrap() {
++                ordered_owner::Step::Partial => assert_eq!(index, 0),
++                ordered_owner::Step::Assembled(original) => {
++                    assert_eq!(index, 1);
++                    assembled = Some(original);
++                }
++                ordered_owner::Step::Replies(_) => panic!("split fragment is not a reply"),
++            }
++        }
++        let (id, body) = client
++            .reader
++            .decode_reassembled_configuration(assembled.unwrap())
++            .unwrap();
++        let cfg::Clientbound::CustomPayload(inner) = cfg::Clientbound::decode(id, &body).unwrap() else {
++            panic!("expected reconstructed custom payload");
++        };
++        let replies = owner.dispatch(&inner.channel, &inner.data).unwrap();
++        assert_eq!(replies.len(), 1);
++        assert_eq!(replies[0].body, [0]);
++        // The queued socket packet is still independent and unread.
++        assert_eq!(client.recv().unwrap(), (15, vec![0]));
++        // Epoch is live and finish still refuses.
++        assert!(owner.active(epoch));
++        assert!(!owner.active(ordered_owner::Epoch(8)));
++        assert!(owner.finish().is_err());
++    }
++
++    /// The owner's idle poll is wired and terminal: once the epoch is terminated
++    /// the poll and any further work refuse. The absolute 30s deadline arithmetic
++    /// itself is covered by the core `split` reassembler tests.
++    #[test]
++    fn owner_idle_poll_is_terminal_after_teardown() {
++        let (_client, _server) = configured_pair();
++        let observed = Arc::new(Observed::default());
++        let profile = profile(&observed);
++        let mut owner = owner_with_authority(ordered_owner::Epoch(1), &profile);
++        assert!(matches!(
++            owner.receive(ordered_owner::SPLIT_CHANNEL, &fragment(1, &[14])).unwrap(),
++            ordered_owner::Step::Partial
++        ));
++        owner.poll_idle().unwrap(); // before teardown, a pending assembly polls clean
++        owner.terminate();
++        assert!(owner.is_terminated());
++        assert!(owner.receive("c:version", &[1, 1]).is_err());
++        assert!(owner.poll_idle().is_err());
++        owner.terminate(); // idempotent
++        assert_eq!(observed.resets.load(Ordering::Relaxed), 1);
++    }
++
++    /// Without authority the owner never reassembles a split payload: it is an
++    /// ordinary (unsupported) bridge task. The outbound splitter is a separate,
++    /// opt-in primitive and is not wired by default.
++    #[test]
++    fn owner_without_authority_never_reassembles_split() {
++        let (_client, _server) = configured_pair();
++        let observed = Arc::new(Observed::default());
++        let profile = profile(&observed);
++        let mut owner =
++            ordered_owner::OrderedOwner::new(ordered_owner::Epoch(1), &profile, None).unwrap();
++        assert!(owner.receive(ordered_owner::SPLIT_CHANNEL, &fragment(1, &[14])).is_err());
++        let splitter = OutboundSplitter::new(Flow::Serverbound, ConnectionProtocol::Configuration, 128)
++            .unwrap();
++        assert!(matches!(
++            splitter.encode(&[7, 0]).unwrap(),
++            OutboundPacket::Unsplit(_)
++        ));
++    }
++}
+diff --git a/crates/horizon-client/src/net/queued_writer.rs b/crates/horizon-client/src/net/queued_writer.rs
+--- a/crates/horizon-client/src/net/queued_writer.rs
++++ b/crates/horizon-client/src/net/queued_writer.rs
+@@ -22,6 +22,10 @@
+ enum WriteJob {
+     Packet(Vec<u8>),
+     Contents(Vec<u8>),
++    /// A whole reply batch admitted under one reservation: framed and written in
++    /// order within this single job, so nothing interleaves and a mid-batch write
++    /// failure tears the connection down rather than acknowledging a partial batch.
++    Batch(Vec<Vec<u8>>),
+     Disconnect(Vec<u8>),
+ }
+
+@@ -178,6 +182,7 @@
+                             WriteJob::Packet(b)
+                             | WriteJob::Contents(b)
+                             | WriteJob::Disconnect(b) => b.len(),
++                            WriteJob::Batch(bodies) => bodies.iter().map(Vec::len).sum(),
+                         };
+                         writing[0].fetch_add(1, Ordering::Relaxed);
+                         writing[2].store(bytes, Ordering::Relaxed);
+@@ -186,6 +191,16 @@
+                     let result = match job {
+                         WriteJob::Packet(body) | WriteJob::Disconnect(body) => writer.send(&body),
+                         WriteJob::Contents(contents) => writer.send_contents(&contents),
++                        WriteJob::Batch(bodies) => {
++                            let mut outcome = Ok(());
++                            for body in &bodies {
++                                outcome = writer.send(body);
++                                if outcome.is_err() {
++                                    break;
++                                }
++                            }
++                            outcome
++                        }
+                     };
+                     #[cfg(any(test, feature = "test-payload-probe"))]
+                     {
+@@ -282,6 +297,34 @@
+             Err(TrySendError::Disconnected(_)) => Err(Error::new("client writer disconnected")),
+         }
+     }
++    /// Admit and emit a whole reply batch atomically and in order. One reservation
++    /// covers every body, and one queue job carries the batch, so no other original
++    /// or phase transition can interleave within it. The worker frames/compresses/
++    /// encrypts and writes the bodies in order; a mid-batch write failure tears the
++    /// connection down (the worker stops and shuts the writer), never a partial ack.
++    /// An admission failure exposes zero fragments. This is NOT split authority.
++    pub(crate) fn send_batch(&self, bodies: Vec<Vec<u8>>) -> Result<()> {
++        if bodies.is_empty() {
++            return Ok(());
++        }
++        if !self.alive.load(Ordering::Acquire) {
++            return Err(Error::new("client writer disconnected"));
++        }
++        let capacity: usize = bodies.iter().map(Vec::capacity).sum();
++        let sender = self.sender.lock().unwrap();
++        let Some(sender) = sender.as_ref() else {
++            return Err(Error::new("writer retired"));
++        };
++        match sender.try_send(WriteJob::Batch(bodies), capacity) {
++            Ok(()) => Ok(()),
++            Err(TrySendError::Full(_)) => {
++                self.alive.store(false, Ordering::Release);
++                self.closer.close();
++                Err(Error::new("client writer backpressure"))
++            }
++            Err(TrySendError::Disconnected(_)) => Err(Error::new("client writer disconnected")),
++        }
++    }
+     pub(crate) fn disconnect(&self, body: Vec<u8>) {
+         let mut sender = self.sender.lock().unwrap();
+         self.terminal.store(true, Ordering::Release);
+@@ -337,9 +380,10 @@
+             return Err(PrepareFailure::Closed);
+         }
+         let capacity = match &job {
+-            WriteJob::Packet(bytes) | WriteJob::Contents(bytes) | WriteJob::Disconnect(bytes) => {
+-                bytes.capacity()
+-            }
++            WriteJob::Packet(bytes)
++            | WriteJob::Contents(bytes)
++            | WriteJob::Disconnect(bytes) => bytes.capacity(),
++            WriteJob::Batch(bodies) => bodies.iter().map(Vec::capacity).sum(),
+         };
+         let sender = self.sender.lock().unwrap();
+         let permit = sender
 diff --git a/crates/horizon-protocol/src/adapter/session.rs b/crates/horizon-protocol/src/adapter/session.rs
 --- a/crates/horizon-protocol/src/adapter/session.rs
 +++ b/crates/horizon-protocol/src/adapter/session.rs
