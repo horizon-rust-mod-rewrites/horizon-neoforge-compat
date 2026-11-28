@@ -1,3 +1,21 @@
+# Latest exact-SHA validation — awaited early writes PASSED
+
+See NEXT_AGENT.md first. Run 46161098482, source `d0c05270057bc69da8082a229dc265f5d4929bdf`:
+16 companion / 9 early configuration / 12 ordered-owner / 14 protocol framing /
+81 network-filter passed, 3 ignored; core172 EACH debug/release; strict core
+checks and full actual pinned client/companion typechecks/lock audit passed.
+Retained verified hosted evidence is in integration/hosted-46161098482-*.txt.
+Actual early reply batches now await write_all completion with bounded waits,
+whole-batch capacity admission, cancellation/terminal physical closure and immediate
+bridge reset. The inherited owner remains INCOMPLETE across adapter phases,
+prepared originals/queues, detached sockets, lifecycle and real split grants.
+No criterion awarded for partial work: **30/100; CANNOT JOIN; both finish gates
+and default split/flag opt-outs remain**. This is selected synthetic engine/TCP
+validation, NOT all upstream tests, host semantics, Java split interop or live join.
+Newer source supersedes prior documented7becb05; preserve exact-SHA distinctions.
+
+--- Earlier checkpoints below are historical ---
+
 # Completion tracking (read alongside NEXT_AGENT.md)
 
 Maintain `COMPATIBILITY_PROGRESS.md` from `progress/compatibility.json`. Run `python3 progress/report.py --check` and progress unittest discovery when updating it. Credit only evidenced complete criteria; changes in scope require a rubric-version change, not hidden exclusions. Tracker arithmetic never authorizes finish or mod rewrites. See `docs/ordered-connection-owner.md` for the next runtime gate.

@@ -1,0 +1,1263 @@
++ cargo check --target x86_64-unknown-linux-gnu --locked -p horizon-client-lib --no-default-features
+   Compiling proc-macro2 v1.0.107
+   Compiling quote v1.0.47
+   Compiling unicode-ident v1.0.26
+    Checking cfg-if v1.0.5
+   Compiling serde_core v1.0.229
+    Checking log v0.4.34
+   Compiling libc v0.2.190
+    Checking bitflags v2.13.2
+   Compiling syn v3.0.6
+   Compiling syn v2.0.119
+   Compiling memchr v2.8.3
+   Compiling version_check v0.9.5
+    Checking once_cell v1.21.4
+   Compiling zmij v1.0.23
+   Compiling generic-array v0.14.7
+   Compiling find-msvc-tools v0.1.14
+   Compiling serde v1.0.229
+   Compiling shlex v2.0.1
+   Compiling cc v1.6.0
+   Compiling thiserror v2.0.21
+   Compiling serde_derive v1.0.229
+   Compiling rustix v1.1.6
+   Compiling thiserror-impl v2.0.21
+    Checking linux-raw-sys v0.12.1
+    Checking foldhash v0.2.0
+   Compiling libm v0.2.16
+    Checking equivalent v1.0.2
+    Checking smallvec v1.16.2
+    Checking hashbrown v0.17.1
+    Checking arrayvec v0.7.8
+   Compiling zerocopy v0.8.60
+    Checking indexmap v2.14.2
+    Checking libloading v0.8.9
+   Compiling cfg_aliases v0.2.2
+   Compiling getrandom v0.2.17
+   Compiling rand_core v0.6.4
+   Compiling bytemuck_derive v1.12.1
+   Compiling anyhow v1.0.104
+   Compiling pkg-config v0.3.34
+    Checking bytemuck v1.25.2
+   Compiling serde_json v1.0.151
+   Compiling siphasher v1.0.4
+   Compiling semver v1.0.28
+   Compiling phf_shared v0.11.3
+   Compiling ppv-lite86 v0.2.21
+   Compiling rand_chacha v0.3.1
+   Compiling rand v0.8.8
+    Checking itoa v1.0.18
+   Compiling phf_generator v0.11.3
+    Checking simd-adler32 v0.3.10
+   Compiling phf_codegen v0.11.3
+   Compiling wayland-sys v0.31.11
+    Checking dlib v0.5.3
+   Compiling crc32fast v1.5.2
+   Compiling unicode_names2_generator v2.0.0
+   Compiling synstructure v0.14.0
+    Checking adler2 v2.0.1
+   Compiling unicode_names2 v2.0.0
+   Compiling typenum v1.20.1
+    Checking phf v0.11.3
+    Checking miniz_oxide v0.9.1
+   Compiling zerofrom-derive v0.1.8
+    Checking zlib-rs v0.6.8
+   Compiling autocfg v1.5.1
+   Compiling num-traits v0.2.19
+    Checking flate2 v1.1.10
+    Checking zerofrom v0.1.8
+   Compiling yoke-derive v0.8.4
+   Compiling zerocopy-derive v0.8.60
+   Compiling prettyplease v0.2.37
+    Checking stable_deref_trait v1.2.1
+   Compiling regex-syntax v0.8.11
+    Checking yoke v0.8.3
+    Checking horizon-core v0.1.0 (/home/runner/work/horizon-neoforge-compat/horizon-full/crates/horizon-core)
+   Compiling block-buffer v0.10.4
+   Compiling crypto-common v0.1.7
+   Compiling wayland-backend v0.3.17
+   Compiling digest v0.10.7
+   Compiling zerovec-derive v0.11.6
+    Checking scoped-tls v1.0.1
+   Compiling heck v0.5.0
+   Compiling winnow v1.0.4
+   Compiling getrandom v0.4.3
+    Checking scopeguard v1.2.0
+    Checking downcast-rs v1.2.1
+   Compiling cpufeatures v0.2.17
+   Compiling sha2 v0.10.9
+   Compiling toml_parser v1.1.3+spec-1.1.0
+    Checking zerovec v0.11.8
+   Compiling toml_datetime v1.1.1+spec-1.1.0
+   Compiling serde_spanned v1.1.2
+   Compiling quick-xml v0.41.0
+   Compiling displaydoc v0.2.7
+   Compiling either v1.19.0
+   Compiling toml_writer v1.1.3+spec-1.1.0
+    Checking bumpalo v3.20.3
+    Checking rustc-hash v1.1.0
+   Compiling wayland-client v0.31.15
+   Compiling fnv v1.0.7
+    Checking zopfli v0.8.4
+    Checking naga-types v30.0.1
+   Compiling wayland-scanner v0.31.11
+   Compiling toml v1.1.6+spec-1.1.0
+   Compiling itertools v0.14.0
+   Compiling horizon-mod-surface v0.1.0 (/home/runner/work/horizon-neoforge-compat/horizon-full/crates/horizon-mod-surface)
+   Compiling naga v30.0.1 (/home/runner/work/horizon-neoforge-compat/horizon-full/third_party/naga)
+   Compiling aho-corasick v1.1.5
+    Checking unicode-width v0.2.2
+    Checking unicode-xid v0.2.6
+    Checking bit-vec v0.9.1
+    Checking typed-path v0.13.0
+    Checking termcolor v1.4.1
+    Checking codespan-reporting v0.13.1
+    Checking zip v9.1.3
+    Checking bit-set v0.10.0
+    Checking pp-rs v0.2.1
+   Compiling horizon-mod-source v0.1.0 (/home/runner/work/horizon-neoforge-compat/horizon-full/crates/horizon-mod-source)
+   Compiling regex-automata v0.4.18
+   Compiling prost-derive v0.14.4
+    Checking half v2.7.1
+   Compiling rustc_version v0.4.1
+    Checking spirv v0.4.0+sdk-1.4.341.0
+   Compiling logos-codegen v0.15.1
+   Compiling horizon-game-discovery v0.1.0 (/home/runner/work/horizon-neoforge-compat/horizon-full/crates/horizon-game-discovery)
+    Checking tinystr v0.8.4
+   Compiling libmimalloc-sys v0.1.49 (/home/runner/work/horizon-neoforge-compat/horizon-full/third_party/libmimalloc-sys)
+    Checking memmap2 v0.9.11
+    Checking writeable v0.6.4
+   Compiling bytes v1.12.1
+    Checking litemap v0.8.3
+    Checking icu_locale_core v2.3.0
+   Compiling prost v0.14.4
+    Checking zerotrie v0.2.5
+    Checking potential_utf v0.1.6
+   Compiling wasmparser v0.261.0
+    Checking horizon-guest-stack v0.1.0 (/home/runner/work/horizon-neoforge-compat/horizon-full/crates/horizon-guest-stack)
+    Checking utf8_iter v1.0.4
+    Checking cty v0.2.2
+   Compiling icu_normalizer_data v2.3.0
+    Checking gimli v0.33.0
+   Compiling beef v0.5.2
+   Compiling rustversion v1.0.23
+   Compiling icu_properties_data v2.3.0
+   Compiling parking_lot_core v0.9.12
+   Compiling lazy_static v1.5.1
+   Compiling object v0.39.1
+   Compiling id-arena v2.3.0
+   Compiling io-lifetimes v2.0.4
+   Compiling wit-parser v0.261.0
+    Checking icu_collections v2.3.0
+    Checking icu_provider v2.3.1
+   Compiling prost-types v0.14.4
+    Checking wayland-protocols v0.32.13
+   Compiling logos-codegen v0.16.1
+   Compiling miette-derive v7.6.0
+   Compiling unicode-width v0.1.14
+    Checking fallible-iterator v0.3.0
+   Compiling getrandom v0.3.4
+    Checking raw-window-handle v0.6.2
+    Checking framehop v0.16.0
+   Compiling miette v7.6.0
+   Compiling logos-derive v0.16.1
+    Checking mimalloc v0.1.52
+   Compiling horizon-mod-api-gen v0.1.0 (/home/runner/work/horizon-neoforge-compat/horizon-full/crates/horizon-mod-api-gen)
+   Compiling logos-derive v0.15.1
+    Checking addr2line v0.26.1
+    Checking horizon-assets v0.1.0 (/home/runner/work/horizon-neoforge-compat/horizon-full/crates/horizon-assets)
+    Checking lock_api v0.4.14
+    Checking horizon-mod-runtime v0.1.0 (/home/runner/work/horizon-neoforge-compat/horizon-full/crates/horizon-mod-runtime)
+    Checking cobs v0.3.0
+   Compiling foldhash v0.1.5
+   Compiling rustix v0.38.44
+   Compiling horizon-world v0.1.0 (/home/runner/work/horizon-neoforge-compat/horizon-full/crates/horizon-world)
+   Compiling ash v0.38.0+1.3.281
+   Compiling io-extras v0.18.4
+   Compiling thiserror v1.0.69
+    Checking rustc-demangle v0.1.28
+    Checking horizon-threads v0.1.0 (/home/runner/work/horizon-neoforge-compat/horizon-full/crates/horizon-threads)
+   Compiling hashbrown v0.15.5
+    Checking postcard v1.1.3
+    Checking parking_lot v0.12.5
+   Compiling logos v0.15.1
+    Checking icu_properties v2.3.0
+   Compiling encoding_rs v0.8.42
+    Checking icu_normalizer v2.3.0
+   Compiling logos v0.16.1
+    Checking miniz_oxide v0.8.9
+    Checking fdeflate v0.3.7
+   Compiling thiserror-impl v1.0.69
+   Compiling ring v0.17.14
+    Checking static_assertions v1.1.0
+   Compiling khronos-egl v6.0.0
+    Checking xxhash-rust v0.8.19
+    Checking percent-encoding v2.3.2
+    Checking lz4_flex v0.14.0
+    Checking allocator-api2 v0.2.21
+    Checking linux-raw-sys v0.4.15
+   Compiling cap-primitives v3.4.6
+   Compiling fixedbitset v0.5.7
+   Compiling fastrand v2.5.0
+    Checking zeroize v1.9.1
+    Checking rustls-pki-types v1.15.1
+   Compiling tempfile v3.27.0
+   Compiling petgraph v0.8.3
+    Checking hashbrown v0.16.1
+    Checking wgpu-types v30.0.1
+    Checking png v0.18.1
+   Compiling prost-reflect v0.16.5
+    Checking idna_adapter v1.2.2
+   Compiling protox-parse v0.9.0
+    Checking fs-set-times v0.20.3
+    Checking wayland-protocols-wlr v0.3.12
+   Compiling regex v1.13.1
+   Compiling wgpu-hal v30.0.1 (/home/runner/work/horizon-neoforge-compat/horizon-full/third_party/wgpu-hal)
+   Compiling horizon-mod-api-macros v0.1.0 (/home/runner/work/horizon-neoforge-compat/horizon-full/crates/horizon-mod-api-macros)
+    Checking rustix-linux-procfs v0.1.1
+    Checking polling v3.11.0
+    Checking os_pipe v1.2.3
+    Checking core_detect v1.0.0
+   Compiling cap-std v3.4.6
+    Checking glam v0.30.10
+    Checking simdutf8 v0.1.5
+    Checking ipnet v2.12.2
+    Checking ambient-authority v0.0.2
+   Compiling multimap v0.10.1
+   Compiling multiversion_no_op v1.0.0
+    Checking maybe-owned v0.3.4
+    Checking presser v0.3.1
+    Checking bitflags v1.3.2
+    Checking subtle v2.6.1
+    Checking slab v0.4.12
+    Checking calloop v0.13.0
+    Checking symphonia-core v0.5.5
+    Checking gpu-allocator v0.28.0
+   Compiling prost-build v0.14.4
+   Compiling protox v0.9.1
+    Checking idna v1.1.0
+    Checking wgpu-naga-bridge v30.0.1
+    Checking ordered-float v5.5.0
+    Checking inout v0.1.4
+   Compiling cap-fs-ext v3.4.6
+    Checking cursor-icon v1.2.0
+    Checking strict-num v0.1.1
+    Checking untrusted v0.9.0
+    Checking arrayref v0.3.9
+    Checking xkeysym v0.2.1
+    Checking xcursor v0.3.11
+    Checking profiling v1.0.18
+    Checking ttf-parser v0.25.1
+    Checking glow v0.17.0
+   Compiling smithay-client-toolkit v0.19.2
+    Checking renderdoc-sys v1.1.0
+   Compiling crossbeam-utils v0.8.23
+    Checking owned_ttf_parser v0.25.1
+    Checking wayland-cursor v0.31.14
+    Checking tiny-skia-path v0.11.4
+    Checking wayland-csd-frame v0.3.0
+    Checking cipher v0.4.4
+   Compiling horizon-perf-format v0.1.0 (/home/runner/work/horizon-neoforge-compat/horizon-full/crates/horizon-perf-format)
+    Checking symphonia-metadata v0.5.5
+    Checking calloop-wayland-source v0.3.0
+   Compiling x11-dl v2.21.0
+   Compiling wgpu-core v30.0.1
+    Checking nom v8.0.0
+    Checking gethostname v1.1.0
+   Compiling ahash v0.8.12
+   Compiling rustls v0.23.46
+   Compiling crossbeam-epoch v0.9.21
+    Checking as-raw-xcb-connection v1.0.1
+   Compiling litrs v1.0.0
+    Checking ab_glyph_rasterizer v0.1.10
+    Checking x11rb-protocol v0.13.2
+    Checking x11rb v0.13.2
+    Checking ab_glyph v0.2.32
+   Compiling document-features v0.2.12
+    Checking tree_magic_mini v3.2.2
+    Checking symphonia-utils-xiph v0.5.5
+    Checking aes v0.8.4
+    Checking rustls-webpki v0.103.16
+    Checking tiny-skia v0.11.4
+    Checking wgpu-core-deps-windows-linux-android v30.0.1
+    Checking horizon-shader-api v0.1.0 (/home/runner/work/horizon-neoforge-compat/horizon-full/crates/horizon-shader-api)
+    Checking horizon-client-core v0.1.0 (/home/runner/work/horizon-neoforge-compat/horizon-full/crates/horizon-client-core)
+    Checking webpki-roots v1.0.10
+    Checking form_urlencoded v1.2.2
+    Checking sha1 v0.10.7
+   Compiling wgpu v30.0.1
+   Compiling winit v0.30.13
+    Checking socket2 v0.5.10
+    Checking socket2 v0.6.5
+    Checking pin-project-lite v0.2.17
+    Checking minisign-verify v0.3.0
+   Compiling crossbeam-deque v0.8.8
+    Checking horizon-system v0.1.0 (/home/runner/work/horizon-neoforge-compat/horizon-full/crates/horizon-system)
+    Checking horizon-hooks v0.1.0 (/home/runner/work/horizon-neoforge-compat/horizon-full/crates/horizon-hooks)
+    Checking tracing-core v0.1.36
+    Checking tracing v0.1.44
+    Checking horizon-protocol v0.1.0 (/home/runner/work/horizon-neoforge-compat/horizon-full/crates/horizon-protocol)
+    Checking url v2.5.8
+    Checking webpki-roots v0.26.11
+    Checking sctk-adwaita v0.10.1
+    Checking wl-clipboard-rs v0.9.4
+    Checking xkbcommon-dl v0.4.2
+    Checking wayland-protocols-plasma v0.3.12
+   Compiling rayon-core v1.13.0
+    Checking base64 v0.22.1
+    Checking smol_str v0.2.2
+    Checking dpi v0.1.2
+    Checking ureq v2.12.1
+    Checking arboard v3.7.0
+    Checking horizon-bench v0.1.0 (/home/runner/work/horizon-neoforge-compat/horizon-full/crates/horizon-bench)
+    Checking symphonia-codec-vorbis v0.5.5
+    Checking symphonia-format-ogg v0.5.5
+   Compiling nix v0.31.3
+    Checking quick-error v2.0.1
+    Checking zune-core v0.4.12
+    Checking byteorder-lite v0.1.0
+    Checking twox-hash v2.1.5
+    Checking iana-time-zone v0.1.65
+    Checking chrono v0.4.45
+    Checking ruzstd v0.9.1
+    Checking image-webp v0.2.4
+    Checking zune-jpeg v0.4.21
+    Checking symphonia v0.5.5
+    Checking horizon-platform v0.1.0 (/home/runner/work/horizon-neoforge-compat/horizon-full/crates/horizon-platform)
+    Checking horizon-hdr v0.1.0 (/home/runner/work/horizon-neoforge-compat/horizon-full/crates/horizon-hdr)
+    Checking horizon-optifine v0.1.0 (/home/runner/work/horizon-neoforge-compat/horizon-full/crates/horizon-optifine)
+    Checking horizon-polytone v0.1.0 (/home/runner/work/horizon-neoforge-compat/horizon-full/crates/horizon-polytone)
+    Checking horizon-shaders v0.1.0 (/home/runner/work/horizon-neoforge-compat/horizon-full/crates/horizon-shaders)
+   Compiling horizon-client-lib v0.1.0 (/home/runner/work/horizon-neoforge-compat/horizon-full/crates/horizon-client-lib)
+    Checking horizon-narrator v0.1.0 (/home/runner/work/horizon-neoforge-compat/horizon-full/crates/horizon-narrator)
+    Checking unicode-bidi v0.3.18
+    Checking pollster v0.4.0
+    Checking horizon-java-properties v0.1.0 (/home/runner/work/horizon-neoforge-compat/horizon-full/crates/horizon-java-properties)
+    Checking horizon-addresses v0.1.0 (/home/runner/work/horizon-neoforge-compat/horizon-full/crates/horizon-addresses)
+    Checking horizon-telemetry v0.1.0 (/home/runner/work/horizon-neoforge-compat/horizon-full/crates/horizon-telemetry)
+    Checking horizon-server-files v0.1.0 (/home/runner/work/horizon-neoforge-compat/horizon-full/crates/horizon-server-files)
+    Checking rayon v1.12.0
+    Checking horizon-anticheat v0.1.0 (/home/runner/work/horizon-neoforge-compat/horizon-full/crates/horizon-anticheat)
+    Checking horizon-mcp v0.1.0 (/home/runner/work/horizon-neoforge-compat/horizon-full/crates/horizon-mcp)
+    Checking fs4 v1.1.0
+    Checking mio v1.2.4
+    Checking same-file v1.0.6
+   Compiling horizon-mod-vocab v0.1.0 (/home/runner/work/horizon-neoforge-compat/horizon-full/crates/horizon-mod-vocab)
+    Checking horizon-mod-package v0.1.0 (/home/runner/work/horizon-neoforge-compat/horizon-full/crates/horizon-mod-package)
+    Checking horizon-engine-slots v0.1.0 (/home/runner/work/horizon-neoforge-compat/horizon-full/crates/horizon-engine-slots)
+    Checking horizon-client-input v0.1.0 (/home/runner/work/horizon-neoforge-compat/horizon-full/crates/horizon-client-input)
+    Checking horizon-items v0.1.0 (/home/runner/work/horizon-neoforge-compat/horizon-full/crates/horizon-items)
+    Checking horizon-command v0.1.0 (/home/runner/work/horizon-neoforge-compat/horizon-full/crates/horizon-command)
+    Checking horizon-client-render v0.1.0 (/home/runner/work/horizon-neoforge-compat/horizon-full/crates/horizon-client-render)
+warning: method `at_payload` is never used
+  --> crates/horizon-client-lib/../horizon-client/src/net/early_configuration.rs:17:19
+   |
+14 | impl Failure {
+   | ------------ method in this implementation
+...
+17 |     pub(crate) fn at_payload(&self, channel: &str) -> String {
+   |                   ^^^^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: field `epoch` is never read
+  --> crates/horizon-client-lib/../horizon-client/src/net/ordered_owner.rs:73:5
+   |
+72 | pub(crate) struct OrderedOwner<'a> {
+   |                   ------------ field in this struct
+73 |     epoch: Epoch,
+   |     ^^^^^
+
+warning: methods `epoch`, `is_terminated`, and `active` are never used
+   --> crates/horizon-client-lib/../horizon-client/src/net/ordered_owner.rs:103:19
+    |
+ 82 | impl<'a> OrderedOwner<'a> {
+    | ------------------------- methods in this implementation
+...
+103 |     pub(crate) fn epoch(&self) -> Epoch {
+    |                   ^^^^^
+...
+107 |     pub(crate) fn is_terminated(&self) -> bool {
+    |                   ^^^^^^^^^^^^^
+...
+112 |     pub(crate) fn active(&self, tag: Epoch) -> bool {
+    |                   ^^^^^^
+
+warning: `horizon-client-lib` (lib) generated 3 warnings
+    Finished `dev` profile [unoptimized] target(s) in 4m 43s
++ cargo check --target x86_64-unknown-linux-gnu --offline -p horizon-client-lib --no-default-features
+     Locking 1 package to latest compatible version
+      Adding horizon-neoforge-compat v0.1.0 (/home/runner/work/horizon-neoforge-compat/horizon-neoforge-compat)
+   Compiling horizon-world v0.1.0 (/home/runner/work/horizon-neoforge-compat/horizon-full/crates/horizon-world)
+    Checking horizon-neoforge-compat v0.1.0 (/home/runner/work/horizon-neoforge-compat/horizon-neoforge-compat)
+    Checking horizon-client-core v0.1.0 (/home/runner/work/horizon-neoforge-compat/horizon-full/crates/horizon-client-core)
+    Checking horizon-protocol v0.1.0 (/home/runner/work/horizon-neoforge-compat/horizon-full/crates/horizon-protocol)
+    Checking horizon-items v0.1.0 (/home/runner/work/horizon-neoforge-compat/horizon-full/crates/horizon-items)
+    Checking horizon-client-input v0.1.0 (/home/runner/work/horizon-neoforge-compat/horizon-full/crates/horizon-client-input)
+    Checking horizon-command v0.1.0 (/home/runner/work/horizon-neoforge-compat/horizon-full/crates/horizon-command)
+    Checking horizon-server-files v0.1.0 (/home/runner/work/horizon-neoforge-compat/horizon-full/crates/horizon-server-files)
+    Checking horizon-client-render v0.1.0 (/home/runner/work/horizon-neoforge-compat/horizon-full/crates/horizon-client-render)
+    Checking horizon-client-lib v0.1.0 (/home/runner/work/horizon-neoforge-compat/horizon-full/crates/horizon-client-lib)
+warning: method `at_payload` is never used
+  --> crates/horizon-client-lib/../horizon-client/src/net/early_configuration.rs:17:19
+   |
+14 | impl Failure {
+   | ------------ method in this implementation
+...
+17 |     pub(crate) fn at_payload(&self, channel: &str) -> String {
+   |                   ^^^^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: field `epoch` is never read
+  --> crates/horizon-client-lib/../horizon-client/src/net/ordered_owner.rs:73:5
+   |
+72 | pub(crate) struct OrderedOwner<'a> {
+   |                   ------------ field in this struct
+73 |     epoch: Epoch,
+   |     ^^^^^
+
+warning: methods `epoch`, `is_terminated`, and `active` are never used
+   --> crates/horizon-client-lib/../horizon-client/src/net/ordered_owner.rs:103:19
+    |
+ 82 | impl<'a> OrderedOwner<'a> {
+    | ------------------------- methods in this implementation
+...
+103 |     pub(crate) fn epoch(&self) -> Epoch {
+    |                   ^^^^^
+...
+107 |     pub(crate) fn is_terminated(&self) -> bool {
+    |                   ^^^^^^^^^^^^^
+...
+112 |     pub(crate) fn active(&self, tag: Epoch) -> bool {
+    |                   ^^^^^^
+
+warning: `horizon-client-lib` (lib) generated 3 warnings
+    Finished `dev` profile [unoptimized] target(s) in 57.37s
++ cargo test --target x86_64-unknown-linux-gnu --locked --offline -p horizon-client-lib --no-default-features --lib neoforge_compat_bridge::tests::
+   Compiling syn v3.0.6
+   Compiling serde_core v1.0.229
+   Compiling cfg-if v1.0.5
+   Compiling log v0.4.34
+   Compiling bitflags v2.13.2
+   Compiling libc v0.2.190
+   Compiling foldhash v0.2.0
+   Compiling hashbrown v0.17.1
+   Compiling libm v0.2.16
+   Compiling once_cell v1.21.4
+   Compiling equivalent v1.0.2
+   Compiling memchr v2.8.3
+   Compiling indexmap v2.14.2
+   Compiling rustix v1.1.6
+   Compiling linux-raw-sys v0.12.1
+   Compiling allocator-api2 v0.2.21
+   Compiling arrayvec v0.7.8
+   Compiling serde_json v1.0.151
+   Compiling zmij v1.0.23
+   Compiling crc32fast v1.5.2
+   Compiling libloading v0.8.9
+   Compiling itoa v1.0.18
+   Compiling typenum v1.20.1
+   Compiling generic-array v0.14.7
+   Compiling hashbrown v0.16.1
+   Compiling simd-adler32 v0.3.10
+   Compiling siphasher v1.0.4
+   Compiling phf_shared v0.11.3
+   Compiling adler2 v2.0.1
+   Compiling phf v0.11.3
+   Compiling crypto-common v0.1.7
+   Compiling bumpalo v3.20.3
+   Compiling synstructure v0.14.0
+   Compiling unicode_names2 v2.0.0
+   Compiling miniz_oxide v0.9.1
+   Compiling dlib v0.5.3
+   Compiling zlib-rs v0.6.8
+   Compiling flate2 v1.1.10
+   Compiling block-buffer v0.10.4
+   Compiling cpufeatures v0.2.17
+   Compiling digest v0.10.7
+   Compiling wayland-sys v0.31.11
+   Compiling stable_deref_trait v1.2.1
+   Compiling fnv v1.0.7
+   Compiling termcolor v1.4.1
+   Compiling gimli v0.33.0
+   Compiling zerocopy v0.8.60
+   Compiling serde_derive v1.0.229
+   Compiling thiserror-impl v2.0.21
+   Compiling serde v1.0.229
+   Compiling smallvec v1.16.2
+   Compiling bytemuck_derive v1.12.1
+   Compiling thiserror v2.0.21
+   Compiling horizon-core v0.1.0 (/home/runner/work/horizon-neoforge-compat/horizon-full/crates/horizon-core)
+   Compiling bytemuck v1.25.2
+   Compiling zerofrom-derive v0.1.8
+   Compiling zerofrom v0.1.8
+   Compiling horizon-mod-surface v0.1.0 (/home/runner/work/horizon-neoforge-compat/horizon-full/crates/horizon-mod-surface)
+   Compiling yoke-derive v0.8.4
+   Compiling yoke v0.8.3
+   Compiling horizon-mod-source v0.1.0 (/home/runner/work/horizon-neoforge-compat/horizon-full/crates/horizon-mod-source)
+   Compiling horizon-game-discovery v0.1.0 (/home/runner/work/horizon-neoforge-compat/horizon-full/crates/horizon-game-discovery)
+   Compiling zerovec-derive v0.11.6
+   Compiling sha2 v0.10.9
+   Compiling zerovec v0.11.8
+   Compiling num-traits v0.2.19
+   Compiling cobs v0.3.0
+   Compiling displaydoc v0.2.7
+   Compiling anyhow v1.0.104
+   Compiling unicode-ident v1.0.26
+   Compiling wit-parser v0.261.0
+   Compiling postcard v1.1.3
+   Compiling getrandom v0.4.3
+   Compiling rustc-hash v1.1.0
+   Compiling scopeguard v1.2.0
+   Compiling scoped-tls v1.0.1
+   Compiling downcast-rs v1.2.1
+   Compiling wayland-backend v0.3.17
+   Compiling naga-types v30.0.1
+   Compiling zopfli v0.8.4
+   Compiling typed-path v0.13.0
+   Compiling horizon-mod-api-gen v0.1.0 (/home/runner/work/horizon-neoforge-compat/horizon-full/crates/horizon-mod-api-gen)
+   Compiling unicode-width v0.2.2
+   Compiling bit-vec v0.9.1
+   Compiling unicode-xid v0.2.6
+   Compiling wasmtime-internal-core v50.0.1
+   Compiling pp-rs v0.2.1
+   Compiling bit-set v0.10.0
+   Compiling codespan-reporting v0.13.1
+   Compiling zip v9.1.3
+   Compiling tinystr v0.8.4
+   Compiling half v2.7.1
+   Compiling horizon-guest-stack v0.1.0 (/home/runner/work/horizon-neoforge-compat/horizon-full/crates/horizon-guest-stack)
+   Compiling spirv v0.4.0+sdk-1.4.341.0
+   Compiling cranelift-srcgen v0.137.1
+   Compiling litemap v0.8.3
+   Compiling writeable v0.6.4
+   Compiling icu_locale_core v2.3.0
+   Compiling cranelift-assembler-x64-meta v0.137.1
+   Compiling naga v30.0.1 (/home/runner/work/horizon-neoforge-compat/horizon-full/third_party/naga)
+   Compiling wayland-client v0.31.15
+   Compiling zerotrie v0.2.5
+   Compiling potential_utf v0.1.6
+   Compiling utf8_iter v1.0.4
+   Compiling icu_collections v2.3.0
+   Compiling icu_provider v2.3.1
+   Compiling pulley-macros v50.0.1
+   Compiling memmap2 v0.9.11
+   Compiling cranelift-bitset v0.137.1
+   Compiling icu_properties_data v2.3.0
+   Compiling icu_normalizer_data v2.3.0
+   Compiling horizon-mod-runtime v0.1.0 (/home/runner/work/horizon-neoforge-compat/horizon-full/crates/horizon-mod-runtime)
+   Compiling semver v1.0.28
+   Compiling cranelift-isle v0.137.1
+   Compiling cty v0.2.2
+   Compiling libmimalloc-sys v0.1.49 (/home/runner/work/horizon-neoforge-compat/horizon-full/third_party/libmimalloc-sys)
+   Compiling wasmparser v0.261.0
+   Compiling icu_normalizer v2.3.0
+   Compiling icu_properties v2.3.0
+   Compiling pulley-interpreter v50.0.1
+   Compiling io-lifetimes v2.0.4
+   Compiling getrandom v0.3.4
+   Compiling wayland-protocols v0.32.13
+   Compiling percent-encoding v2.3.2
+   Compiling zeroize v1.9.1
+   Compiling target-lexicon v0.13.5
+   Compiling fallible-iterator v0.3.0
+   Compiling raw-window-handle v0.6.2
+   Compiling cranelift-codegen-shared v0.137.1
+   Compiling subtle v2.6.1
+   Compiling cranelift-codegen-meta v0.137.1
+   Compiling framehop v0.16.0
+   Compiling rustls-pki-types v1.15.1
+   Compiling idna_adapter v1.2.2
+   Compiling protox-parse v0.9.0
+   Compiling parking_lot_core v0.9.12
+   Compiling mimalloc v0.1.52
+   Compiling object v0.39.1
+   Compiling cranelift-entity v0.137.1
+   Compiling cranelift-assembler-x64 v0.137.1
+   Compiling horizon-assets v0.1.0 (/home/runner/work/horizon-neoforge-compat/horizon-full/crates/horizon-assets)
+   Compiling lock_api v0.4.14
+   Compiling addr2line v0.26.1
+   Compiling miniz_oxide v0.8.9
+   Compiling fdeflate v0.3.7
+   Compiling winnow v1.0.4
+   Compiling glam v0.30.10
+   Compiling rustc-demangle v0.1.28
+   Compiling horizon-threads v0.1.0 (/home/runner/work/horizon-neoforge-compat/horizon-full/crates/horizon-threads)
+   Compiling toml_parser v1.1.3+spec-1.1.0
+   Compiling png v0.18.1
+   Compiling parking_lot v0.12.5
+   Compiling cranelift-bforest v0.137.1
+   Compiling cranelift-codegen v0.137.1
+   Compiling protox v0.9.1
+   Compiling idna v1.1.0
+   Compiling io-extras v0.18.4
+   Compiling fs-set-times v0.20.3
+   Compiling rustix-linux-procfs v0.1.1
+   Compiling getrandom v0.2.17
+   Compiling os_pipe v1.2.3
+   Compiling serde_spanned v1.1.2
+   Compiling toml_datetime v1.1.1+spec-1.1.0
+   Compiling ipnet v2.12.2
+   Compiling rustc-hash v2.1.3
+   Compiling static_assertions v1.1.0
+   Compiling ambient-authority v0.0.2
+   Compiling lz4_flex v0.14.0
+   Compiling maybe-owned v0.3.4
+   Compiling arbitrary v1.5.0
+   Compiling xxhash-rust v0.8.19
+   Compiling linux-raw-sys v0.4.15
+   Compiling toml_writer v1.1.3+spec-1.1.0
+   Compiling untrusted v0.9.0
+   Compiling ring v0.17.14
+   Compiling toml v1.1.6+spec-1.1.0
+   Compiling rustix v0.38.44
+   Compiling horizon-world v0.1.0 (/home/runner/work/horizon-neoforge-compat/horizon-full/crates/horizon-world)
+   Compiling cranelift-control v0.137.1
+   Compiling cap-primitives v3.4.6
+   Compiling wgpu-types v30.0.1
+   Compiling regalloc2 v0.15.2
+   Compiling thiserror v1.0.69
+   Compiling horizon-perf-format v0.1.0 (/home/runner/work/horizon-neoforge-compat/horizon-full/crates/horizon-perf-format)
+   Compiling proc-macro2 v1.0.107
+   Compiling ash v0.38.0+1.3.281
+   Compiling horizon-mod-vocab v0.1.0 (/home/runner/work/horizon-neoforge-compat/horizon-full/crates/horizon-mod-vocab)
+   Compiling wayland-protocols-wlr v0.3.12
+   Compiling polling v3.11.0
+   Compiling slab v0.4.12
+   Compiling core_detect v1.0.0
+   Compiling bytes v1.12.1
+   Compiling bitflags v1.3.2
+   Compiling simdutf8 v0.1.5
+   Compiling foldhash v0.1.5
+   Compiling lazy_static v1.5.1
+   Compiling presser v0.3.1
+   Compiling gpu-allocator v0.28.0
+   Compiling encoding_rs v0.8.42
+   Compiling symphonia-core v0.5.5
+   Compiling hashbrown v0.15.5
+   Compiling prost v0.14.4
+   Compiling calloop v0.13.0
+   Compiling syn v2.0.119
+   Compiling wgpu-naga-bridge v30.0.1
+   Compiling khronos-egl v6.0.0
+   Compiling cap-std v3.4.6
+   Compiling crossbeam-utils v0.8.23
+   Compiling rustls-webpki v0.103.16
+   Compiling webpki-roots v1.0.10
+   Compiling form_urlencoded v1.2.2
+   Compiling ordered-float v5.5.0
+   Compiling inout v0.1.4
+   Compiling aho-corasick v1.1.5
+   Compiling renderdoc-sys v1.1.0
+   Compiling horizon-hooks v0.1.0 (/home/runner/work/horizon-neoforge-compat/horizon-full/crates/horizon-hooks)
+   Compiling fixedbitset v0.5.7
+   Compiling strict-num v0.1.1
+   Compiling leb128fmt v0.1.0
+   Compiling regex-syntax v0.8.11
+   Compiling horizon-system v0.1.0 (/home/runner/work/horizon-neoforge-compat/horizon-full/crates/horizon-system)
+   Compiling xkeysym v0.2.1
+   Compiling arrayref v0.3.9
+   Compiling ttf-parser v0.25.1
+   Compiling profiling v1.0.18
+   Compiling glow v0.17.0
+   Compiling xcursor v0.3.11
+   Compiling cursor-icon v1.2.0
+   Compiling wayland-csd-frame v0.3.0
+   Compiling wayland-cursor v0.31.14
+   Compiling wgpu-hal v30.0.1 (/home/runner/work/horizon-neoforge-compat/horizon-full/third_party/wgpu-hal)
+   Compiling owned_ttf_parser v0.25.1
+   Compiling tiny-skia-path v0.11.4
+   Compiling regex-automata v0.4.18
+   Compiling wasm-encoder v0.261.0
+   Compiling petgraph v0.8.3
+   Compiling cipher v0.4.4
+   Compiling url v2.5.8
+   Compiling webpki-roots v0.26.11
+   Compiling rustls v0.23.46
+   Compiling crossbeam-epoch v0.9.21
+   Compiling cap-fs-ext v3.4.6
+   Compiling calloop-wayland-source v0.3.0
+   Compiling symphonia-metadata v0.5.5
+   Compiling horizon-shader-api v0.1.0 (/home/runner/work/horizon-neoforge-compat/horizon-full/crates/horizon-shader-api)
+   Compiling wasmprinter v0.261.0
+   Compiling wasmtime-internal-versioned-export-macros v50.0.1
+   Compiling object v0.40.0
+   Compiling gethostname v1.1.0
+   Compiling nom v8.0.0
+   Compiling socket2 v0.6.5
+   Compiling x11rb-protocol v0.13.2
+   Compiling wasmtime-internal-unwinder v50.0.1
+   Compiling as-raw-xcb-connection v1.0.1
+   Compiling either v1.19.0
+   Compiling minisign-verify v0.3.0
+   Compiling ab_glyph_rasterizer v0.1.10
+   Compiling wasmtime-internal-component-util v50.0.1
+   Compiling base64 v0.22.1
+   Compiling ureq v2.12.1
+   Compiling wasmtime-environ v50.0.1
+   Compiling ab_glyph v0.2.32
+   Compiling horizon-mod-package v0.1.0 (/home/runner/work/horizon-neoforge-compat/horizon-full/crates/horizon-mod-package)
+   Compiling x11rb v0.13.2
+   Compiling tree_magic_mini v3.2.2
+   Compiling symphonia-utils-xiph v0.5.5
+   Compiling smithay-client-toolkit v0.19.2
+   Compiling crossbeam-deque v0.8.8
+   Compiling aes v0.8.4
+   Compiling regex v1.13.1
+   Compiling tiny-skia v0.11.4
+   Compiling wgpu-core-deps-windows-linux-android v30.0.1
+   Compiling horizon-bench v0.1.0 (/home/runner/work/horizon-neoforge-compat/horizon-full/crates/horizon-bench)
+   Compiling horizon-client-core v0.1.0 (/home/runner/work/horizon-neoforge-compat/horizon-full/crates/horizon-client-core)
+   Compiling sha1 v0.10.7
+   Compiling is-docker v0.2.0
+   Compiling socket2 v0.5.10
+   Compiling pin-project-lite v0.2.17
+   Compiling wasmtime-internal-cranelift v50.0.1
+   Compiling tracing-core v0.1.36
+   Compiling tracing v0.1.44
+   Compiling horizon-protocol v0.1.0 (/home/runner/work/horizon-neoforge-compat/horizon-full/crates/horizon-protocol)
+   Compiling is-wsl v0.4.0
+   Compiling horizon-platform v0.1.0 (/home/runner/work/horizon-neoforge-compat/horizon-full/crates/horizon-platform)
+   Compiling wgpu-core v30.0.1
+   Compiling sctk-adwaita v0.10.1
+   Compiling rayon-core v1.13.0
+   Compiling x11-dl v2.21.0
+   Compiling wl-clipboard-rs v0.9.4
+   Compiling ahash v0.8.12
+   Compiling itertools v0.14.0
+   Compiling wasmtime v50.0.1
+   Compiling xkbcommon-dl v0.4.2
+   Compiling cranelift-frontend v0.137.1
+   Compiling cranelift-native v0.137.1
+   Compiling horizon-mod-api v0.1.0 (/home/runner/work/horizon-neoforge-compat/horizon-full/crates/horizon-mod-api)
+   Compiling wayland-protocols-plasma v0.3.12
+   Compiling horizon-addresses v0.1.0 (/home/runner/work/horizon-neoforge-compat/horizon-full/crates/horizon-addresses)
+   Compiling smol_str v0.2.2
+   Compiling dpi v0.1.2
+   Compiling winit v0.30.13
+   Compiling arboard v3.7.0
+   Compiling rayon v1.12.0
+   Compiling wgpu v30.0.1
+   Compiling open v5.4.5
+   Compiling horizon-items v0.1.0 (/home/runner/work/horizon-neoforge-compat/horizon-full/crates/horizon-items)
+   Compiling symphonia-format-ogg v0.5.5
+   Compiling symphonia-codec-vorbis v0.5.5
+   Compiling horizon-engine-slots v0.1.0 (/home/runner/work/horizon-neoforge-compat/horizon-full/crates/horizon-engine-slots)
+   Compiling horizon-mod-wasm v0.1.0 (/home/runner/work/horizon-neoforge-compat/horizon-full/crates/horizon-mod-wasm)
+   Compiling wasmtime-internal-jit-icache-coherence v50.0.1
+   Compiling async-trait v0.1.92
+   Compiling memfd v0.6.6
+   Compiling quick-error v2.0.1
+   Compiling byteorder-lite v0.1.0
+   Compiling zune-core v0.4.12
+   Compiling horizon-java-properties v0.1.0 (/home/runner/work/horizon-neoforge-compat/horizon-full/crates/horizon-java-properties)
+   Compiling twox-hash v2.1.5
+   Compiling iana-time-zone v0.1.65
+   Compiling chrono v0.4.45
+   Compiling ruzstd v0.9.1
+   Compiling zune-jpeg v0.4.21
+   Compiling image-webp v0.2.4
+   Compiling horizon-command v0.1.0 (/home/runner/work/horizon-neoforge-compat/horizon-full/crates/horizon-command)
+   Compiling horizon-client-input v0.1.0 (/home/runner/work/horizon-neoforge-compat/horizon-full/crates/horizon-client-input)
+   Compiling symphonia v0.5.5
+   Compiling horizon-perf-share v0.1.0 (/home/runner/work/horizon-neoforge-compat/horizon-full/crates/horizon-perf-share)
+   Compiling horizon-hdr v0.1.0 (/home/runner/work/horizon-neoforge-compat/horizon-full/crates/horizon-hdr)
+   Compiling horizon-polytone v0.1.0 (/home/runner/work/horizon-neoforge-compat/horizon-full/crates/horizon-polytone)
+   Compiling horizon-optifine v0.1.0 (/home/runner/work/horizon-neoforge-compat/horizon-full/crates/horizon-optifine)
+   Compiling horizon-shaders v0.1.0 (/home/runner/work/horizon-neoforge-compat/horizon-full/crates/horizon-shaders)
+   Compiling horizon-client-lib v0.1.0 (/home/runner/work/horizon-neoforge-compat/horizon-full/crates/horizon-client-lib)
+   Compiling horizon-narrator v0.1.0 (/home/runner/work/horizon-neoforge-compat/horizon-full/crates/horizon-narrator)
+   Compiling fastrand v2.5.0
+   Compiling unicode-bidi v0.3.18
+   Compiling pollster v0.4.0
+   Compiling tempfile v3.27.0
+   Compiling horizon-client-render v0.1.0 (/home/runner/work/horizon-neoforge-compat/horizon-full/crates/horizon-client-render)
+warning: function `answering` is never used
+  --> crates/horizon-mod-wasm/src/calls.rs:25:8
+   |
+25 | pub fn answering<K: AsRef<str>>(keys: &[K], body: &str) -> String {
+   |        ^^^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: function `import_name` is never used
+  --> crates/horizon-mod-wasm/src/calls.rs:53:8
+   |
+53 | pub fn import_name(owner: &str, method: &str) -> Option<&'static str> {
+   |        ^^^^^^^^^^^
+
+warning: function `host_shim` is never used
+  --> crates/horizon-mod-wasm/src/calls.rs:62:8
+   |
+62 | pub fn host_shim(calls: &[(&str, &str)]) -> (String, String) {
+   |        ^^^^^^^^^
+
+warning: function `shim_keys` is never used
+   --> crates/horizon-mod-wasm/src/calls.rs:103:8
+    |
+103 | pub fn shim_keys(calls: &[(&str, &str)]) -> Vec<&'static str> {
+    |        ^^^^^^^^^
+
+warning: function `shim_name` is never used
+   --> crates/horizon-mod-wasm/src/calls.rs:111:4
+    |
+111 | fn shim_name(owner: &str, method: &str) -> &'static str {
+    |    ^^^^^^^^^
+
+warning: `horizon-mod-wasm` (lib) generated 5 warnings
+   Compiling horizon-perf v0.1.0 (/home/runner/work/horizon-neoforge-compat/horizon-full/crates/horizon-perf)
+   Compiling nix v0.31.3
+   Compiling horizon-telemetry v0.1.0 (/home/runner/work/horizon-neoforge-compat/horizon-full/crates/horizon-telemetry)
+   Compiling horizon-server-files v0.1.0 (/home/runner/work/horizon-neoforge-compat/horizon-full/crates/horizon-server-files)
+   Compiling horizon-anticheat v0.1.0 (/home/runner/work/horizon-neoforge-compat/horizon-full/crates/horizon-anticheat)
+   Compiling horizon-mcp v0.1.0 (/home/runner/work/horizon-neoforge-compat/horizon-full/crates/horizon-mcp)
+   Compiling fs4 v1.1.0
+   Compiling mio v1.2.4
+   Compiling horizon-theme v0.1.0 (/home/runner/work/horizon-neoforge-compat/horizon-full/crates/horizon-theme)
+   Compiling shlex v2.0.1
+   Compiling horizon-neoforge-compat v0.1.0 (/home/runner/work/horizon-neoforge-compat/horizon-neoforge-compat)
+   Compiling same-file v1.0.6
+warning: unexpected `cfg` condition name: `compat_isolated`
+   --> crates/horizon-client-lib/../horizon-client/src/net/ordered_owner_tests.rs:178:11
+    |
+178 | #[cfg(not(compat_isolated))]
+    |           ^^^^^^^^^^^^^^^
+    |
+    = help: expected names are: `docsrs`, `feature`, and `test` and 32 more
+    = help: consider using a Cargo feature instead
+    = help: or consider adding in `Cargo.toml` the `check-cfg` lint config for the lint:
+             [lints.rust]
+             unexpected_cfgs = { level = "warn", check-cfg = ['cfg(compat_isolated)'] }
+    = help: or consider adding `println!("cargo::rustc-check-cfg=cfg(compat_isolated)");` to the top of the `build.rs`
+    = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
+    = note: `#[warn(unexpected_cfgs)]` on by default
+
+warning: method `epoch` is never used
+   --> crates/horizon-client-lib/../horizon-client/src/net/ordered_owner.rs:103:19
+    |
+ 82 | impl<'a> OrderedOwner<'a> {
+    | ------------------------- method in this implementation
+...
+103 |     pub(crate) fn epoch(&self) -> Epoch {
+    |                   ^^^^^
+    |
+    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: `horizon-client-lib` (lib test) generated 2 warnings
+    Finished `test` profile [unoptimized] target(s) in 8m 59s
+     Running unittests ../horizon-client/src/client_lib.rs (target/x86_64-unknown-linux-gnu/debug/deps/horizon_client_lib-ab72f1d09ed587e9)
+
+running 16 tests
+test neoforge_compat_bridge::tests::actual_bridge_reset_is_terminal_and_new_factory_epoch_is_independent ... ok
+test neoforge_compat_bridge::tests::actual_engine_transport::tests::split_nonidentity_id_is_adapted_exactly_once ... ok
+test neoforge_compat_bridge::tests::actual_engine_outbound_transport::tests::outbound_actual_loader_reply_unsplit_tcp_and_finish_still_refuses ... ok
+test neoforge_compat_bridge::tests::actual_engine_transport::tests::split_partial_timeout_never_reaches_decoder ... ok
+test neoforge_compat_bridge::tests::actual_engine_transport::tests::split_real_core_to_actual_decoder_and_loader ... ok
+test neoforge_compat_bridge::tests::actual_wire_query_setup_common_then_finish_refusal ... ok
+test neoforge_compat_bridge::tests::failure_payload_never_becomes_success ... ok
+test neoforge_compat_bridge::tests::inventory_is_checked_before_registration_provider_runs ... ok
+test neoforge_compat_bridge::tests::inventory_mismatch_never_constructs_loader_state ... ok
+test neoforge_compat_bridge::tests::peer_announcements_cannot_enable_unimplemented_required_tasks ... ok
+test neoforge_compat_bridge::tests::peer_setup_cannot_select_a_feature_inventory_the_host_never_attested ... ok
+test neoforge_compat_bridge::tests::unavailable_host_inventory_never_offers_feature_or_split_support ... ok
+test neoforge_compat_bridge::tests::actual_engine_transport::tests::split_requires_exact_adapter_and_both_config_phases ... ok
+test neoforge_compat_bridge::tests::unknown_required_task_and_reconnect_cleanup ... ok
+test neoforge_compat_bridge::tests::actual_engine_transport::tests::split_bad_originals_terminally_close_reader ... ok
+test neoforge_compat_bridge::tests::actual_engine_outbound_transport::tests::outbound_actual_preparation_split_tcp_compression_encryption_and_reassembly ... ok
+
+test result: ok. 16 passed; 0 failed; 0 ignored; 0 measured; 4631 filtered out; finished in 0.02s
+
++ cargo test --target x86_64-unknown-linux-gnu --locked --offline -p horizon-client-lib --no-default-features --lib early_configuration
+warning: function `answering` is never used
+  --> crates/horizon-mod-wasm/src/calls.rs:25:8
+   |
+25 | pub fn answering<K: AsRef<str>>(keys: &[K], body: &str) -> String {
+   |        ^^^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: function `import_name` is never used
+  --> crates/horizon-mod-wasm/src/calls.rs:53:8
+   |
+53 | pub fn import_name(owner: &str, method: &str) -> Option<&'static str> {
+   |        ^^^^^^^^^^^
+
+warning: function `host_shim` is never used
+  --> crates/horizon-mod-wasm/src/calls.rs:62:8
+   |
+62 | pub fn host_shim(calls: &[(&str, &str)]) -> (String, String) {
+   |        ^^^^^^^^^
+
+warning: function `shim_keys` is never used
+   --> crates/horizon-mod-wasm/src/calls.rs:103:8
+    |
+103 | pub fn shim_keys(calls: &[(&str, &str)]) -> Vec<&'static str> {
+    |        ^^^^^^^^^
+
+warning: function `shim_name` is never used
+   --> crates/horizon-mod-wasm/src/calls.rs:111:4
+    |
+111 | fn shim_name(owner: &str, method: &str) -> &'static str {
+    |    ^^^^^^^^^
+
+warning: `horizon-mod-wasm` (lib) generated 5 warnings
+warning: unexpected `cfg` condition name: `compat_isolated`
+   --> crates/horizon-client-lib/../horizon-client/src/net/ordered_owner_tests.rs:178:11
+    |
+178 | #[cfg(not(compat_isolated))]
+    |           ^^^^^^^^^^^^^^^
+    |
+    = help: expected names are: `docsrs`, `feature`, and `test` and 32 more
+    = help: consider using a Cargo feature instead
+    = help: or consider adding in `Cargo.toml` the `check-cfg` lint config for the lint:
+             [lints.rust]
+             unexpected_cfgs = { level = "warn", check-cfg = ['cfg(compat_isolated)'] }
+    = help: or consider adding `println!("cargo::rustc-check-cfg=cfg(compat_isolated)");` to the top of the `build.rs`
+    = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
+    = note: `#[warn(unexpected_cfgs)]` on by default
+
+warning: method `epoch` is never used
+   --> crates/horizon-client-lib/../horizon-client/src/net/ordered_owner.rs:103:19
+    |
+ 82 | impl<'a> OrderedOwner<'a> {
+    | ------------------------- method in this implementation
+...
+103 |     pub(crate) fn epoch(&self) -> Epoch {
+    |                   ^^^^^
+    |
+    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: `horizon-client-lib` (lib test) generated 2 warnings
+    Finished `test` profile [unoptimized] target(s) in 0.45s
+     Running unittests ../horizon-client/src/client_lib.rs (target/x86_64-unknown-linux-gnu/debug/deps/horizon_client_lib-ab72f1d09ed587e9)
+
+running 9 tests
+test net::early_configuration::tests::payload_refusal_diagnostics_do_not_reflect_invalid_or_unbounded_identifiers ... ok
+test net::early_configuration::tests::invalid_batch_is_rejected_whole_and_even_optimistic_bridge_cannot_enter_play ... ok
+test net::early_configuration::tests::finish_refuses_pending_tasks_and_drop_resets_before_next_epoch ... ok
+test net::early_configuration::tests::early_loader_delivery_preserves_body_and_replies_without_an_accepted_horizon_epoch ... ok
+test net::early_configuration::tests::unsupported_neoforge_tasks_poison_the_epoch_and_cannot_finish ... ok
+test net::early_configuration::tests::profile_rejects_wrong_baselines_and_reserved_or_duplicate_adapters ... ok
+test net::early_configuration::tests::undeclared_or_oversized_payloads_never_reach_bridge ... ok
+test net::early_configuration::tests::unwinding_external_bridge_panic_poisoned_epoch_cannot_resume_or_finish ... ok
+test net::early_configuration_net_tests::explicit_neoforge_routes_before_horizon_and_refuses_finish_without_ack_or_epoch ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 4638 filtered out; finished in 0.00s
+
++ cargo test --target x86_64-unknown-linux-gnu --locked --offline -p horizon-client-lib --no-default-features --lib ordered_owner_tests
+warning: function `answering` is never used
+  --> crates/horizon-mod-wasm/src/calls.rs:25:8
+   |
+25 | pub fn answering<K: AsRef<str>>(keys: &[K], body: &str) -> String {
+   |        ^^^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: function `import_name` is never used
+  --> crates/horizon-mod-wasm/src/calls.rs:53:8
+   |
+53 | pub fn import_name(owner: &str, method: &str) -> Option<&'static str> {
+   |        ^^^^^^^^^^^
+
+warning: function `host_shim` is never used
+  --> crates/horizon-mod-wasm/src/calls.rs:62:8
+   |
+62 | pub fn host_shim(calls: &[(&str, &str)]) -> (String, String) {
+   |        ^^^^^^^^^
+
+warning: function `shim_keys` is never used
+   --> crates/horizon-mod-wasm/src/calls.rs:103:8
+    |
+103 | pub fn shim_keys(calls: &[(&str, &str)]) -> Vec<&'static str> {
+    |        ^^^^^^^^^
+
+warning: function `shim_name` is never used
+   --> crates/horizon-mod-wasm/src/calls.rs:111:4
+    |
+111 | fn shim_name(owner: &str, method: &str) -> &'static str {
+    |    ^^^^^^^^^
+
+warning: `horizon-mod-wasm` (lib) generated 5 warnings
+warning: unexpected `cfg` condition name: `compat_isolated`
+   --> crates/horizon-client-lib/../horizon-client/src/net/ordered_owner_tests.rs:178:11
+    |
+178 | #[cfg(not(compat_isolated))]
+    |           ^^^^^^^^^^^^^^^
+    |
+    = help: expected names are: `docsrs`, `feature`, and `test` and 32 more
+    = help: consider using a Cargo feature instead
+    = help: or consider adding in `Cargo.toml` the `check-cfg` lint config for the lint:
+             [lints.rust]
+             unexpected_cfgs = { level = "warn", check-cfg = ['cfg(compat_isolated)'] }
+    = help: or consider adding `println!("cargo::rustc-check-cfg=cfg(compat_isolated)");` to the top of the `build.rs`
+    = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
+    = note: `#[warn(unexpected_cfgs)]` on by default
+
+warning: method `epoch` is never used
+   --> crates/horizon-client-lib/../horizon-client/src/net/ordered_owner.rs:103:19
+    |
+ 82 | impl<'a> OrderedOwner<'a> {
+    | ------------------------- method in this implementation
+...
+103 |     pub(crate) fn epoch(&self) -> Epoch {
+    |                   ^^^^^
+    |
+    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: `horizon-client-lib` (lib test) generated 2 warnings
+    Finished `test` profile [unoptimized] target(s) in 0.45s
+     Running unittests ../horizon-client/src/client_lib.rs (target/x86_64-unknown-linux-gnu/debug/deps/horizon_client_lib-ab72f1d09ed587e9)
+
+running 11 tests
+test net::ordered_owner_tests::companion::owner_idle_poll_is_terminal_after_teardown ... ok
+test net::ordered_owner_tests::companion::owner_without_authority_never_reassembles_split ... ok
+test net::ordered_owner_tests::owner_batch_admission_counts_packet_count_outer_and_inner_capacity ... ok
+test net::ordered_owner_tests::companion::owner_reassembles_split_then_dispatches_exactly_once ... ok
+test net::ordered_owner_tests::owner_batch_peer_failure_is_not_reported_as_queue_success ... ok
+test net::ordered_owner_tests::owner_batch_completion_waits_for_real_pipe_write_and_preserves_order ... ok
+test net::ordered_owner_tests::owner_batch_dropped_receipt_cancels_without_waiting_or_replay ... ok
+test net::ordered_owner_tests::owner_bootstrap_failure_closes_transport_without_loader_or_ack ... ok
+test net::ordered_owner_tests::owner_drives_real_configure_with_batch_reply_refusal_and_reset ... ok
+test net::ordered_owner_tests::owner_batch_timeout_closes_blocked_transport_and_cancels_later_jobs ... ok
+test net::ordered_owner_tests::owner_batch_tcp_completion_compression_encryption_matrix ... ok
+
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 4636 filtered out; finished in 0.02s
+
++ cargo test --target x86_64-unknown-linux-gnu --locked --offline -p horizon-protocol --no-default-features --lib neoforge_configuration_framing_tests
+   Compiling proc-macro2 v1.0.107
+   Compiling libc v0.2.190
+   Compiling quote v1.0.47
+   Compiling syn v3.0.6
+   Compiling getrandom v0.2.17
+   Compiling rand_core v0.6.4
+   Compiling rand_chacha v0.3.1
+   Compiling rand v0.8.8
+   Compiling synstructure v0.14.0
+   Compiling phf_generator v0.11.3
+   Compiling phf_codegen v0.11.3
+   Compiling unicode_names2_generator v2.0.0
+   Compiling unicode_names2 v2.0.0
+   Compiling thiserror v2.0.21
+   Compiling serde_json v1.0.151
+   Compiling bumpalo v3.20.3
+   Compiling hashbrown v0.17.1
+   Compiling gimli v0.33.0
+   Compiling simd-adler32 v0.3.10
+   Compiling flate2 v1.1.10
+   Compiling zopfli v0.8.4
+   Compiling indexmap v2.14.2
+   Compiling getrandom v0.4.3
+   Compiling arrayvec v0.7.8
+   Compiling smallvec v1.16.2
+   Compiling framehop v0.16.0
+   Compiling rustix v1.1.6
+   Compiling zip v9.1.3
+   Compiling zerofrom-derive v0.1.8
+   Compiling yoke-derive v0.8.4
+   Compiling zerofrom v0.1.8
+   Compiling yoke v0.8.3
+   Compiling zerovec-derive v0.11.6
+   Compiling displaydoc v0.2.7
+   Compiling serde_derive v1.0.229
+   Compiling zerovec v0.11.8
+   Compiling tinystr v0.8.4
+   Compiling icu_locale_core v2.3.0
+   Compiling potential_utf v0.1.6
+   Compiling zerotrie v0.2.5
+   Compiling icu_provider v2.3.1
+   Compiling icu_collections v2.3.0
+   Compiling serde v1.0.229
+   Compiling thiserror-impl v2.0.21
+   Compiling horizon-core v0.1.0 (/home/runner/work/horizon-neoforge-compat/horizon-full/crates/horizon-core)
+   Compiling cobs v0.3.0
+   Compiling icu_normalizer v2.3.0
+   Compiling icu_properties v2.3.0
+   Compiling addr2line v0.26.1
+   Compiling horizon-guest-stack v0.1.0 (/home/runner/work/horizon-neoforge-compat/horizon-full/crates/horizon-guest-stack)
+   Compiling memmap2 v0.9.11
+   Compiling linux-raw-sys v0.12.1
+   Compiling horizon-assets v0.1.0 (/home/runner/work/horizon-neoforge-compat/horizon-full/crates/horizon-assets)
+   Compiling horizon-threads v0.1.0 (/home/runner/work/horizon-neoforge-compat/horizon-full/crates/horizon-threads)
+   Compiling idna_adapter v1.2.2
+   Compiling postcard v1.1.3
+   Compiling xxhash-rust v0.8.19
+   Compiling horizon-world v0.1.0 (/home/runner/work/horizon-neoforge-compat/horizon-full/crates/horizon-world)
+   Compiling idna v1.1.0
+   Compiling getrandom v0.3.4
+   Compiling horizon-mod-runtime v0.1.0 (/home/runner/work/horizon-neoforge-compat/horizon-full/crates/horizon-mod-runtime)
+   Compiling socket2 v0.5.10
+   Compiling horizon-protocol v0.1.0 (/home/runner/work/horizon-neoforge-compat/horizon-full/crates/horizon-protocol)
+    Finished `test` profile [unoptimized] target(s) in 55.44s
+     Running unittests src/lib.rs (target/x86_64-unknown-linux-gnu/debug/deps/horizon_protocol-1fa872e117989c16)
+
+running 14 tests
+test connection::neoforge_configuration_framing_tests::outbound_preparation_matches_literal_wire_and_actual_adapter_for_allowlist ... ok
+test connection::neoforge_configuration_framing_tests::outbound_preparation_enforces_directional_opaque_payload_policy ... ok
+test adapter::session::neoforge_configuration_framing_tests::protocol_767_configuration_payload_bodies_cross_tcp_in_both_directions ... ok
+test connection::neoforge_configuration_framing_tests::outbound_preparation_leaves_real_adapter_queued_packets_untouched ... ok
+test connection::neoforge_configuration_framing_tests::outbound_preparation_rejects_malformed_originals_with_actual_codecs ... ok
+test connection::neoforge_configuration_framing_tests::outbound_preparation_supports_detached_network_without_sending ... ok
+test connection::neoforge_configuration_framing_tests::reassembled_content_never_enters_vanilla_numeric_translation ... ok
+test connection::neoforge_configuration_framing_tests::reassembled_failure_refuses_external_and_raw_reads_before_side_effects ... ok
+test connection::neoforge_configuration_framing_tests::outbound_preparation_preserves_socket_counters_compression_and_cipher ... ok
+test connection::neoforge_configuration_framing_tests::reassembled_finish_refuses_before_phase_change_and_without_ack ... ok
+test connection::neoforge_configuration_framing_tests::reassembled_success_preserves_prefetched_socket_bytes_and_counters ... ok
+test connection::neoforge_configuration_framing_tests::outbound_preparation_requires_exact_network_adapter_and_both_phases ... ok
+test connection::neoforge_configuration_framing_tests::reassembled_real_codecs_reject_trailing_and_malformed_bodies ... ok
+test connection::neoforge_configuration_framing_tests::outbound_preparation_refuses_finish_and_all_other_configuration_kinds ... ok
+
+test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 592 filtered out; finished in 0.05s
+
++ cargo test --target x86_64-unknown-linux-gnu --locked --offline -p horizon-client-lib --no-default-features --lib net::tests::
+warning: function `answering` is never used
+  --> crates/horizon-mod-wasm/src/calls.rs:25:8
+   |
+25 | pub fn answering<K: AsRef<str>>(keys: &[K], body: &str) -> String {
+   |        ^^^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: function `import_name` is never used
+  --> crates/horizon-mod-wasm/src/calls.rs:53:8
+   |
+53 | pub fn import_name(owner: &str, method: &str) -> Option<&'static str> {
+   |        ^^^^^^^^^^^
+
+warning: function `host_shim` is never used
+  --> crates/horizon-mod-wasm/src/calls.rs:62:8
+   |
+62 | pub fn host_shim(calls: &[(&str, &str)]) -> (String, String) {
+   |        ^^^^^^^^^
+
+warning: function `shim_keys` is never used
+   --> crates/horizon-mod-wasm/src/calls.rs:103:8
+    |
+103 | pub fn shim_keys(calls: &[(&str, &str)]) -> Vec<&'static str> {
+    |        ^^^^^^^^^
+
+warning: function `shim_name` is never used
+   --> crates/horizon-mod-wasm/src/calls.rs:111:4
+    |
+111 | fn shim_name(owner: &str, method: &str) -> &'static str {
+    |    ^^^^^^^^^
+
+warning: `horizon-mod-wasm` (lib) generated 5 warnings
+warning: unexpected `cfg` condition name: `compat_isolated`
+   --> crates/horizon-client-lib/../horizon-client/src/net/ordered_owner_tests.rs:178:11
+    |
+178 | #[cfg(not(compat_isolated))]
+    |           ^^^^^^^^^^^^^^^
+    |
+    = help: expected names are: `docsrs`, `feature`, and `test` and 32 more
+    = help: consider using a Cargo feature instead
+    = help: or consider adding in `Cargo.toml` the `check-cfg` lint config for the lint:
+             [lints.rust]
+             unexpected_cfgs = { level = "warn", check-cfg = ['cfg(compat_isolated)'] }
+    = help: or consider adding `println!("cargo::rustc-check-cfg=cfg(compat_isolated)");` to the top of the `build.rs`
+    = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about checking conditional configuration
+    = note: `#[warn(unexpected_cfgs)]` on by default
+
+warning: method `epoch` is never used
+   --> crates/horizon-client-lib/../horizon-client/src/net/ordered_owner.rs:103:19
+    |
+ 82 | impl<'a> OrderedOwner<'a> {
+    | ------------------------- method in this implementation
+...
+103 |     pub(crate) fn epoch(&self) -> Epoch {
+    |                   ^^^^^
+    |
+    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: `horizon-client-lib` (lib test) generated 2 warnings
+    Finished `test` profile [unoptimized] target(s) in 0.45s
+     Running unittests ../horizon-client/src/client_lib.rs (target/x86_64-unknown-linux-gnu/debug/deps/horizon_client_lib-ab72f1d09ed587e9)
+
+running 84 tests
+test datapack_net::tests::a_required_registry_refuses_a_client_that_lacks_it ... ok
+test datapack_net::tests::a_reload_cannot_change_which_registries_a_client_is_sent ... ok
+test datapack_net::tests::a_client_with_the_mod_receives_the_registry_and_reads_it ... ok
+test datapack_net::tests::optional_and_server_only_registries_never_end_a_join ... ok
+test lod_net::tests::only_tiles_within_the_distance_are_served ... ok
+test datapack_net::tests::a_reload_snapshot_replaces_the_set_under_the_same_session ... ok
+test lod_net::tests::requests_and_offers_round_trip ... ok
+test lod_net::tests::a_tile_crosses_by_biome_name ... ok
+test net::tests::a_bundle_over_the_ingress_budget_is_rejected ... ok
+test lod_net::tests::hostile_replies_are_refused_before_they_cost_memory ... ok
+test net::tests::a_bundled_transfer_refused_by_ingress_is_not_a_successful_handoff ... ok
+test net::tests::a_bundle_is_dispatched_only_when_its_closing_delimiter_arrives ... ok
+test net::tests::a_disconnect_inside_a_closed_bundle_publishes_the_events_staged_before_it ... ok
+test net::tests::a_failed_negotiation_names_both_builds ... ok
+test net::tests::a_full_queue_still_answers_keepalives_behind_a_best_effort_event ... ok
+test net::tests::a_bundle_owns_a_registered_application_payload ... ok
+test net::tests::a_horizon_server_that_never_negotiates_is_joined_with_nothing_negotiated ... ok
+test net::tests::a_known_entry_takes_its_data_from_the_clients_pack ... ok
+test net::tests::a_lan_join_takes_only_an_ip_and_a_port ... ok
+test net::tests::a_bundle_carries_a_brand_event_in_packet_order ... ok
+test net::tests::a_negotiated_connection_that_reconfigures_silently_is_refused ... ok
+test net::tests::a_horizon_server_that_answers_keeps_every_check ... ok
+test net::tests::a_payload_error_inside_a_closed_bundle_publishes_the_events_staged_before_it ... ok
+test net::tests::a_refused_address_stays_out_of_the_logged_reason ... ok
+test net::tests::a_server_that_stops_answering_times_out ... ignored, daily
+test net::tests::a_reconfiguration_is_acknowledged_first_and_answered_while_the_game_stalls ... ok
+test net::tests::a_session_reports_how_far_it_got_before_it_ended ... ok
+test net::tests::a_velocity_suffix_is_still_a_horizon_server ... ok
+test net::tests::a_login_reason_repeating_its_argument_stays_bounded ... ok
+test net::tests::configuration_answers_the_content_identity_challenge ... ok
+test net::tests::configuration_answers_the_menu_extra_revision_query ... ok
+test net::tests::configuration_answers_the_viewed_levels_query_with_its_cap ... ok
+test net::tests::configuration_keeps_mod_lists_private_until_the_server_identifies_as_horizon ... ok
+test net::tests::direct_login_preserves_hostname_and_negotiates_brand ... ignored, daily
+test net::tests::disconnect_and_drop_do_not_wait_for_a_stalled_reader ... ok
+test net::tests::export_disconnect_uses_control_credit_when_gameplay_fills_the_budget ... ok
+test net::tests::export_fences_order_local_play_traffic_in_both_directions ... ok
+test net::tests::fill_known_entries_rejects_path_traversal_and_reads_valid_entries ... ok
+test net::tests::lan_login_continues_after_authentication_failure ... ignored, daily
+test net::tests::legacy_ping_request_is_the_1_6_ping_host_packet ... ok
+test net::tests::legacy_status_is_split_on_nul_after_the_section_one_marker ... ok
+test net::tests::local_send_rejects_unknown_oversize_payload_before_writing ... ok
+test net::tests::login_reason_array_component_preserves_translate_key ... ok
+test net::tests::login_reason_deeply_nested_extra_stops_at_depth_limit ... ok
+test net::tests::login_reason_empty_unknown_object_falls_back_to_raw_json ... ok
+test net::tests::login_reason_joins_empty_root_text_with_nested_extra ... ok
+test net::tests::login_reason_supports_keybind_and_leaves_unresolved_selector_score_and_null_empty ... ok
+test net::tests::login_reason_valid_empty_components_stay_blank ... ok
+test net::tests::lost_connections_read_like_vanillas_disconnect_reasons ... ok
+test net::tests::older_servers_are_on_unless_the_variable_is_zero ... ok
+test net::tests::pings_wait_behind_teleports_but_keepalives_do_not_wait_for_the_game ... ok
+test net::tests::play_answers_cookie_requests_from_stored_cookies_and_follows_transfers ... ok
+test net::tests::play_packets_wait_out_a_reconfiguration ... ok
+test net::tests::a_full_incoming_queue_waits_for_a_slow_game_instead_of_disconnecting ... ok
+test net::tests::server_brand_payload_is_decoded_and_invalid_or_unrelated_payloads_are_ignored ... ok
+test net::tests::session_join_retries_only_temporary_failures ... ok
+test net::tests::session_recorder_gets_the_packets_the_client_makes ... ok
+test net::tests::session_recorder_gets_the_play_packets_the_network_thread_receives ... ok
+test net::tests::stopping_in_the_background_answers_before_the_archive_is_finished ... ok
+test net::tests::the_client_knows_vanilla_core_pack_of_its_own_version_only ... ok
+test net::tests::the_connecting_line_is_vanillas ... ok
+test perf_net::tests::a_backlog_holds_the_transfer_back_until_gameplay_packets_are_out ... ok
+test perf_net::tests::a_capture_goes_from_asked_to_running_to_finished ... ok
+test perf_net::tests::a_chunk_beyond_the_announced_size_ends_the_transfer ... ok
+test perf_net::tests::a_chunk_is_a_tag_and_a_length_prefixed_array_and_no_bigger_than_the_limit ... ok
+test perf_net::tests::a_file_announced_over_the_cap_is_refused_and_its_chunks_are_stray ... ok
+test perf_net::tests::a_finished_reply_announces_the_file_size_as_a_varlong ... ok
+test perf_net::tests::a_refusal_frees_the_link_and_a_window_end_finishes_a_running_capture ... ok
+test perf_net::tests::a_request_beyond_the_limits_of_profile_start_is_refused ... ok
+test perf_net::tests::a_server_that_fails_mid_file_frees_the_link ... ok
+test perf_net::tests::a_silent_server_is_given_up_on_thirty_seconds_after_the_last_sign_of_life ... ok
+test perf_net::tests::a_start_request_is_the_bytes_the_wire_says ... ok
+test perf_net::tests::an_unanswered_start_times_out_but_a_running_capture_does_not ... ok
+test perf_net::tests::only_a_horizon_brand_may_ask ... ok
+test perf_net::tests::replies_round_trip_and_refusals_are_distinct_bytes ... ok
+test perf_net::tests::the_file_arrives_chunk_by_chunk_and_the_last_one_frees_the_link ... ok
+test perf_net::tests::the_server_judges_by_brand_then_level_then_what_runs ... ok
+test net::tests::a_transfer_inside_a_closed_bundle_publishes_the_events_staged_before_it ... ok
+test perf_net::tests::the_transfer_sends_the_whole_file_in_32_kib_chunks ... ok
+test perf_net::tests::unset_switches_stay_unset_across_the_wire ... ok
+test perf_net::tests::wanted_carries_every_switch_a_server_has_and_never_a_file ... ok
+test net::tests::a_waiting_connection_ends_on_a_closed_queue_or_a_packet_larger_than_it ... ok
+test net::tests::poll_returns_a_whole_bundle_and_never_a_prefix ... ok
+test perf_net::tests::the_transfer_never_sends_more_than_256_kib_in_any_second ... ok
+
+test result: ok. 81 passed; 0 failed; 3 ignored; 0 measured; 4563 filtered out; finished in 0.85s
+

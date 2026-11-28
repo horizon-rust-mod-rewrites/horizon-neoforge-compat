@@ -1,6 +1,20 @@
 # Next production milestone: one ordered connection owner
 
-Status: **acceptance/design plan only; no production owner implemented here**.
+Status: **partial runtime prerequisite implemented; full owner NOT complete**.
+At source `d0c05270057bc69da8082a229dc265f5d4929bdf`, actual early configure
+uses the merged per-configuration bridge owner plus awaited, capacity-charged
+batch writes, cancellation, terminal physical closure, old-reader invalidation
+even without a shared writer, and immediate bridge reset.
+Selected actual-engine validation [run46161098482](https://github.com/horizon-rust-mod-rewrites/horizon-neoforge-compat/actions/runs/46161098482)
+passes12 owner tests (plus other retained suites in NEXT_AGENT.md). This does NOT
+serialize both adapter transitions, prepared originals, adapter queues or stale
+callbacks under one connection owner. Production split remains disabled. The
+acceptance matrix below remains the gate, not a claim already satisfied.
+`owner` is in_progress and earns zero of its4 points; overall remains30/100.
+
+Write receipts establish worker write_all completion only, never peer receipt,
+flush, semantic host completion or negotiated split authority. The early stack
+guard closes on every exit because finish/play remain deliberately unsupported.
 This continues NEXT_AGENT.md's first dependency, not a new handshake claim.
 Target remains MC1.21.1 / protocol767 / NeoForge21.1.248, pinned Horizon
 `ae632edf48f6cae3ba52a5c81523ec712488c9cc`.

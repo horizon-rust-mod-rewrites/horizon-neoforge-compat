@@ -9,9 +9,9 @@
     "horizon": "ae632edf48f6cae3ba52a5c81523ec712488c9cc"
   },
   "last_engine_validation": {
-    "tested_sha": "7becb053b2d75f4a8978decbd8ecf94fb9d0dd95",
-    "run_url": "https://github.com/horizon-rust-mod-rewrites/horizon-neoforge-compat/actions/runs/46137932076",
-    "retained_evidence": "integration/hosted-46137932076-full-check.txt"
+    "tested_sha": "d0c05270057bc69da8082a229dc265f5d4929bdf",
+    "run_url": "https://github.com/horizon-rust-mod-rewrites/horizon-neoforge-compat/actions/runs/46161098482",
+    "retained_evidence": "integration/hosted-46161098482-full-check.txt"
   },
   "sections": [
     {
@@ -228,7 +228,7 @@
           "id": "owner",
           "title": "Single live ordered connection owner",
           "weight": 4,
-          "status": "not_started",
+          "status": "in_progress",
           "acceptance": "One owner serializes both phase transitions, Loader epoch, ingress, preparation, queued writes and close/reset; idle timer cannot race them.",
           "evidence": [],
           "depends_on": [

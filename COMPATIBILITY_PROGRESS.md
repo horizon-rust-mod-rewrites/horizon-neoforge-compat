@@ -17,8 +17,8 @@ Updated: 2026-11-28. Rubric: v1.
 
 ## Latest executed engine checkpoint
 
-- Tested source SHA: `7becb053b2d75f4a8978decbd8ecf94fb9d0dd95`; distinct from newer tracking/docs commits.
-- [Successful hosted run](https://github.com/horizon-rust-mod-rewrites/horizon-neoforge-compat/actions/runs/46137932076); [retained selected-engine evidence](integration/hosted-46137932076-full-check.txt).
+- Tested source SHA: `d0c05270057bc69da8082a229dc265f5d4929bdf`; distinct from newer tracking/docs commits.
+- [Successful hosted run](https://github.com/horizon-rust-mod-rewrites/horizon-neoforge-compat/actions/runs/46161098482); [retained selected-engine evidence](integration/hosted-46161098482-full-check.txt).
 - 172 core tests EACH debug/release, including 37 split tests; 16 companion / 9 early / 14 protocol / 81 network-filter passed, 3 ignored. Selected suites only; overlapping isolated tests are not additional coverage.
 - **Current runtime: CANNOT JOIN.** Production split routing, complete tasks, real semantic content publication, launcher/UI and live interoperability remain unproven. Default split/feature-flag opt-ins remain disabled; both finish refusals remain.
 
@@ -64,7 +64,7 @@ Evidence checkpoint SHAs identify where the referenced record/source was reviewe
 | `assembly` — Bounded inbound split primitive | 2 | complete | Fallible bounded reassembly, deadlines and lifecycle tests execute. This is not production ingress. Evidence: [integration/hosted-46087704109-core.txt](integration/hosted-46087704109-core.txt) (checkpoint `fb0294b`); [src/split.rs](src/split.rs) (checkpoint `fb0294b`) |
 | `splitter` — Bounded outbound split primitive | 2 | complete | Original/envelope limits, capacity and split boundary tests execute. This is not production emission. Evidence: [integration/hosted-46087704109-core.txt](integration/hosted-46087704109-core.txt) (checkpoint `fb0294b`); [tests/split.rs](tests/split.rs) (checkpoint `fb0294b`) |
 | `adapter-seams` — Actual adapter and TCP split seams | 2 | complete | Actual preparation/decoder and TCP compression/encryption matrix passes without queue/cipher side effects; not a production route. Evidence: [integration/hosted-46087704109-full-check.txt](integration/hosted-46087704109-full-check.txt) (checkpoint `fb0294b`); [docs/horizon-split-outbound-seam.md](docs/horizon-split-outbound-seam.md) (checkpoint `fb0294b`) |
-| `owner` — Single live ordered connection owner | 4 | not started | One owner serializes both phase transitions, Loader epoch, ingress, preparation, queued writes and close/reset; idle timer cannot race them. Prerequisites: `adapter-seams`, `selection`. No completion evidence yet. |
+| `owner` — Single live ordered connection owner | 4 | in progress | One owner serializes both phase transitions, Loader epoch, ingress, preparation, queued writes and close/reset; idle timer cannot race them. Prerequisites: `adapter-seams`, `selection`. No completion evidence yet. |
 | `split-authority` — Negotiated bidirectional split authority | 2 | blocked | Actual selected setup plus real host handlers grants both needed directions per epoch; no registration/threshold inference. Prerequisites: `owner`. No completion evidence yet. |
 | `transport-budgets` — Connection-wide bounded admission and idle expiry | 3 | blocked | Whole-traffic/pending budgets, idle assembly deadline, fallible whole-batch atomic admission and serialized output are enforced by real owner. Prerequisites: `owner`, `assembly`, `splitter`. No completion evidence yet. |
 | `transport-runtime` — Production ingress/emission and awaited completion | 3 | blocked | Actual ingress and direct framing route are enabled only with authority; dispatch/write completion is awaited; failures close socket and reset Loader without ack. Prerequisites: `split-authority`, `transport-budgets`. No completion evidence yet. |

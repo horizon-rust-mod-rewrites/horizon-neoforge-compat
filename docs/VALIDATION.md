@@ -1,3 +1,15 @@
+# Current continuation validation — 46161098482 PASSED
+
+Exact source `d0c05270057bc69da8082a229dc265f5d4929bdf`. See NEXT_AGENT.md and retained
+`integration/hosted-46161098482-*.txt` for artifact digest, exact suite counts,
+warning ledger and limitations. New runtime slice: bounded awaited early batch
+writes and terminal physical closure/reset; full owner remains incomplete and no
+additional checklist points are awarded. **30/100, CANNOT JOIN**, both finish
+refusals/default split and flag opt-outs remain. Older checkpoints below do not
+supersede this exact-SHA result.
+
+--- Historical validation records ---
+
 # Latest exact-SHA hosted validation: focused fixes PASSED
 
 Run: https://github.com/horizon-rust-mod-rewrites/horizon-neoforge-compat/actions/runs/46137932076

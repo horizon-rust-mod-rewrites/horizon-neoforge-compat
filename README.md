@@ -1,3 +1,14 @@
+## Latest validated continuation: awaited early writes
+
+[Full hosted run 46161098482](https://github.com/horizon-rust-mod-rewrites/horizon-neoforge-compat/actions/runs/46161098482) passed at source `d0c05270057bc69da8082a229dc265f5d4929bdf`:
+actual pinned client/companion typechecks,12 ordered-owner regressions and existing
+selected suites pass. Early Loader/engine replies now wait for bounded worker
+write completion; cancellation and every early terminal exit close transport and
+reset the bridge. Full ordered phase/epoch/preparation ownership is STILL partial.
+See NEXT_AGENT.md for exact counts, verified retained evidence and remaining gates.
+**30/100 evidenced completion, NOT50%; still CANNOT JOIN.** No finish gate or
+default split/feature-flag opt-out was removed.
+
 # Full compatibility completion tracker
 
 See [COMPATIBILITY_PROGRESS.md](COMPATIBILITY_PROGRESS.md): **30%** of the initial evidence-backed, weighted acceptance checklist. This is not an effort estimate or mod-support percentage. **Not ready to begin individual mod rewrites; CANNOT JOIN.** The tracker records remaining transport ownership, required tasks, semantic content, actual-client integration and isolated live proof; tracker metadata does not implement runtime support.

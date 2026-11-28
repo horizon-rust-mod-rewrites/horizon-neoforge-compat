@@ -1,65 +1,94 @@
-# Terminal reader follow-up — awaiting exact-SHA hosted validation
+# Exact-SHA continuation checkpoint — awaited early writes PASSED
 
-Previous source dabf9c5b86e1c92442b1019abbef3b6da51ff4cc PASSED full standard
-hosted run46159257282. Artifact digest verified:
-c94cfb0cdd34814351be40d3e0b36d2edacdaab41d3cc8ce24fdadc042397667.
-16 companion /9 early /11 owner /14 protocol /81 net passed,3 ignored; core172
-each debug/release, strict checks, driver35 and fixtures6. Metadata46159261398
-also passed. Its retained evidence is parked for the final separate evidence
-commit; do NOT infer this following source change passed from that older result.
+- Source commit: `d0c05270057bc69da8082a229dc265f5d4929bdf`.
+- Full standard hosted validation: https://github.com/horizon-rust-mod-rewrites/horizon-neoforge-compat/actions/runs/46161098482 — **SUCCESS**.
+- Artifact ZIP SHA-256 verified before reading:
+  `6e3c62d48b20e55e6db1d2232665179674ec0a0e4b09ae7d94a29ef98b674060`.
+- Retained `integration/hosted-46161098482-{core,full-check,full-driver,scope,patch,companion-isolated}.txt`.
+- Actual full pinned patched client + companion typecheck/lock audit pass.
+  **16 companion / 9 early configuration / 12 ordered-owner / 14 protocol
+  framing / 81 network-filter passed, 3 ignored**. Selected suites only, NOT all
+  engine tests; isolated endpoint/companion counts overlap and are not additive.
+- Core **172 tests EACH debug/release**, strict Clippy/fmt/warning-denied docs,
+  35 integration-driver tests and six synthetic fixtures passed. Metadata push
+  run46161103360 passed with28 progress-validator tests + full checksums.
+- Warning ledger: five existing upstream horizon-mod-wasm unused functions;
+  patched client unnecessary `mut`, unused `at_payload`, epoch field/accessors; test-only unexpected
+  `compat_isolated` cfg and unused epoch accessor. These were NOT hidden and do
+  not constitute the missing synchronization/epoch implementation.
 
-Independent post-test review found a real uncovered teardown edge: missing shared
-writer could return before constructing the previous close guard, and a closer
-alone did not discard already buffered reader bytes. Follow-up adds a terminal
-ConnReader shutdown boundary, uses a guard owning the reader borrow through the
-actual configure call, constructs it before checking shared writer presence, and
-invalidates buffered/raw old-epoch reads on every early exit. Default route keeps
-cleanup disabled. Missing-writer actual-entry regression added, previous refusal
-tests now assert terminal reader invalidation. Owner suite now requires12 passes.
-No new split/flag opt-in, no finish removal, no tracker credit: still30/100.
+## Runtime changes earned (not checklist completion)
 
-Local core172 each debug/release, strictClippy/fmt/docs, endpoint/table/isolated
-companion and patch/source checks previously passed with Rust1.97/musl/direct
-linker. Full engine requires hostedCI; update exact new evidence after its run.
+Preserved merged HEAD647f430 newer owner work after verifying remote HEAD, and
+inspected its ACTUAL failed runs first. Fixed obsolete structural assertions and
+three stale checksum entries; retained raw failed-job evidence. Full compilation
+had never started in those failed runs; old7becb05 was not owner evidence.
 
---- Earlier active handoff follows ---
+The actual early configure route now awaits a bounded queued-worker write_all
+completion receipt for Loader batches AND engine replies (keepalive/pong/etc.)
+before advancing dispatch. Queue insertion is no longer treated as completion.
+No shared writer lock is held while waiting. Timeout, dropped receipt or write
+failure closes the physical transport and prevents subsequent queued jobs from
+draining. Retirement refuses while an old receipt could still cancel its socket.
+Whole-batch admission charges retained inner + outer capacities and overhead,
+checks packet count/overflow, and exposes no packets on rejection. Early-path
+RAII owns the reader borrow and closes both directions on every early exit,
+including missing shared writer and bootstrap/factory failure. It also discards
+buffered originals and refuses subsequent reads, even zero-length raw reads.
+Bridge reset is immediate and exactly-once on terminate; ordinary traffic polls
+the assembly deadline instead of indefinitely postponing an idle-only check.
 
-# Active continuation — 2026-11-28: awaited early writes (awaiting full CI)
+Eight new adversarial tests exercise actual worker/entry paths, including blocked
+pipe completion, timeout, drop cancellation, retirement, peer failure, bounded
+admission, missing-writer/old-buffer invalidation, bootstrap closure and TCP compression on/off × encryption on/off.
+Two inherited owner tests had inconsistent bridge inputs/reset expectations;
+those are fixed, not silently skipped. No production split authority is granted.
 
-Verified remote HEAD 647f4300b365b2739657bb450b0e780b53273d35 before editing.
-Preserved merged owner work. Actual latest full46146363170 and metadata46146369350
-FAILED: obsolete structural assertions and three stale checksum entries. Retained
-raw failed job logs; fixed assertions without weakening ordering/finish checks.
-Full compilation never began in those runs; older 7becb05 is not owner evidence.
+### Independent follow-up review and validation ledger
 
-Substantive patch work now pending exact-SHA hosted engine validation:
-- Whole-batch worker completion receipts (write_all, NOT peer ack/flush), bounded
-  waits, cancellation/Drop closes actual transport, no shared-writer lock held
-  across waits; early keepalive/pong and Loader replies all await this barrier.
-- Include retained outer/inner capacities + overhead in batch admission, count
-  cap, zero exposure on refusal. Retirement refuses outstanding receipts.
-- Stop draining queued jobs after cancellation. Early terminal RAII closes both
-  physical directions even on factory/bootstrap failure; bridge resets immediately
-  and once on terminate, not only eventual Drop. Poll deadlines on ordinary traffic.
-- Repair two inconsistent inherited owner tests; add seven adversarial worker/
-  actual-entry regressions incl TCP compression/encryption matrix. Selected owner
-  suite now requires >=11 passes. Engine tests have NOT yet executed for this work.
+First source `dabf9c5b86e1c92442b1019abbef3b6da51ff4cc` also PASSED full
+run46159257282 (11 owner tests). Its own retained six transcripts remain separate;
+ZIP SHA256 c94cfb0cdd34814351be40d3e0b36d2edacdaab41d3cc8ce24fdadc042397667.
+Post-test review found an uncovered real teardown edge: the first guard could
+return before construction if the shared writer was missing, and a closer alone
+did not invalidate buffered old-epoch packets. Second source d0c0527 fixes both
+with the borrowed-reader RAII/shutdown boundary and an extra actual-entry test.
+The top run46161098482 validates that SECOND exact source; do not combine suites
+or substitute the first run's result. Evidence-only commits following it change
+no compiled source/patch/driver/workflow. The unused-mut warning remains recorded,
+not suppressed; it is cosmetic and not a reason to claim phase ownership solved.
 
-30/100 remains unchanged; owner is STILL PARTIAL. Both adapter phase transitions,
-prepared originals/adapter queues, detached socket ownership, profile-safe play
-re-entry/transfer, real split grants and connection-wide budgets remain unsolved.
-No new split/flag opt-in, no finish removal, no mod rewrites, no live join.
+## Still incomplete: 30/100, CANNOT JOIN
 
-Local resources reassessed: bounded hash-verified Rust1.97.0 components installed;
-no system C linker, so checks use musl + shipped direct linker. One duplicate-copy
-disk exhaustion was recovered by moving scratch components; no repository files
-were lost. Sparse upstream HEAD is exact pin; all29 audited file hashes pass.
-Local actual core debug, isolated companion17, endpoint8 + table1, four structural
-assertions and apply/reverse/restore pass. Full actual engine is only hosted due
-local disk/native dependencies. Local tests are not full owner runtime evidence.
-Check exact new Actions evidence first; fix genuine failures before further work.
+The owner criterion is now **in_progress**, earns ZERO points, and weights and
+acceptance criteria are unchanged. This is a real runtime prerequisite slice,
+NOT the complete single ordered connection owner and NOT 50% completion.
+Remaining owner work: one serialization domain across BOTH adapter transitions,
+prepared originals, adapter-generated queues, stale work and real socket/epoch;
+detached-socket closer ownership; profile-safe reconnect/reconfiguration/transfer;
+connection-wide traffic/pending budgets and genuine negotiated split grants.
+A write_all return is NOT peer receipt, flush or asynchronous host-task completion.
+The stack guard intentionally closes even on a future accidental Ok: revisit only
+with a separately proven conditional completion/play lifecycle milestone.
 
---- Prior handoff below (historical where contradicted above) ---
+Both core/engine finish refusals and default split/flag opt-outs remain. No mod
+rewrites, live/production testing, merge, force push, visibility or schedule change.
+Next steps: finish the owner above, then split authority/budgets/emission, actual
+host configuration tasks, atomic both-way semantic content, isolated exact-version
+interop. Do not claim any of those from this successful selected-suite run.
+
+## Local validation/resource reassessment
+
+Exact Rust1.97.0 minimal components and audited upstream sparse HEAD were verified;
+no C linker, so local checks use musl + shipped direct linker. All29 audited source
+hashes, patch apply/reverse/restoration, four structural assertions, endpoint8 +
+table1, isolated companion17 (overlaps endpoint), core172 each debug/release,
+strict Clippy/fmt/docs, driver35, metadata28 and fixtures6 pass. A duplicate-copy
+disk exhaustion was recovered before successful execution; no repo data was lost.
+Full-engine execution is the hosted result above, not a local-build claim. Exact
+source unchanged by this following evidence-only commit. Preserve this distinction.
+
+--- Older handoff follows (historical where contradicted above) ---
 
 # Completion tracking checkpoint — 2026-11-28
 
