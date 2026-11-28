@@ -485,7 +485,10 @@ fn inbound_irregular_growth_reaches_exact_aggregate_without_padding_or_leaks() {
             None
         );
     }
-    let packet = receiver.receive(&frame(2, &[0x99; 17]), 9).unwrap().unwrap();
+    let packet = receiver
+        .receive(&frame(2, &[0x99; 17]), 9)
+        .unwrap()
+        .unwrap();
     assert_eq!(packet.len(), MAX_PACKET_BYTES);
     assert_eq!(&packet[..first.len()], first.as_slice());
     for byte in 2..=8 {
@@ -498,7 +501,10 @@ fn inbound_irregular_growth_reaches_exact_aggregate_without_padding_or_leaks() {
     assert!(!receiver.pending());
     assert!(!receiver.failed());
     receiver.receive(&frame(1, &[7]), 10).unwrap();
-    assert_eq!(receiver.receive(&frame(2, &[8]), 11).unwrap(), Some(vec![7, 8]));
+    assert_eq!(
+        receiver.receive(&frame(2, &[8]), 11).unwrap(),
+        Some(vec![7, 8])
+    );
     // Ownership of the first result is independent of subsequent assemblies.
     assert_eq!(packet.len(), MAX_PACKET_BYTES);
     assert_eq!(packet[0], 0x11);
@@ -508,7 +514,9 @@ fn inbound_irregular_growth_reaches_exact_aggregate_without_padding_or_leaks() {
 fn inbound_new_assembly_gets_own_deadline_but_never_resets_epoch_clock() {
     let mut receiver = Reassembler::new();
     receiver.receive(&frame(1, &[1]), 0).unwrap();
-    receiver.receive(&frame(2, &[2]), MAX_ASSEMBLY_MILLIS - 1).unwrap();
+    receiver
+        .receive(&frame(2, &[2]), MAX_ASSEMBLY_MILLIS - 1)
+        .unwrap();
     let second_start = 2 * MAX_ASSEMBLY_MILLIS;
     receiver.check_deadline(second_start).unwrap();
     receiver.receive(&frame(1, &[3]), second_start).unwrap();

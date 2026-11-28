@@ -1,3 +1,40 @@
+# Newest CI checkpoint: fast formatting failure repaired; original outbound core executed
+
+Continue same PR/branch, verify actual remote HEAD before edits/publishing, keep
+AI-Assisted-By footer in EVERY commit. No merge/force/visibility/schedule changes.
+
+Own substantive SHA6acc9dc3cb56b3b39c848515824e776a764bc402 run46087488085
+FAILED its fast preflight on three rustfmt differences in the five new core tests.
+Full engine job was correctly SKIPPED before large inputs. Actual diagnostic
+excerpt retained in integration/hosted-46087488085-fmt-failure.txt. This checkpoint
+applies precisely those three diagnostics; no new runtime change. New protocol
+writer/8 protocol tests/2 companion TCP tests and 5 core tests STILL need their
+own newer successful hosted execution. Current floors16/14/9/81, expected core171.
+
+Original outbound implementation now HAS executed core evidence: SHA
+35649b888233a0a4713d9b6ffb434ddc3b6e2d8c, run46087222005, passed **166 core
+tests EACH debug/release**, including all31 split tests, strict Clippy/fmt/docs,
+35 Python/six fixtures, isolated companion and patch checks. Retained its own
+core/scope/full-driver/partial-full-check logs; artifact digest verified:
+`4ec09880c833688a6151506e91aa2ffd69a615e5bc6d7438af6163875fa4bdd0`.
+This run was intentionally CANCELLED during the superseded
+full engine compile AFTER core/provenance passed, once substantive6acc9dc was
+queued, to avoid redundant full builds. It is NOT full-engine success. The
+partial full-check log is explicitly incomplete, not proof of engine tests.
+
+Last full hosted SUCCESS remains run46084373021 at exactSHA7d053a6: actual
+14 companion /6 protocol /9 early /81 network-filter passed,3 ignored; core153
+each debug/release. Newer outbound does not inherit full-engine validation.
+
+Next: inspect this new fix SHA's real run/logs FIRST, then preserve text and fix
+any genuine compile/test failure. No compiler/toolchain/dependencies downloaded
+locally. Both finish refusals remain, default split/flags DISABLED; STILL CANNOT
+JOIN. No actual host inventory/production route/queue atomicity/idle timer/semantic
+content application has been invented. Substantive scope and safe next work are
+in the next checkpoint and docs/horizon-split-outbound-seam.md.
+
+--- Earlier checkpoints (historical where contradicted) ---
+
 # Newest substantive checkpoint: actual outbound preparation and real TCP test wiring
 
 Continue SAME open draft PR #1 / feat/neoforge-21.1.248-early-handshake. Verify
