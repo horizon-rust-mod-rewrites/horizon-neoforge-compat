@@ -1,3 +1,46 @@
+# Milestone attempt — detached cancellation / epoch resource policy (validation pending)
+
+Remote HEAD verified as `74b357d4d17c4715083a1892aa2eb435756748d7` before edits.
+Substantive continuation is in the actual Horizon patch, not a synthetic owner:
+
+- Detached reader/writer halves retain a real physical shutdown capability from
+  the writer handle already present at detach. Closers share terminal state;
+  shutdown revokes buffered reads and new preparations/sends, including empty raw
+  operations. `take` leaves an inert placeholder with no old-socket capability.
+- Explicit-profile configuration now has a cumulative decoded-ingress + encoded-
+  egress policy: 16,384 packets, 64MiB, absolute 120s lifetime, only tighten-able.
+  Ordinary packets count; whole batches are charged before publication; write
+  waits are capped by remaining lifetime and rechecked afterwards. Actual reader
+  loops check the absolute deadline, including per-fill socket timeouts, so an
+  incomplete frame/continuous trickle cannot refresh it indefinitely.
+- Automatic Transfer on this early path refuses before publishing a profile-less
+  reconnect event. The user must explicitly reselect a compatible profile; this
+  is safe refusal, NOT implemented NeoForge transfer/reconnect support.
+- Ten additional regressions: five actual owner/policy tests, four actual protocol
+  tests (including detached TCP compression/encryption matrix), one endpoint
+  policy-boundary test. Existing suites retained, no ignore added.
+
+Local pin/patch/reverse/restoration + endpoint9/table1, isolated companion18 and
+Python driver35, metadata28, core172 EACH debug/release, strict Clippy/fmt/docs
+and six fixtures have passed. Full actual-engine compilation/tests are PENDING for
+this new runtime source until its OWN standard hosted run completes. Previous
+run46161098482 validates d0c0527 only; do NOT substitute it for this source.
+
+**30/100, zero new criterion points; owner remains incomplete; CANNOT JOIN.**
+Still needed: one serialization domain for BOTH adapter transitions and queues,
+prepared-original and stale-work epoch fencing; genuine bidirectional negotiated
+split grants/routing; connection-wide (including login/play/adapter output) budgets,
+awaited asynchronous host effects, complete profile-safe lifecycle/reconnect, and
+all remaining task/content/live prerequisites. Low-level infallible detached
+framing APIs still require caller serialization; closing a socket is not a peer
+acknowledgment. External detached pollers must bound their own external I/O.
+A synchronous bridge callback is still a bounded-work contract, not forcibly
+preemptible host execution. Both finish refusals and default split/flag opt-outs
+remain. No production server tests, mod rewrites, merge, force push, visibility
+change or schedules. Use the same draft PR and required AI commit footer.
+
+--- Previous exact-SHA checkpoint follows ---
+
 # Exact-SHA continuation checkpoint — awaited early writes PASSED
 
 - Source commit: `d0c05270057bc69da8082a229dc265f5d4929bdf`.

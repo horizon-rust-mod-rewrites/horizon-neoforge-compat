@@ -1,3 +1,14 @@
+# Current milestone attempt (full validation pending)
+
+The new actual-path patch adds physical detached cancellation + shared terminal
+invalidation, an explicit-profile epoch cumulative/deadline policy, and automatic
+Transfer refusal instead of profile-less fallback. See NEXT_AGENT.md for policy,
+regressions and limitations. This is NOT full connection ownership: adapter phase
+and queue serialization, real bidirectional split authority, connection-wide
+budgets and complete profile lifecycle remain missing. No criterion awarded;
+**30/100, CANNOT JOIN**, all finish/default opt-out gates retained. Older exact-SHA
+validation below applies only to that recorded source until a new run succeeds.
+
 # Next production milestone: one ordered connection owner
 
 Status: **partial runtime prerequisite implemented; full owner NOT complete**.

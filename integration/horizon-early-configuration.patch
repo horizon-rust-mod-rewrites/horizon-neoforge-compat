@@ -153,7 +153,7 @@ diff --git a/crates/horizon-client/src/net.rs b/crates/horizon-client/src/net.rs
      )?;
      deliver(
          send,
-@@ -1639,6 +1699,97 @@
+@@ -1639,6 +1699,111 @@
  /// while a world's first view streams in no longer ends the connection (#18380).
  /// Events main already dropped under pressure keep `send`, so keepalives are still
  /// answered behind them.
@@ -187,7 +187,15 @@ diff --git a/crates/horizon-client/src/net.rs b/crates/horizon-client/src/net.rs
 +    writer: &Arc<Mutex<Option<QueuedWriter>>>,
 +    lang: &Language,
 +    bodies: Vec<Vec<u8>>,
++    budget: &ordered_owner::ConfigurationBudget,
 +) -> Result<(), Reason> {
++    budget
++        .outbound(&bodies)
++        .map_err(|error| Reason::plain(error.to_string()))?;
++    let timeout = budget
++        .remaining()
++        .map_err(|error| Reason::plain(error.to_string()))?
++        .min(EARLY_WRITE_TIMEOUT);
 +    let writer = writer
 +        .lock()
 +        .unwrap()
@@ -196,8 +204,13 @@ diff --git a/crates/horizon-client/src/net.rs b/crates/horizon-client/src/net.rs
 +        .ok_or_else(|| Reason::plain("Disconnected"))?;
 +    writer
 +        .send_batch(bodies)
-+        .and_then(|receipt| receipt.wait(EARLY_WRITE_TIMEOUT))
-+        .map_err(|error| Reason::plain(connection_lost(error, lang)))
++        .and_then(|receipt| receipt.wait(timeout))
++        .map_err(|error| Reason::plain(connection_lost(error, lang)))?;
++    // A callback or write may have consumed the last remaining lifetime. Never
++    // dispatch another original or report success after that absolute deadline.
++    budget
++        .poll()
++        .map_err(|error| Reason::plain(error.to_string()))
 +}
 +
 +/// Validate/encode the entire batch before admission. The worker's actual write
@@ -206,6 +219,7 @@ diff --git a/crates/horizon-client/src/net.rs b/crates/horizon-client/src/net.rs
 +    writer: &Arc<Mutex<Option<QueuedWriter>>>,
 +    lang: &Language,
 +    replies: Vec<early_configuration::Reply>,
++    budget: &ordered_owner::ConfigurationBudget,
 +) -> Result<(), Reason> {
 +    if replies.is_empty() {
 +        return Ok(());
@@ -225,7 +239,7 @@ diff --git a/crates/horizon-client/src/net.rs b/crates/horizon-client/src/net.rs
 +                .map_err(|error| Reason::plain(format!("configuration/encode: {error}")))?,
 +        );
 +    }
-+    emit_early_bodies(writer, lang, bodies)
++    emit_early_bodies(writer, lang, bodies, budget)
 +}
 +
 +/// Own the reader borrow through the entire early configure call. Teardown can
@@ -251,7 +265,7 @@ diff --git a/crates/horizon-client/src/net.rs b/crates/horizon-client/src/net.rs
  fn deliver(send: &ingress::Producer<Event>, lang: &Language, event: Event) -> Result<(), Reason> {
      send.send_waiting(event)
          .map_err(|refused| refusal(refused, lang))
-@@ -1750,18 +1901,91 @@
+@@ -1750,18 +1915,97 @@
      // The connection's first configuration, not a reconfiguration from play.
      initial: bool,
  ) -> Result<Dynamic, Reason> {
@@ -284,7 +298,9 @@ diff --git a/crates/horizon-client/src/net.rs b/crates/horizon-client/src/net.rs
 +) -> Result<Dynamic, Reason> {
 +    // Construct the guard BEFORE checking writer availability: a concurrently
 +    // removed writer must not strand the still-owned reader/socket or its buffer.
-+    let mut early_transport = EarlyTransportGuard {
++    let budget =
++        early_profile.map(|profile| ordered_owner::ConfigurationBudget::new(profile.limits));
++    let early_transport = EarlyTransportGuard {
 +        reader,
 +        writer: if early_profile.is_some() {
 +            writer.lock().unwrap().as_ref().cloned()
@@ -297,6 +313,9 @@ diff --git a/crates/horizon-client/src/net.rs b/crates/horizon-client/src/net.rs
 +        return Err(Reason::plain("Disconnected"));
 +    }
 +    let reader = &mut *early_transport.reader;
++    if let Some(budget) = &budget {
++        reader.set_read_deadline(Some(budget.deadline()));
++    }
      let mut registries = Dynamic::default();
      let mut content_verified = false;
      payloads.begin_configuration();
@@ -328,7 +347,12 @@ diff --git a/crates/horizon-client/src/net.rs b/crates/horizon-client/src/net.rs
 +            let body = p
 +                .try_encode()
 +                .map_err(|error| Reason::plain(connection_lost(error, lang)))?;
-+            return emit_early_bodies(writer, lang, vec![body]);
++            return emit_early_bodies(
++                writer,
++                lang,
++                vec![body],
++                budget.as_ref().expect("early budget"),
++            );
 +        }
          match writer.lock().unwrap().as_mut() {
 -            Some(w) => p
@@ -336,18 +360,14 @@ diff --git a/crates/horizon-client/src/net.rs b/crates/horizon-client/src/net.rs
 -                .and_then(|body| w.send(&body))
 -                .map_err(|e| Reason::plain(connection_lost(e, lang))),
 +            Some(w) => {
-+                let body = if early_profile.is_some() {
-+                    p.try_encode()
-+                } else {
-+                    p.try_encode_with_payload_codecs(&payloads.local.codecs)
-+                };
++                let body = p.try_encode_with_payload_codecs(&payloads.local.codecs);
 +                body.and_then(|body| w.send(&body))
 +                    .map_err(|e| Reason::plain(connection_lost(e, lang)))
 +            }
              None => Err(Reason::plain("Disconnected")),
          }
      };
-@@ -1793,19 +2017,83 @@
+@@ -1793,19 +2037,105 @@
      };
      // With only engine declarations the client waits for the server's query, so a vanilla
      // server is sent nothing new.
@@ -365,6 +385,11 @@ diff --git a/crates/horizon-client/src/net.rs b/crates/horizon-client/src/net.rs
 -        match cfg::Clientbound::decode_with_payload_codecs(id, &payload, &payloads.local.codecs)
 -            .map_err(|e| Reason::plain(connection_lost(e, lang)))?
 -        {
++        if let Some(budget) = &budget {
++            budget
++                .poll()
++                .map_err(|error| Reason::plain(error.to_string()))?;
++        }
 +        if let Some(owner) = owner.as_mut() {
 +            owner
 +                .poll_idle()
@@ -383,6 +408,13 @@ diff --git a/crates/horizon-client/src/net.rs b/crates/horizon-client/src/net.rs
 +            }
 +            Err(error) => return Err(Reason::plain(connection_lost(error, lang))),
 +        };
++        if let Some(budget) = &budget {
++            // Five bytes conservatively charge the decoded packet-id prefix.
++            // Every packet counts, including brand, keepalive and ignored data.
++            budget
++                .charge(1, payload.len().saturating_add(5))
++                .map_err(|error| Reason::plain(error.to_string()))?;
++        }
 +        let packet = if early_profile.is_some() {
 +            cfg::Clientbound::decode(id, &payload)
 +        } else {
@@ -428,17 +460,42 @@ diff --git a/crates/horizon-client/src/net.rs b/crates/horizon-client/src/net.rs
 +                        let replies = owner
 +                            .dispatch(&inner.channel, &inner.data)
 +                            .map_err(|error| Reason::plain(owner_error(&error, &inner.channel)))?;
-+                        emit_reply_batch(writer, lang, replies)?;
++                        emit_reply_batch(
++                            writer,
++                            lang,
++                            replies,
++                            budget.as_ref().expect("early budget"),
++                        )?;
 +                    }
 +                    ordered_owner::Step::Replies(replies) => {
-+                        emit_reply_batch(writer, lang, replies)?;
++                        emit_reply_batch(
++                            writer,
++                            lang,
++                            replies,
++                            budget.as_ref().expect("early budget"),
++                        )?;
 +                    }
 +                }
 +            }
              cfg::Clientbound::CustomPayload(p) if p.channel == crate::build_mismatch::CHANNEL => {
                  server_build = crate::build_mismatch::decode(&p.data);
              }
-@@ -1953,6 +2241,17 @@
+@@ -1945,6 +2275,14 @@
+                 let _ = send.send(Event::ServerLinks(p.links));
+             }
+             cfg::Clientbound::Transfer(p) => {
++                if owner.is_some() {
++                    // Event::Transfer currently reconnects through the ordinary
++                    // profile-less wrapper. Refuse rather than silently downgrading
++                    // an explicit NeoForge connection to vanilla at a new host.
++                    return Err(Reason::plain(
++                        "configuration/transfer: explicit NeoForge profile must be reselected",
++                    ));
++                }
+                 let _ = send.send(Event::Transfer {
+                     host: p.host,
+                     port: p.port,
+@@ -1953,6 +2291,17 @@
              }
              cfg::Clientbound::Disconnect(d) => return Err(Reason::tag(&d.reason, lang)),
              cfg::Clientbound::FinishConfiguration(_) => {
@@ -456,7 +513,7 @@ diff --git a/crates/horizon-client/src/net.rs b/crates/horizon-client/src/net.rs
                  // A Horizon server that never sent on horizon:payloads predates the
                  // negotiation: play on with nothing negotiated, as on a vanilla server.
                  // Only on the first configuration: a server that goes silent when it
-@@ -1995,6 +2294,11 @@
+@@ -1995,6 +2344,11 @@
                      })
                      .map_err(Reason::plain)?;
                  return Ok(registries);
@@ -472,11 +529,11 @@ diff --git a/crates/horizon-client/src/net/early_configuration.rs b/crates/horiz
 new file mode 100644
 --- /dev/null
 +++ b/crates/horizon-client/src/net/early_configuration.rs
-@@ -0,0 +1,196 @@
+@@ -0,0 +1,242 @@
 +// SPDX-License-Identifier: LGPL-3.0-or-later
 +//! Engine-owned, explicitly selected configuration endpoint. No global registration,
 +//! Horizon negotiation, play delivery, or implicit permission from channel lists.
-+use std::{collections::BTreeSet, sync::Arc};
++use std::{collections::BTreeSet, sync::Arc, time::Duration};
 +
 +pub const MAX_BODY: usize = 32_767;
 +const MAX_CHANNELS: usize = 1_024;
@@ -532,6 +589,25 @@ new file mode 100644
 +    pack_sha256: [u8; 32],
 +    adapters: BTreeSet<String>,
 +    factory: Arc<dyn Factory>,
++    pub(crate) limits: ConfigurationLimits,
++}
++/// Cumulative decoded ingress + encoded egress, including ordinary traffic.
++/// Pending retained allocations remain independently bounded by the real writer
++/// and ingress queues. Login/play and adapter-generated traffic are NOT covered.
++#[derive(Clone, Copy)]
++pub(crate) struct ConfigurationLimits {
++    pub(crate) packets: usize,
++    pub(crate) bytes: usize,
++    pub(crate) lifetime: Duration,
++}
++impl Default for ConfigurationLimits {
++    fn default() -> Self {
++        Self {
++            packets: 16_384,
++            bytes: 64 * 1_048_576,
++            lifetime: Duration::from_secs(120),
++        }
++    }
 +}
 +impl Profile {
 +    pub fn neoforge(
@@ -564,7 +640,34 @@ new file mode 100644
 +            pack_sha256,
 +            adapters: channels,
 +            factory,
++            limits: ConfigurationLimits::default(),
 +        })
++    }
++    /// Tighten the local configuration-epoch policy. These are not negotiated
++    /// NeoForge limits or a claim that a real pack fits. Zero/unbounded policies
++    /// and increases above the conservative defaults are rejected.
++    pub fn with_configuration_limits(
++        mut self,
++        packets: usize,
++        bytes: usize,
++        lifetime: Duration,
++    ) -> Result<Self> {
++        let defaults = self.limits;
++        if packets == 0
++            || packets > defaults.packets
++            || bytes == 0
++            || bytes > defaults.bytes
++            || lifetime.is_zero()
++            || lifetime > defaults.lifetime
++        {
++            return Err(Failure("invalid_configuration_limits"));
++        }
++        self.limits = ConfigurationLimits {
++            packets,
++            bytes,
++            lifetime,
++        };
++        Ok(self)
 +    }
 +    pub(crate) fn begin(&self) -> Result<Endpoint<'_>> {
 +        Ok(Endpoint {
@@ -673,7 +776,7 @@ diff --git a/crates/horizon-client/src/net/early_configuration_tests.rs b/crates
 new file mode 100644
 --- /dev/null
 +++ b/crates/horizon-client/src/net/early_configuration_tests.rs
-@@ -0,0 +1,267 @@
+@@ -0,0 +1,292 @@
 +// SPDX-License-Identifier: LGPL-3.0-or-later
 +use super::*;
 +use std::sync::{
@@ -941,6 +1044,31 @@ new file mode 100644
 +    drop(endpoint);
 +    assert_eq!(observed.resets.load(Ordering::Relaxed), 1);
 +}
++
++#[test]
++fn configuration_policy_can_only_tighten_bounded_defaults() {
++    let observed = Arc::new(Observed::default());
++    for (packets, bytes, lifetime) in [
++        (0, 1, Duration::from_secs(1)),
++        (1, 0, Duration::from_secs(1)),
++        (1, 1, Duration::ZERO),
++        (16_385, 1, Duration::from_secs(1)),
++        (1, 64 * 1_048_576 + 1, Duration::from_secs(1)),
++        (1, 1, Duration::from_secs(121)),
++    ] {
++        assert!(
++            profile(&observed)
++                .with_configuration_limits(packets, bytes, lifetime)
++                .is_err()
++        );
++    }
++    assert!(
++        profile(&observed)
++            .with_configuration_limits(1, 1, Duration::from_nanos(1))
++            .is_ok()
++    );
++    assert_eq!(observed.created.load(Ordering::Relaxed), 0);
++}
 diff --git a/crates/horizon-client/src/net/early_configuration_net_tests.rs b/crates/horizon-client/src/net/early_configuration_net_tests.rs
 new file mode 100644
 --- /dev/null
@@ -1129,34 +1257,27 @@ diff --git a/crates/horizon-client/src/net/ordered_owner.rs b/crates/horizon-cli
 new file mode 100644
 --- /dev/null
 +++ b/crates/horizon-client/src/net/ordered_owner.rs
-@@ -0,0 +1,218 @@
+@@ -0,0 +1,272 @@
 +// SPDX-License-Identifier: LGPL-3.0-or-later
-+//! Single ordered connection owner for the explicit NeoForge configuration path.
++//! Partial ordered early-configuration owner, not a connection-wide actor.
 +//!
-+//! This is the serialization domain the early endpoint previously lacked: one
-+//! owner per configuration epoch that tags every operation with that epoch,
-+//! serializes split reassembly with the connection's socket ingress, drives an
-+//! idle deadline for partial assembly even when no packet arrives, and terminally
-+//! tears the epoch down (dropping partial assembly and resetting the bridge) on
-+//! any failure, disconnect, transfer or reconfiguration.
++//! The configure loop serializes its socket ingress, bridge dispatch, bounded
++//! reply-batch completion and idle polling. The bridge and optional reassembler
++//! reset on terminal teardown. Adapter phase transitions/generated queues,
++//! stale prepared originals, negotiated bidirectional split authority and the
++//! complete profile lifecycle are NOT yet under one serialization domain.
 +//!
-+//! The owner does not own the socket reader: the configure loop reads the socket
-+//! and, on a completed reassembly, decodes the reconstructed original exactly
-+//! once with the real protocol-767 decoder before handing the inner payload back
-+//! to [`OrderedOwner::dispatch`]. This keeps a single reader and a single
-+//! serialization domain rather than a second façade over the same connection.
++//! Production installs no split reassembler: only a genuine future negotiated
++//! grant plus installed host handlers could authorize one. The companion uses
++//! the bounded reassembler in selected tests, not in the default runtime route.
++//! Reconstructed originals use the actual protocol-767 decoder exactly once.
 +//!
-+//! The engine stays dependency-free: split reassembly is provided through the
-+//! local [`Reassembly`] trait. Production installs none (split authority is never
-+//! granted without a genuine negotiated grant and host inventory), so the owner
-+//! never reassembles by default. The compatibility companion supplies a real
-+//! bounded reassembler for tests and future authority.
-+//!
-+//! The engine's hard finish latch is unchanged: [`OrderedOwner::finish`] still
-+//! refuses, so this owner can never fabricate a configuration acknowledgement or
-+//! expose modded content to vanilla translation. Default connections never build
-+//! an owner; only an explicitly selected `early_configuration::Profile` does.
-+use std::time::Instant;
++//! Both finish refusals remain. Default vanilla/Horizon connections do not
++//! construct this owner or the early configuration resource policy.
++use std::{
++    cell::Cell,
++    time::{Duration, Instant},
++};
 +
 +use horizon_protocol::Error;
 +
@@ -1348,11 +1469,72 @@ new file mode 100644
 +        self.terminate();
 +    }
 +}
++
++/// An epoch-local cumulative policy, shared by ingress and every early reply.
++/// Not a connection-wide or pending-allocation budget. Refusal is sticky and
++/// whole-batch charging publishes neither a partial debit nor any output.
++pub(crate) struct ConfigurationBudget {
++    limits: super::early_configuration::ConfigurationLimits,
++    used: Cell<(usize, usize)>,
++    failed: Cell<bool>,
++    base: Instant,
++}
++impl ConfigurationBudget {
++    pub(crate) fn new(limits: super::early_configuration::ConfigurationLimits) -> Self {
++        Self {
++            limits,
++            used: Cell::new((0, 0)),
++            failed: Cell::new(false),
++            base: Instant::now(),
++        }
++    }
++    pub(crate) fn poll(&self) -> horizon_protocol::Result<()> {
++        if self.failed.get() {
++            return Err(Error::new("configuration budget terminated"));
++        }
++        if self.base.elapsed() >= self.limits.lifetime {
++            self.failed.set(true);
++            return Err(Error::new("configuration lifetime exceeded"));
++        }
++        Ok(())
++    }
++    pub(crate) fn deadline(&self) -> Instant {
++        self.base + self.limits.lifetime
++    }
++    pub(crate) fn remaining(&self) -> horizon_protocol::Result<Duration> {
++        self.poll()?;
++        Ok(self.limits.lifetime.saturating_sub(self.base.elapsed()))
++    }
++    pub(crate) fn charge(&self, packets: usize, bytes: usize) -> horizon_protocol::Result<()> {
++        self.poll()?;
++        let used = self.used.get();
++        let next = used.0.checked_add(packets).zip(used.1.checked_add(bytes));
++        if let Some((packets, bytes)) = next
++            && packets <= self.limits.packets
++            && bytes <= self.limits.bytes
++        {
++            self.used.set((packets, bytes));
++            return Ok(());
++        }
++        self.failed.set(true);
++        Err(Error::new("configuration cumulative traffic limit"))
++    }
++    pub(crate) fn outbound(&self, bodies: &[Vec<u8>]) -> horizon_protocol::Result<()> {
++        let bytes = bodies
++            .iter()
++            .try_fold(0usize, |sum, body| sum.checked_add(body.len()));
++        let Some(bytes) = bytes else {
++            self.failed.set(true);
++            return Err(Error::new("configuration cumulative traffic overflow"));
++        };
++        self.charge(bodies.len(), bytes)
++    }
++}
 diff --git a/crates/horizon-client/src/net/ordered_owner_tests.rs b/crates/horizon-client/src/net/ordered_owner_tests.rs
 new file mode 100644
 --- /dev/null
 +++ b/crates/horizon-client/src/net/ordered_owner_tests.rs
-@@ -0,0 +1,587 @@
+@@ -0,0 +1,748 @@
 +// SPDX-License-Identifier: LGPL-3.0-or-later
 +//! Engine tests for the ordered connection owner. These drive the actual
 +//! `configure_with_profile` entry point and the real `Connection`/`QueuedWriter`
@@ -1940,6 +2122,167 @@ new file mode 100644
 +    drop(writer);
 +    std::fs::remove_dir_all(root).unwrap();
 +}
++
++/// Use the actual configure loop with its real queues and default adapter. The
++/// limits only tighten production policy, not substitute a test owner/clock.
++fn run_policy_case(
++    packets: Vec<cfg::Clientbound>,
++    limits: (usize, usize, Duration),
++    expected: &str,
++    expected_replies: usize,
++    expected_dispatches: usize,
++    initial: bool,
++) {
++    use horizon_world::native_load_context::DataLoadOrigin;
++    let root = std::env::temp_dir().join(format!("horizon-owner-policy-{}", next_serial()));
++    std::fs::create_dir_all(&root).unwrap();
++    std::fs::write(root.join("items.json"), "{}").unwrap();
++    let resources = crate::test_resources::item_data(&root, DataLoadOrigin::ClientPreload).unwrap();
++    let observed = Arc::new(Observed::default());
++    let profile = profile(&observed)
++        .with_configuration_limits(limits.0, limits.1, limits.2)
++        .unwrap();
++    let payloads =
++        crate::raw_payloads::Transport::capture(crate::raw_payloads::Side::Client).unwrap();
++    let (client, server) = horizon_protocol::connection::Pipe::pair();
++    let (mut reader, writer) = Connection::local(client).split();
++    let writer = Arc::new(Mutex::new(Some(QueuedWriter::new(writer).unwrap())));
++    let mut peer = Connection::local(server);
++    peer.reader
++        .set_read_timeout(Some(Duration::from_secs(2)))
++        .unwrap();
++    for packet in packets {
++        peer.send(&packet.encode()).unwrap();
++    }
++    let (send, events) = event_channel();
++    let error = configure_with_profile(
++        &mut reader,
++        &writer,
++        &Arc::new(AtomicBool::new(true)),
++        &Language::new(),
++        &send,
++        &Cookies::default(),
++        &resources,
++        &payloads,
++        initial,
++        Some(&profile),
++    )
++    .err()
++    .unwrap();
++    assert!(
++        error.text.contains(expected),
++        "unexpected refusal: {}",
++        error.text
++    );
++    assert_eq!(observed.starts.load(Ordering::Relaxed), 1);
++    assert_eq!(observed.resets.load(Ordering::Relaxed), 1);
++    assert_eq!(observed.received.lock().unwrap().len(), expected_dispatches);
++    for _ in 0..expected_replies {
++        peer.recv().unwrap();
++    }
++    assert!(
++        peer.recv().is_err(),
++        "no refused batch/finish acknowledgement exposed"
++    );
++    assert!(
++        peer.send(&[0]).is_err(),
++        "terminal transport, not just a read timeout"
++    );
++    assert!(reader.recv().is_err());
++    assert!(writer.lock().unwrap().as_ref().unwrap().send(&[0]).is_err());
++    assert!(payloads.epoch().is_none());
++    while let Ok(receipt) = events.try_recv_owned() {
++        let (event, _lease) = receipt.into_parts();
++        assert!(
++            !matches!(event, Event::Transfer { .. }),
++            "cannot reconnect without explicit profile"
++        );
++    }
++    std::fs::remove_dir_all(root).unwrap();
++}
++
++#[test]
++fn owner_configuration_cumulative_budget_counts_ordinary_ingress_and_egress() {
++    run_policy_case(
++        vec![
++            cfg::Clientbound::KeepAlive(cfg::KeepAlive { id: 1 }),
++            cfg::Clientbound::Ping(cfg::Ping { id: 2 }),
++            cfg::Clientbound::FinishConfiguration(Empty),
++        ],
++        (3, 1024, Duration::from_secs(2)),
++        "cumulative traffic",
++        1,
++        0,
++        true,
++    );
++}
++
++#[test]
++fn owner_configuration_byte_budget_refuses_reply_before_any_admission() {
++    // Ping ingress is 4 payload bytes + conservative 5-byte id charge. Pong is
++    // 5 bytes: a 13-byte total policy accepts ingress but refuses the whole reply.
++    run_policy_case(
++        vec![cfg::Clientbound::Ping(cfg::Ping { id: 2 })],
++        (8, 13, Duration::from_secs(2)),
++        "cumulative traffic",
++        0,
++        0,
++        true,
++    );
++}
++
++#[test]
++fn owner_configuration_lifetime_expires_without_another_incoming_packet() {
++    run_policy_case(
++        vec![],
++        (8, 1024, Duration::from_millis(1)),
++        "lifetime",
++        0,
++        0,
++        true,
++    );
++}
++
++#[test]
++fn owner_configuration_transfer_requires_profile_reselection_in_both_entries() {
++    for initial in [true, false] {
++        run_policy_case(
++            vec![cfg::Clientbound::Transfer(cfg::Transfer {
++                host: "example.invalid".into(),
++                port: 25565,
++            })],
++            (8, 1024, Duration::from_secs(2)),
++            "profile must be reselected",
++            0,
++            0,
++            initial,
++        );
++    }
++}
++
++#[test]
++fn owner_cumulative_batch_charge_is_checked_atomic_sticky_and_epoch_local() {
++    use early_configuration::ConfigurationLimits;
++    use ordered_owner::ConfigurationBudget;
++    let limits = ConfigurationLimits {
++        packets: 3,
++        bytes: 8,
++        lifetime: Duration::from_secs(2),
++    };
++    let budget = ConfigurationBudget::new(limits);
++    budget.charge(1, 3).unwrap();
++    budget.outbound(&[vec![0, 1], vec![2, 3, 4]]).unwrap(); // exact boundary
++    assert!(budget.charge(1, 0).is_err());
++    assert!(budget.poll().is_err());
++    let next = ConfigurationBudget::new(limits);
++    assert!(next.charge(usize::MAX, usize::MAX).is_err());
++    assert!(next.charge(0, 0).is_err());
++    let next = ConfigurationBudget::new(limits);
++    next.charge(1, 1).unwrap();
++    assert!(next.charge(usize::MAX, 0).is_err()); // checked overflow
++    let next = ConfigurationBudget::new(limits);
++    next.outbound(&[vec![0; 8]]).unwrap(); // independent successor still live
++}
 diff --git a/crates/horizon-client/src/net/queued_writer.rs b/crates/horizon-client/src/net/queued_writer.rs
 --- a/crates/horizon-client/src/net/queued_writer.rs
 +++ b/crates/horizon-client/src/net/queued_writer.rs
@@ -2241,10 +2584,16 @@ diff --git a/crates/horizon-protocol/src/adapter/session.rs b/crates/horizon-pro
 diff --git a/crates/horizon-protocol/src/connection.rs b/crates/horizon-protocol/src/connection.rs
 --- a/crates/horizon-protocol/src/connection.rs
 +++ b/crates/horizon-protocol/src/connection.rs
-@@ -17,6 +17,14 @@
+@@ -12,10 +12,18 @@
+     net::{Shutdown, SocketAddr, TcpStream, ToSocketAddrs},
+     sync::{
+         Arc,
+-        atomic::{AtomicI64, Ordering},
++        atomic::{AtomicBool, AtomicI64, Ordering},
+     },
      time::{Duration, Instant},
  };
-
++
 +/// Shared packet-id boundary for socket bodies and reconstructed originals.
 +/// Does not frame, decompress, translate, or dispatch the packet.
 +fn packet_id(body: &[u8]) -> Result<(i32, usize)> {
@@ -2252,48 +2601,113 @@ diff --git a/crates/horizon-protocol/src/connection.rs b/crates/horizon-protocol
 +    let id = reader.varint()?;
 +    Ok((id, reader.position()))
 +}
-+
+
  mod memory;
  pub use memory::Pipe;
-
-@@ -100,6 +108,8 @@
+@@ -100,6 +108,12 @@
  }
 
  pub struct ConnReader {
 +    /// A rejected reconstructed packet permanently invalidates this reader.
 +    reassembly_failed: bool,
++    read_deadline: Option<Instant>,
++    /// Shared terminal state survives split and detach; no successor reuses it.
++    terminal: Arc<AtomicBool>,
++    detached_closer: Option<Closer>,
      memory: bool,
      stream: Stream,
      /// Bytes read: `buffer[start..end]` are not consumed yet, and reads go
-@@ -282,6 +292,7 @@
+@@ -117,14 +131,21 @@
+     older_client: Option<Arc<crate::adapter::ClientSession>>,
+ }
+ /// Closes a connection from another thread: a read or a write blocked on it fails.
+-pub struct Closer(Stream);
++#[derive(Clone)]
++pub struct Closer {
++    stream: Arc<Stream>,
++    terminal: Arc<AtomicBool>,
++}
+ impl Closer {
+     pub fn close(&self) {
+-        self.0.shutdown();
++        self.terminal.store(true, Ordering::Release);
++        self.stream.shutdown();
+     }
+ }
+
+ pub struct ConnWriter {
++    terminal: Arc<AtomicBool>,
++    detached_closer: Option<Closer>,
+     memory: bool,
+     stream: Stream,
+     encrypt: Option<Cfb8>,
+@@ -278,10 +299,15 @@
+     }
+     fn over(stream: Stream) -> Result<Self> {
+         let counters = Arc::new(Counters::default());
++        let terminal = Arc::new(AtomicBool::new(false));
+         let write = stream.try_clone()?;
          let memory = matches!(stream, Stream::Memory(_));
          Ok(Self {
              reader: ConnReader {
 +                reassembly_failed: false,
++                read_deadline: None,
++                terminal: terminal.clone(),
++                detached_closer: None,
                  memory,
                  stream,
                  buffer: Vec::new(),
-@@ -394,6 +405,10 @@
+@@ -295,6 +321,8 @@
+                 older_client: None,
+             },
+             writer: ConnWriter {
++                terminal,
++                detached_closer: None,
+                 memory,
+                 stream: write,
+                 encrypt: None,
+@@ -359,7 +387,14 @@
+     /// goes in through [`ConnReader::read_from`]; [`ConnWriter::frame_into`]
+     /// makes what is to be sent. Their own reads and writes fail from now on.
+     pub fn detach(mut self) -> (Socket, ConnReader, ConnWriter) {
+-        self.writer.stream = Stream::Detached;
++        // Retain the writer's existing handle as a cancellation capability.
++        // No fallible clone or API-signature change at the ownership handoff.
++        let closer = Closer {
++            stream: Arc::new(std::mem::replace(&mut self.writer.stream, Stream::Detached)),
++            terminal: self.reader.terminal.clone(),
++        };
++        self.reader.detached_closer = Some(closer.clone());
++        self.writer.detached_closer = Some(closer);
+         let socket = match std::mem::replace(&mut self.reader.stream, Stream::Detached) {
+             Stream::Tcp(s) => Socket::Tcp(s),
+             Stream::Memory(p) => Socket::Memory(p),
+@@ -394,6 +429,11 @@
      }
      /// Read exactly `len` bytes as they are, with no framing.
      pub fn read_raw(&mut self, len: usize) -> Result<Vec<u8>> {
++        self.check_read_deadline()?;
 +        // Refuse before allocation, even for a zero-length raw read.
-+        if self.reassembly_failed {
++        if self.reassembly_failed || self.terminal.load(Ordering::Acquire) {
 +            return Err(Error::new("invalid reconstructed configuration epoch"));
 +        }
          let mut out = vec![0u8; len];
          self.stream.read_exact(&mut out)?;
          Ok(out)
-@@ -403,8 +418,96 @@
+@@ -403,8 +443,105 @@
          self.memory
      }
 
 +    /// Terminally close this reader's physical connection and discard buffered
 +    /// packets. A configuration failure must not leave old bytes reusable even
-+    /// when its queued writer has already been removed. Detached external sockets
-+    /// still require a separately owned closer; this does not claim that ownership.
++    /// when its queued writer has already been removed. Detached halves retain
++    /// the original transport's shutdown capability, never a successor's socket.
 +    pub fn shutdown(&mut self) {
 +        self.reassembly_failed = true;
++        self.terminal.store(true, Ordering::Release);
++        if let Some(closer) = &self.detached_closer {
++            closer.close();
++        }
 +        self.stream.shutdown();
 +        self.stream = Stream::Detached;
 +        self.buffer.clear();
@@ -2315,6 +2729,7 @@ diff --git a/crates/horizon-protocol/src/connection.rs b/crates/horizon-protocol
 +    /// packs. This is NOT a path for vanilla translation of modded registries.
 +    /// Every failure closes the transport and terminally invalidates this reader.
 +    pub fn decode_reassembled_configuration(&mut self, body: Vec<u8>) -> Result<(i32, Vec<u8>)> {
++        self.check_read_deadline()?;
 +        let result = self.decode_reassembled_configuration_inner(body);
 +        if result.is_err() {
 +            self.shutdown();
@@ -2324,7 +2739,10 @@ diff --git a/crates/horizon-protocol/src/connection.rs b/crates/horizon-protocol
 +
 +    fn decode_reassembled_configuration_inner(&self, body: Vec<u8>) -> Result<(i32, Vec<u8>)> {
 +        use crate::{State, adapter::ServerVersion, packets::configuration as cfg};
-+        if self.reassembly_failed || self.older_client.is_some() {
++        if self.reassembly_failed
++            || self.terminal.load(Ordering::Acquire)
++            || self.older_client.is_some()
++        {
 +            return Err(Error::new("invalid reconstructed configuration epoch"));
 +        }
 +        let session = self
@@ -2375,35 +2793,56 @@ diff --git a/crates/horizon-protocol/src/connection.rs b/crates/horizon-protocol
 +
      /// Block until a whole packet arrives: (id, payload).
      pub fn recv(&mut self) -> Result<(i32, Vec<u8>)> {
-+        if self.reassembly_failed {
++        self.check_read_deadline()?;
++        if self.reassembly_failed || self.terminal.load(Ordering::Acquire) {
 +            return Err(Error::new("invalid reconstructed configuration epoch"));
 +        }
          if let Some(packet) = self.adapter.as_ref().and_then(|a| a.next_incoming()) {
              return Ok(packet);
          }
-@@ -443,6 +546,9 @@
+@@ -416,6 +553,7 @@
+             return Ok(packet);
+         }
+         loop {
++            self.check_read_deadline()?;
+             match self.next()? {
+                 Next::Packet((id, payload)) if self.older_client.is_some() => {
+                     let client = self.older_client.as_ref().expect("checked");
+@@ -443,6 +581,10 @@
      /// more: for a detached reader, after [`Self::read_from`]. Only an older
      /// client's renumbering applies (a server's connection has no other).
      pub fn buffered(&mut self) -> Result<Option<(i32, Vec<u8>)>> {
-+        if self.reassembly_failed {
++        self.check_read_deadline()?;
++        if self.reassembly_failed || self.terminal.load(Ordering::Acquire) {
 +            return Err(Error::new("invalid reconstructed configuration epoch"));
 +        }
          if let Some(packet) = self
              .older_client
              .as_ref()
-@@ -468,6 +574,11 @@
+@@ -451,6 +593,7 @@
+             return Ok(Some(packet));
+         }
+         loop {
++            self.check_read_deadline()?;
+             match self.next()? {
+                 Next::Packet((id, payload)) if self.older_client.is_some() => {
+                     let client = self.older_client.as_ref().expect("checked");
+@@ -468,6 +611,14 @@
      /// buffer: the bytes read, 0 at the end of the stream, or its error
      /// (`WouldBlock` when nothing waits).
      pub fn read_from(&mut self, source: &mut impl Read) -> std::io::Result<usize> {
++        if self.check_read_deadline().is_err() {
++            return Err(std::io::ErrorKind::TimedOut.into());
++        }
 +        // A detached source is caller-owned: do not consume it or refill the
 +        // cleared buffer after a reconstructed packet poisoned this reader.
-+        if self.reassembly_failed {
++        if self.reassembly_failed || self.terminal.load(Ordering::Acquire) {
 +            return Err(detached());
 +        }
          let wanted = match self.next_header() {
              Ok(Some((prefix, len))) => prefix + len,
              _ => 0,
-@@ -514,14 +625,11 @@
+@@ -514,14 +665,11 @@
                  if body.is_empty() {
                      return Ok(None);
                  }
@@ -2421,7 +2860,90 @@ diff --git a/crates/horizon-protocol/src/connection.rs b/crates/horizon-protocol
                  body.drain(..at);
                  Ok(Some((id, body)))
              }
-@@ -697,6 +805,81 @@
+@@ -530,6 +678,16 @@
+     /// Read once from the stream into the buffer, with room for at least
+     /// `frame` bytes of unconsumed data (a whole frame, once its length is known).
+     fn fill(&mut self, frame: usize) -> Result<()> {
++        self.check_read_deadline()?;
++        if let Some(deadline) = self.read_deadline {
++            // Bound EACH blocking read by the remaining absolute lifetime. A
++            // peer sending one byte per idle timeout cannot refresh that clock.
++            let left = deadline.saturating_duration_since(Instant::now());
++            self.stream.set_read_timeout(Some(
++                left.max(Duration::from_nanos(1))
++                    .min(Duration::from_millis(500)),
++            ))?;
++        }
+         let mut stream = std::mem::replace(&mut self.stream, Stream::Detached);
+         let read = self.fill_from(&mut stream, frame);
+         self.stream = stream;
+@@ -581,7 +739,29 @@
+     }
+     /// A [`Closer`] for this connection.
+     pub fn closer(&self) -> Result<Closer> {
+-        Ok(Closer(self.stream.try_clone()?))
++        if let Some(closer) = &self.detached_closer {
++            return Ok(closer.clone());
++        }
++        Ok(Closer {
++            stream: Arc::new(self.stream.try_clone()?),
++            terminal: self.terminal.clone(),
++        })
++    }
++    /// Absolute monotonic read deadline, independent of per-read idle timeouts.
++    /// Only explicit early configuration installs it; ordinary routes keep None.
++    /// Detached pollers must still bound their own external blocking I/O.
++    pub fn set_read_deadline(&mut self, deadline: Option<Instant>) {
++        self.read_deadline = deadline;
++    }
++    fn check_read_deadline(&mut self) -> Result<()> {
++        if self
++            .read_deadline
++            .is_some_and(|deadline| Instant::now() >= deadline)
++        {
++            self.shutdown();
++            return Err(Error::new("configuration lifetime exceeded"));
++        }
++        Ok(())
+     }
+     pub fn set_read_timeout(&self, timeout: Option<Duration>) -> Result<()> {
+         Ok(self.stream.set_read_timeout(timeout)?)
+@@ -615,6 +795,9 @@
+     /// Remove this exact writer, leaving an explicitly disconnected placeholder.
+     pub fn take(&mut self) -> Self {
+         let placeholder = Self {
++            // An inert placeholder must not retain the old socket's capability.
++            terminal: Arc::new(AtomicBool::new(true)),
++            detached_closer: None,
+             memory: self.memory,
+             stream: Stream::Detached,
+             encrypt: None,
+@@ -628,7 +811,13 @@
+
+     /// An independent shutdown handle for this writer.
+     pub fn closer(&self) -> Result<Closer> {
+-        Ok(Closer(self.stream.try_clone()?))
++        if let Some(closer) = &self.detached_closer {
++            return Ok(closer.clone());
++        }
++        Ok(Closer {
++            stream: Arc::new(self.stream.try_clone()?),
++            terminal: self.terminal.clone(),
++        })
+     }
+     /// Encode frame contents for this transport. Memory packets bypass network
+     /// compression and its size limits; use this before `frame_into` when detached.
+@@ -671,6 +860,9 @@
+     /// Write bytes as they are, with no framing: the legacy server list ping
+     /// (`LegacyServerPinger`) is not a framed protocol.
+     pub fn write_raw(&mut self, data: &[u8]) -> Result<()> {
++        if self.terminal.load(Ordering::Acquire) {
++            return Err(Error::new("closed connection transport"));
++        }
+         self.stream.write_all(data)?;
+         self.stream.flush()?;
+         Ok(())
+@@ -697,8 +889,89 @@
      pub fn for_client_is_plain(&self) -> bool {
          self.older_client.is_none()
      }
@@ -2440,6 +2962,9 @@ diff --git a/crates/horizon-protocol/src/connection.rs b/crates/horizon-protocol
 +    /// Errors leave this writer/session untouched; the caller owns close/reset.
 +    pub fn prepare_serverbound_configuration(&self, body: &[u8]) -> Result<Vec<u8>> {
 +        use crate::{State, adapter::ServerVersion, packets::configuration as cfg};
++        if self.terminal.load(Ordering::Acquire) {
++            return Err(Error::new("closed outbound configuration transport"));
++        }
 +        if self.memory || self.older_client.is_some() {
 +            return Err(Error::new("unsupported outbound configuration transport"));
 +        }
@@ -2502,8 +3027,43 @@ diff --git a/crates/horizon-protocol/src/connection.rs b/crates/horizon-protocol
 +
      /// Send one packet body (VarInt id + payload).
      pub fn send(&mut self, body: &[u8]) -> Result<()> {
++        if self.terminal.load(Ordering::Acquire) {
++            return Err(Error::new("closed connection transport"));
++        }
          if self.older_client.is_some() {
-@@ -1315,3 +1498,633 @@
+             for body in self.for_client(body)? {
+                 self.send_contents(&self.contents(&body)?)?;
+@@ -718,6 +991,9 @@
+     }
+     /// Send a frame whose contents [`Self::contents`] made for this transport.
+     pub fn send_contents(&mut self, contents: &[u8]) -> Result<()> {
++        if self.terminal.load(Ordering::Acquire) {
++            return Err(Error::new("closed connection transport"));
++        }
+         let mut framed = Vec::with_capacity(contents.len() + 3);
+         self.frame_into(contents, &mut framed);
+         self.stream.write_all(&framed)?;
+@@ -786,6 +1062,10 @@
+             .fetch_add((out.len() - at) as i64, Ordering::Relaxed);
+     }
+     pub fn shutdown(&self) {
++        self.terminal.store(true, Ordering::Release);
++        if let Some(closer) = &self.detached_closer {
++            closer.close();
++        }
+         self.stream.shutdown();
+     }
+ }
+@@ -818,6 +1098,8 @@
+
+     fn writer(encrypted: bool) -> ConnWriter {
+         ConnWriter {
++            terminal: Arc::new(AtomicBool::new(false)),
++            detached_closer: None,
+             memory: false,
+             stream: Stream::Detached,
+             encrypt: encrypted.then(|| Cfb8::new(&[7; 16], &[9; 16])),
+@@ -1315,3 +1597,745 @@
          assert!(Connection::from_stream(stream).is_ok());
      }
  }
@@ -2689,6 +3249,118 @@ diff --git a/crates/horizon-protocol/src/connection.rs b/crates/horizon-protocol
 +        );
 +        assert_eq!(session.reading(), State::Configuration);
 +        assert!(session.next_incoming().is_none());
++    }
++
++    #[test]
++    fn absolute_read_deadline_refuses_prefetched_work_and_external_io() {
++        let (mut client, mut peer) = configured();
++        peer.send(&[14, 0]).unwrap();
++        client.reader.fill(0).unwrap();
++        client.reader.set_read_deadline(Some(Instant::now()));
++        assert!(
++            client
++                .reader
++                .recv()
++                .unwrap_err()
++                .to_string()
++                .contains("lifetime")
++        );
++        let mut source = std::io::Cursor::new(vec![0; 32]);
++        assert!(client.reader.read_from(&mut source).is_err());
++        assert_eq!(source.position(), 0);
++        assert!(client.reader.buffered().is_err());
++        assert!(client.writer.send(&[7, 0]).is_err());
++        assert!(peer.send(&[0]).is_err());
++    }
++
++    #[test]
++    fn detached_rejection_closes_actual_socket_and_stale_writer_tcp_matrix() {
++        for compressed in [false, true] {
++            for encrypted in [false, true] {
++                let (mut client, mut peer) = outbound_configured();
++                if compressed {
++                    client.set_compression(8);
++                    peer.set_compression(8);
++                }
++                if encrypted {
++                    client.enable_encryption(&[7; 16]);
++                    peer.enable_encryption(&[7; 16]);
++                }
++                let counters = outbound_counters(&client);
++                let (socket, mut reader, mut writer) = client.detach();
++                assert!(writer.prepare_serverbound_configuration(&[7, 0]).is_ok());
++                // Rejection must revoke the writer and shut down the externally
++                // held socket even though neither half owns its data I/O now.
++                assert!(reader.decode_reassembled_configuration(vec![]).is_err());
++                assert!(writer.prepare_serverbound_configuration(&[7, 0]).is_err());
++                assert!(writer.send(&[7, 0]).is_err());
++                assert!(writer.send_contents(&[7, 0]).is_err());
++                assert!(writer.write_raw(&[]).is_err());
++                let Socket::Tcp(mut socket) = socket else {
++                    panic!("TCP expected")
++                };
++                let error = socket.write_all(&[0]).unwrap_err();
++                assert_ne!(error.kind(), std::io::ErrorKind::TimedOut);
++                assert_eq!(socket.read(&mut [0]).unwrap(), 0);
++                assert_eq!(peer.reader.stream.read(&mut [0]).unwrap(), 0);
++                assert_eq!(
++                    reader.counters.received.load(Ordering::Relaxed),
++                    counters[0]
++                );
++                assert_eq!(reader.counters.sent.load(Ordering::Relaxed), counters[1]);
++                assert_eq!(
++                    reader.counters.bytes_in.load(Ordering::Relaxed),
++                    counters[2]
++                );
++                assert_eq!(
++                    reader.counters.bytes_out.load(Ordering::Relaxed),
++                    counters[3]
++                );
++            }
++        }
++    }
++
++    #[test]
++    fn detached_writer_and_closer_revoke_prefetched_reader_before_io() {
++        for close_by_handle in [false, true] {
++            let (mut client, mut peer) = configured();
++            peer.send(&[14, 0]).unwrap();
++            client.reader.fill(0).unwrap(); // a complete old packet already buffered
++            let (_socket, mut reader, mut writer) = client.detach();
++            let closer = writer.closer().unwrap(); // acquired AFTER detach
++            if close_by_handle {
++                closer.close();
++            } else {
++                writer.shutdown();
++            }
++            assert!(reader.buffered().is_err());
++            assert!(reader.recv().is_err());
++            assert!(reader.read_raw(0).is_err());
++            let mut source = std::io::Cursor::new(vec![0; 32]);
++            assert!(reader.read_from(&mut source).is_err());
++            assert_eq!(source.position(), 0);
++            assert!(writer.send(&[7, 0]).is_err());
++            let error = peer.send(&[0]).unwrap_err();
++            assert!(!error.is_timed_out());
++            // Idempotent old cancellation must not affect an independent epoch.
++            let (mut next, mut peer) = configured();
++            closer.close();
++            next.send(&[7, 0]).unwrap();
++            assert_eq!(peer.recv().unwrap(), (7, vec![0]));
++        }
++    }
++
++    #[test]
++    fn taken_writer_placeholder_cannot_close_the_transferred_transport() {
++        let (mut client, mut peer) = configured();
++        let mut taken = client.writer.take();
++        client.writer.shutdown();
++        client.writer.closer().unwrap().close();
++        assert!(client.writer.send(&[7, 0]).is_err());
++        taken.send(&[7, 0]).unwrap();
++        assert_eq!(peer.recv().unwrap(), (7, vec![0]));
++        taken.shutdown();
++        assert!(client.reader.recv().is_err());
 +    }
 +
 +    fn outbound_configured() -> (Connection, Connection) {

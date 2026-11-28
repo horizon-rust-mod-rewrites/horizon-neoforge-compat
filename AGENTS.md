@@ -1,3 +1,14 @@
+# Latest milestone attempt — new runtime source awaiting its own hosted validation
+
+Read NEXT_AGENT.md first. Detached cancellation, shared terminal state, bounded
+absolute configuration lifetime/cumulative traffic, and fail-closed explicit-
+profile Transfer are implemented with ten new regressions. Local isolated checks
+pass; full-engine evidence for this new source is PENDING. Do not substitute old
+run46161098482. Owner still incomplete: **30/100; CANNOT JOIN**; no points/gates,
+split/flag defaults, scope/weights, visibility or schedules changed.
+
+--- Previous checkpoints follow ---
+
 # Latest exact-SHA validation — awaited early writes PASSED
 
 See NEXT_AGENT.md first. Run 46161098482, source `d0c05270057bc69da8082a229dc265f5d4929bdf`:
