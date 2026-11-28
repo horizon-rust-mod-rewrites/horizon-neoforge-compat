@@ -6,6 +6,32 @@ Read AGENTS.md and linked handoffs, then this file. Keep every commit attributed
 
     AI-Assisted-By: QX AI assistant
 
+## Confirmed reconstructed-decoder hosted success
+
+Run https://github.com/horizon-rust-mod-rewrites/horizon-neoforge-compat/actions/runs/46083513758
+completed SUCCESS for tested SHA `89adc878a4d96b1ccb102326f3c73f3a5d39224e`.
+Downloaded artifact SHA256 verified:
+`e0e69113821562dfe0f3a210079586c69bd9af957f0b3385275fe287911db86d`.
+Retained `integration/hosted-46083513758-{full-check,full-driver,scope,core}.txt`.
+Actual full patched client plus companion typechecks and selected tests passed:
+**14 companion, 9 early configuration, 3 protocol (TCP + decoder), 81 network
+filter / 3 ignored**. Core still 153 tests EACH debug/release; strict Clippy,
+fmt/docs, 35 Python and six fixtures passed. This is selected suites, NOT entire
+upstream tests or engine UI/live join. Both finish gates remain; CANNOT JOIN.
+
+Run 46082288102 also completed SUCCESS for earlier SHA
+`70ba5a4737d2fcb669738ee49dac5dcdb330939f`: 9 companion, 9 early, 1 TCP,
+81 network / 3 ignored; validates original five boundary tests, floors/lock audit.
+Artifact SHA256 verified:
+`b35fb58b461ac0d6b3ec41cfbd659100f3e190108a79e9c7f6a701beeac38cde`.
+Retained its own full-check/full-driver/scope/core transcripts, not overwritten.
+
+Newer terminal ingress fix SHA `7d053a65902af967c053ab65c32c6d59c058d444`
+requires its OWN run 46084373021, last pending. Its three additional protocol
+tests and 6-test floor are NOT proven by the 3-test older success. Inspect actual
+jobs/logs before advancing claims. Bounded outbound fragmentation work is under
+investigation separately; no enabled split/flag or invented host inventory.
+
 ## Terminal decoder ingress hardening checkpoint
 
 Follow-up source review found that reconstructed-packet rejection poisoned recv
