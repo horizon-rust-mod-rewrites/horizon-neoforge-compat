@@ -26,6 +26,34 @@ class ReportTests(unittest.TestCase):
     def test_baseline_valid_and_thirty_percent(self):
         self.assertEqual(report.score(report.validate(self.data)), 30)
 
+    def test_non_object_metadata_root_refuses(self):
+        for value in (None, [], 'metadata'):
+            with self.subTest(value=value):
+                with self.assertRaisesRegex(ValueError, 'metadata root must be an object'):
+                    report.validate(value)
+
+    def test_non_object_validation_records_refuse(self):
+        mutations = [
+            ('last_engine_validation must be an object',
+             lambda data: data.__setitem__('last_engine_validation', None)),
+            ('section must be an object',
+             lambda data: data['sections'].__setitem__(0, None)),
+            ('task must be an object',
+             lambda data: data['sections'][0]['tasks'].__setitem__(0, None)),
+            ('evidence entry must be an object',
+             lambda data: self.task_in(data, 'pins').__setitem__('evidence', [None])),
+        ]
+        for message, mutate in mutations:
+            with self.subTest(message=message):
+                data = copy.deepcopy(self.data)
+                mutate(data)
+                with self.assertRaisesRegex(ValueError, message):
+                    report.validate(data)
+
+    @staticmethod
+    def task_in(data, tid):
+        return next(t for s in data['sections'] for t in s['tasks'] if t['id'] == tid)
+
     def test_partial_and_blocked_rows_earn_zero(self):
         tasks = report.validate(self.data)
         for status in ('blocked', 'in_progress', 'not_started'):
@@ -142,6 +170,21 @@ class ReportTests(unittest.TestCase):
                                  capture_output=True, text=True)
             self.assertEqual(run.returncode, 1)
             self.assertIn('FAIL:', run.stderr)
+            self.assertEqual(output.read_text(), 'sentinel')
+
+    def test_non_object_json_cli_fails_without_traceback_or_rewriting(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / 'progress').mkdir()
+            (root / 'progress/report.py').write_text(Path(report.__file__).read_text())
+            (root / 'progress/compatibility.json').write_text('null')
+            output = root / 'COMPATIBILITY_PROGRESS.md'
+            output.write_text('sentinel')
+            run = subprocess.run([sys.executable, str(root / 'progress/report.py')],
+                                 capture_output=True, text=True)
+            self.assertEqual(run.returncode, 1)
+            self.assertIn('FAIL: metadata root must be an object', run.stderr)
+            self.assertNotIn('Traceback', run.stderr)
             self.assertEqual(output.read_text(), 'sentinel')
 
     def test_check_mode_passes_without_writing(self):

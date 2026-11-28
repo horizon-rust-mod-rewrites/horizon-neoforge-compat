@@ -45,6 +45,7 @@ def evidence_path(value, root):
 
 
 def validate(data, root=ROOT):
+    require(isinstance(data, dict), 'metadata root must be an object')
     require(type(data.get('schema_version')) is int and data['schema_version'] == 1,
             'unsupported schema_version')
     require(type(data.get('rubric_version')) is int and data['rubric_version'] >= 1,
@@ -53,6 +54,7 @@ def validate(data, root=ROOT):
     require(nonempty(data.get('updated')), 'updated date required')
     date.fromisoformat(data['updated'])
     run = data.get('last_engine_validation', {})
+    require(isinstance(run, dict), 'last_engine_validation must be an object')
     require(bool(SHA.fullmatch(str(run.get('tested_sha', '')))), 'invalid tested SHA')
     require(bool(re.fullmatch(
         r'https://github\.com/horizon-rust-mod-rewrites/horizon-neoforge-compat/actions/runs/[0-9]+',
@@ -63,6 +65,7 @@ def validate(data, root=ROOT):
     tasks = {}
     section_ids = set()
     for section in sections:
+        require(isinstance(section, dict), 'section must be an object')
         sid = section.get('id', '')
         require(isinstance(sid, str) and bool(IDENTIFIER.fullmatch(sid)) and sid not in section_ids,
                 'duplicate or invalid section ID')
@@ -70,6 +73,7 @@ def validate(data, root=ROOT):
         require(nonempty(section.get('title')), 'section title required')
         require(isinstance(section.get('tasks'), list) and section['tasks'], 'empty section')
         for task in section['tasks']:
+            require(isinstance(task, dict), 'task must be an object')
             tid = task.get('id', '')
             require(isinstance(tid, str) and bool(IDENTIFIER.fullmatch(tid)) and tid not in tasks,
                     'duplicate or invalid task ID')
@@ -87,6 +91,7 @@ def validate(data, root=ROOT):
             require(task['status'] != 'complete' or bool(evidence),
                     f'{tid}: complete task requires retained evidence')
             for item in evidence:
+                require(isinstance(item, dict), f'{tid}: evidence entry must be an object')
                 evidence_path(item.get('path'), root)
                 require(bool(SHA.fullmatch(str(item.get('checkpoint_sha', '')))),
                         f'{tid}: invalid evidence checkpoint SHA')

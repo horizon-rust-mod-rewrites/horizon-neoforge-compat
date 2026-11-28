@@ -132,7 +132,7 @@ inside the checkout or redistribute them.
 From the checkout root, with `JAVA_HOME` pointing to your Java 21 JDK:
 
 ```sh
-SCRATCH="$(mktemp -d /workspace/temp/codec-reference.XXXXXX)"
+SCRATCH="$(mktemp -d "${TMPDIR:-/tmp}/codec-reference.XXXXXX")"
 export CARGO_TARGET_DIR="$SCRATCH/rust-target"
 python3 tests/reference/prepare.py --scratch "$SCRATCH" --java-home "$JAVA_HOME"
 cargo test --offline --locked --release --bin codec-reference
@@ -142,6 +142,10 @@ python3 tests/reference/differential.py \
   --rust-bin "$CARGO_TARGET_DIR/release/codec-reference" \
   --report "$SCRATCH/results.json"
 ```
+
+Set `TMPDIR` to an external scratch directory with at least 400 MiB available
+if the system temporary directory is too small; do not place generated jars,
+adapted sources or build outputs inside the checkout.
 
 For musl, add `--target x86_64-unknown-linux-musl` to both cargo commands, use
 your configured musl linker, and point `--rust-bin` to

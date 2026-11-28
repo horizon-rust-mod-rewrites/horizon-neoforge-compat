@@ -117,6 +117,35 @@ fn aggregate_part_budget() {
     }
     assert!(r.receive(&frame(2, &[1]), 0).is_err());
 }
+
+#[test]
+fn aggregate_part_budget_accepts_exact_maximum() {
+    let mut r = Reassembler::new();
+    let mut assembled = None;
+    for index in 0..MAX_PARTS {
+        let marker = if index == 0 {
+            1
+        } else if index == MAX_PARTS - 1 {
+            2
+        } else {
+            0
+        };
+        let byte = (index % 251) as u8;
+        let result = r.receive(&frame(marker, &[byte]), index as u64).unwrap();
+        if index == MAX_PARTS - 1 {
+            assembled = result;
+        } else {
+            assert_eq!(result, None);
+        }
+    }
+    let expected = (0..MAX_PARTS)
+        .map(|index| (index % 251) as u8)
+        .collect::<Vec<_>>();
+    assert_eq!(assembled, Some(expected));
+    assert!(!r.pending());
+    assert!(!r.failed());
+}
+
 #[test]
 fn timeout_applies_without_incoming_packet() {
     let mut r = Reassembler::new();
