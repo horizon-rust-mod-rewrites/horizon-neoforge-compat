@@ -1,3 +1,13 @@
+# Milestone attempt published — full-engine approval/evidence pending
+
+Runtime source: `a1fdf5c83a36f3035b94a12a9477c4cef19d097f`. Local checks rerun at that EXACT SHA pass;
+see docs/validation-owner-a1fdf5c-local.md. Full-engine inspection is blocked on
+approval to read GitHub workflow runs filtered by that SHA. No hosted run ID or
+success is inferred. Local engine build was safely refused by disk preflight.
+Do not award points or substitute earlier hosted evidence. **30/100, CANNOT JOIN**.
+The following implementation note describes this runtime source; the new commit
+above it is documentation/evidence only, not an additional runtime change.
+
 # Milestone attempt — detached cancellation / epoch resource policy (validation pending)
 
 Remote HEAD verified as `74b357d4d17c4715083a1892aa2eb435756748d7` before edits.

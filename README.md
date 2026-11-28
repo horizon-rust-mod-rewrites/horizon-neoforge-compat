@@ -1,3 +1,14 @@
+# Current milestone attempt — full owner not yet complete
+
+Published runtime [`a1fdf5c`](https://github.com/horizon-rust-mod-rewrites/horizon-neoforge-compat/commit/a1fdf5c83a36f3035b94a12a9477c4cef19d097f)
+adds detached cancellation, bounded absolute configuration policy and safe
+explicit-profile Transfer refusal. Local checks pass; actual full-engine hosted
+results await authorized inspection. See NEXT_AGENT.md and
+`docs/validation-owner-a1fdf5c-local.md` for exact evidence and blockers.
+**30/100, zero newly completed criteria; CANNOT JOIN.** Both finish refusals and
+default split/flag opt-outs remain. Earlier successful runs validate their own
+recorded source, not this new runtime patch.
+
 ## Latest validated continuation: awaited early writes
 
 [Full hosted run 46161098482](https://github.com/horizon-rust-mod-rewrites/horizon-neoforge-compat/actions/runs/46161098482) passed at source `d0c05270057bc69da8082a229dc265f5d4929bdf`:
