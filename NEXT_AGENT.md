@@ -6,6 +6,33 @@ Read AGENTS.md and linked handoffs, then this file. Keep every commit attributed
 
     AI-Assisted-By: QX AI assistant
 
+## Bounded outbound fragmentation checkpoint
+
+Added concrete OutboundSplitter in src/split.rs and 13 outbound tests in
+tests/split.rs (31 authored split tests total). Encodes actual VarInt-array
+bodies with first=1/middle=0/last=2 from complete original wire packets; unsplit
+originals remain borrowed unchanged. Configuration-only, explicit direction and
+host-supplied threshold; conservative directional fragment-body ceilings,
+aggregate/part bounds and packet-ID validation precede fallible allocations.
+No single-part/combined marker invented, no output batch leaks on error. No
+channel authority or socket writer/queue is supplied; host must reject recursive,
+phase-changing and unsupported originals. Default split/flags remain disabled,
+both finish refusals unchanged, STILL CANNOT JOIN. See docs/SPLIT.md.
+
+13 new Rust tests include literal golden bodies, VarInt boundaries, 59,200 small
+boundary cases, directional ceilings and aggregate/parts limits. These tests have
+NOT compiled/executed locally; rustfmt/Clippy remain pending hosted execution.
+Locally executed: 35 Python tests, six fixtures, whitespace/checksum checks;
+three exact NeoForge split source-member hashes rechecked by narrow retrieval.
+No full upstream/compiler/dependency downloads attempted on 1GiB disk.
+
+Last observed terminal-ingress run 46084373021 for SHA
+7d053a65902af967c053ab65c32c6d59c058d444 remains IN PROGRESS; evidence-only
+46085511434 is PENDING. No new full validation claim. This outbound change must
+have its OWN SHA run; inspect actual logs, retain evidence and fix genuine
+failures first. Prior hosted 14-companion/3-protocol success does not prove the
+newer 6-protocol suite or outbound tests. Same draft PR, attributed commits only.
+
 ## Confirmed reconstructed-decoder hosted success
 
 Run https://github.com/horizon-rust-mod-rewrites/horizon-neoforge-compat/actions/runs/46083513758

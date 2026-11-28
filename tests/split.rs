@@ -164,3 +164,304 @@ fn decode_error_clears_pending_assembly() {
     assert!(!r.pending());
     assert!(r.failed());
 }
+
+use horizon_neoforge_compat::modded::{ConnectionProtocol, Flow};
+use horizon_neoforge_compat::Error;
+
+fn outbound(flow: Flow, threshold: usize) -> OutboundSplitter {
+    OutboundSplitter::new(flow, ConnectionProtocol::Configuration, threshold).unwrap()
+}
+fn split_bodies(result: OutboundPacket<'_>) -> Vec<Vec<u8>> {
+    match result {
+        OutboundPacket::Split(bodies) => bodies,
+        OutboundPacket::Unsplit(_) => panic!("expected actual split payload bodies"),
+    }
+}
+fn roundtrip_bodies(bodies: &[Vec<u8>], original: &[u8]) {
+    assert!((2..=256).contains(&bodies.len()));
+    let mut receiver = Reassembler::new();
+    for (i, body) in bodies.iter().enumerate() {
+        let output = receiver.receive(body, i as u64).unwrap();
+        if i + 1 == bodies.len() {
+            assert_eq!(output.as_deref(), Some(original));
+        } else {
+            assert_eq!(output, None);
+        }
+    }
+    assert!(!receiver.pending());
+    assert!(!receiver.failed());
+}
+
+#[test]
+fn outbound_literal_golden_both_directions() {
+    // Independent specification bytes, NOT encoded with frame() or Part::decode.
+    // Full wire ID 128 is 80 01; threshold 30 reserves 26, content width 4.
+    let original = [
+        0x80, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e,
+        0x0f, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d,
+        0x1e,
+    ];
+    let expected: &[&[u8]] = &[
+        &[5, 1, 0x80, 0x01, 0x02, 0x03],
+        &[5, 0, 0x04, 0x05, 0x06, 0x07],
+        &[5, 0, 0x08, 0x09, 0x0a, 0x0b],
+        &[5, 0, 0x0c, 0x0d, 0x0e, 0x0f],
+        &[5, 0, 0x10, 0x11, 0x12, 0x13],
+        &[5, 0, 0x14, 0x15, 0x16, 0x17],
+        &[5, 0, 0x18, 0x19, 0x1a, 0x1b],
+        &[4, 2, 0x1c, 0x1d, 0x1e],
+    ];
+    for flow in [Flow::Clientbound, Flow::Serverbound] {
+        let bodies = split_bodies(outbound(flow, 30).encode(&original).unwrap());
+        assert_eq!(bodies.len(), expected.len());
+        for (body, literal) in bodies.iter().zip(expected) {
+            assert_eq!(body.as_slice(), *literal);
+        }
+        roundtrip_bodies(&bodies, &original);
+    }
+}
+
+#[test]
+fn outbound_unsplit_borrows_exact_original_including_nonminimal_id() {
+    for flow in [Flow::Clientbound, Flow::Serverbound] {
+        let encoder = outbound(flow, 30);
+        for length in 1..=30 {
+            let mut original = vec![0x55; length];
+            if length >= 2 {
+                original[..2].copy_from_slice(&[0x80, 0]);
+            }
+            match encoder.encode(&original).unwrap() {
+                OutboundPacket::Unsplit(bytes) => {
+                    assert_eq!(bytes, original);
+                    assert_eq!(bytes.as_ptr(), original.as_ptr());
+                }
+                OutboundPacket::Split(_) => panic!("must not force small originals into fragments"),
+            }
+        }
+    }
+}
+
+#[test]
+fn outbound_rejects_empty_truncated_negative_and_overflow_ids_even_unsplit() {
+    let encoder = outbound(Flow::Serverbound, 30);
+    for original in [
+        vec![],
+        vec![0x80],
+        vec![0x80, 0x80],
+        vec![0x80, 0x80, 0x80],
+        vec![0x80, 0x80, 0x80, 0x80],
+        vec![0xff, 0xff, 0xff, 0xff, 0x0f], // negative packet ID
+        vec![0x80, 0x80, 0x80, 0x80, 0x08], // sign bit
+        vec![0x80, 0x80, 0x80, 0x80, 0x10], // overflow
+        vec![0x80, 0x80, 0x80, 0x80, 0x80, 0],
+    ] {
+        assert!(encoder.encode(&original).is_err(), "{original:?}");
+    }
+    // Structural validation is not an assertion that the host implements this ID.
+    let largest = [0xff, 0xff, 0xff, 0xff, 7];
+    assert_eq!(
+        encoder.encode(&largest).unwrap(),
+        OutboundPacket::Unsplit(&largest)
+    );
+}
+
+#[test]
+fn outbound_configuration_only_and_invalid_thresholds_refuse() {
+    for flow in [Flow::Clientbound, Flow::Serverbound] {
+        for protocol in [
+            ConnectionProtocol::Handshaking,
+            ConnectionProtocol::Play,
+            ConnectionProtocol::Status,
+            ConnectionProtocol::Login,
+        ] {
+            assert!(OutboundSplitter::new(flow, protocol, 30).is_err());
+        }
+        for limit in (0..=26).chain([MAX_PACKET_BYTES + 1, usize::MAX]) {
+            assert!(OutboundSplitter::new(flow, ConnectionProtocol::Configuration, limit).is_err());
+        }
+        assert!(OutboundSplitter::new(flow, ConnectionProtocol::Configuration, 27).is_ok());
+        assert!(
+            OutboundSplitter::new(flow, ConnectionProtocol::Configuration, MAX_PACKET_BYTES).is_ok()
+        );
+    }
+}
+
+#[test]
+fn outbound_literal_id_spans_fragments_and_last_has_one_byte() {
+    let mut original: Vec<u8> = (0..28).collect();
+    original[..2].copy_from_slice(&[0x80, 1]);
+    let bodies = split_bodies(outbound(Flow::Serverbound, 27).encode(&original).unwrap());
+    assert_eq!(bodies.len(), 28);
+    assert_eq!(bodies[0], [2, 1, 0x80]);
+    assert_eq!(bodies[1], [2, 0, 1]);
+    assert_eq!(bodies[27], [2, 2, 27]);
+    roundtrip_bodies(&bodies, &original);
+}
+
+#[test]
+fn outbound_exhaustive_small_thresholds_lengths_and_remainders() {
+    // Every remainder, exact threshold, threshold+1, exact divisions and one-byte
+    // tails for all widths 1..=74. Assertions do not rely on our inbound decoder.
+    for flow in [Flow::Clientbound, Flow::Serverbound] {
+        for threshold in 27..=100 {
+            let encoder = outbound(flow, threshold);
+            for length in 1..=400 {
+                let original: Vec<u8> = (0..length).map(|i| (i % 127) as u8).collect();
+                let result = encoder.encode(&original);
+                if length <= threshold {
+                    assert_eq!(result.unwrap(), OutboundPacket::Unsplit(&original));
+                    continue;
+                }
+                let width = threshold - 26;
+                let count = (length - 1) / width + 1;
+                if count > 256 {
+                    assert_eq!(result.unwrap_err(), Error::Limit("split parts"));
+                    continue;
+                }
+                let bodies = split_bodies(result.unwrap());
+                assert_eq!(bodies.len(), count);
+                for (i, body) in bodies.iter().enumerate() {
+                    let start = i * width;
+                    let end = ((i + 1) * width).min(length);
+                    let marker = if i == 0 {
+                        1
+                    } else if i + 1 == count {
+                        2
+                    } else {
+                        0
+                    };
+                    let mut expected = vec![(end - start + 1) as u8, marker];
+                    expected.extend_from_slice(&original[start..end]);
+                    assert_eq!(body, &expected);
+                    assert!(body.len() + 20 <= threshold); // max outer ID + channel
+                }
+                roundtrip_bodies(&bodies, &original);
+            }
+        }
+    }
+}
+
+#[test]
+fn outbound_literal_array_length_varint_boundaries() {
+    // Array lengths 127, 128, 16383, 16384; marker is inside, not before, array.
+    let cases: &[(usize, &[u8])] = &[
+        (126, &[0x7f, 1]),
+        (127, &[0x80, 0x01, 1]),
+        (16_382, &[0xff, 0x7f, 1]),
+        (16_383, &[0x80, 0x80, 0x01, 1]),
+    ];
+    for &(width, prefix) in cases {
+        let original = vec![0x55; width + 27];
+        let bodies = split_bodies(
+            outbound(Flow::Clientbound, width + 26)
+                .encode(&original)
+                .unwrap(),
+        );
+        let mut first = prefix.to_vec();
+        first.extend_from_slice(&original[..width]);
+        let mut last = vec![0x1c, 2]; // independent literal: 27 content + marker
+        last.extend_from_slice(&[0x55; 27]);
+        assert_eq!(bodies, [first, last]);
+        roundtrip_bodies(&bodies, &original);
+    }
+}
+
+#[test]
+fn outbound_directional_caps_include_varint_and_marker() {
+    let original = vec![0x55; 2 * 1_048_576 + 1];
+    for (flow, cap, content, prefix) in [
+        (Flow::Serverbound, 32_767, 32_763, [0xfc, 0xff, 0x01, 1]),
+        (Flow::Clientbound, 1_048_576, 1_048_572, [0xfd, 0xff, 0x3f, 1]),
+    ] {
+        let bodies = split_bodies(outbound(flow, 2 * 1_048_576).encode(&original).unwrap());
+        assert_eq!(bodies[0].len(), cap);
+        assert_eq!(&bodies[0][..4], &prefix);
+        assert_eq!(&bodies[0][4..], &original[..content]);
+        assert!(bodies.iter().all(|body| body.len() <= cap));
+        assert!(bodies.iter().all(|body| body.len() + 20 <= 2 * 1_048_576));
+        roundtrip_bodies(&bodies, &original);
+    }
+}
+
+#[test]
+fn outbound_exact_part_limit_and_next_part_rejected_without_batch() {
+    let encoder = outbound(Flow::Clientbound, 27);
+    let allowed = vec![0x55; 256];
+    let bodies = split_bodies(encoder.encode(&allowed).unwrap());
+    assert_eq!(bodies.len(), 256);
+    assert_eq!(bodies[0], [2, 1, 0x55]);
+    assert_eq!(bodies[255], [2, 2, 0x55]);
+    roundtrip_bodies(&bodies, &allowed);
+    assert_eq!(
+        encoder.encode(&[0x55; 257]).unwrap_err(),
+        Error::Limit("split parts")
+    );
+    assert_eq!(split_bodies(encoder.encode(&allowed).unwrap()), bodies);
+}
+
+#[test]
+fn outbound_serverbound_maximum_parts_is_stricter_than_aggregate() {
+    let encoder = outbound(Flow::Serverbound, 1_048_576);
+    let allowed = vec![0x55; 32_763 * 256];
+    let bodies = split_bodies(encoder.encode(&allowed).unwrap());
+    assert_eq!(bodies.len(), 256);
+    assert!(bodies.iter().all(|body| body.len() == 32_767));
+    roundtrip_bodies(&bodies, &allowed);
+    let one_more = vec![0x55; 32_763 * 256 + 1];
+    assert_eq!(
+        encoder.encode(&one_more).unwrap_err(),
+        Error::Limit("split parts")
+    );
+    let aggregate = vec![0x55; MAX_PACKET_BYTES];
+    assert_eq!(
+        encoder.encode(&aggregate).unwrap_err(),
+        Error::Limit("split parts")
+    );
+}
+
+#[test]
+fn outbound_clientbound_exact_aggregate_and_next_byte() {
+    let encoder = outbound(Flow::Clientbound, 2 * 1_048_576);
+    let original = vec![0x55; MAX_PACKET_BYTES];
+    let bodies = split_bodies(encoder.encode(&original).unwrap());
+    assert_eq!(bodies.len(), 9);
+    assert_eq!(bodies[8].len(), 34);
+    assert_eq!(&bodies[8][..2], &[33, 2]); // 32-byte final content
+    assert_eq!(&bodies[8][2..], &[0x55; 32]);
+    assert!(bodies.iter().map(Vec::len).sum::<usize>() <= MAX_PACKET_BYTES + 256 * 6);
+    roundtrip_bodies(&bodies, &original);
+    let too_large = vec![0x55; MAX_PACKET_BYTES + 1];
+    assert_eq!(
+        encoder.encode(&too_large).unwrap_err(),
+        Error::Limit("split packet")
+    );
+}
+
+#[test]
+fn outbound_unsplit_policy_is_not_overridden_by_directional_fragment_caps() {
+    let original = vec![0x55; MAX_PACKET_BYTES];
+    for flow in [Flow::Clientbound, Flow::Serverbound] {
+        // This is NOT permission to put 8 MiB in an ordinary custom payload:
+        // the host must validate the original's actual packet type and codec.
+        let encoder = outbound(flow, MAX_PACKET_BYTES);
+        match encoder.encode(&original).unwrap() {
+            OutboundPacket::Unsplit(bytes) => assert_eq!(bytes.as_ptr(), original.as_ptr()),
+            OutboundPacket::Split(_) => panic!("threshold equality must preserve the original"),
+        }
+    }
+}
+
+#[test]
+fn outbound_keeps_full_five_byte_id_and_payload_bytes_without_padding() {
+    let mut original = vec![0xff, 0xff, 0xff, 0xff, 7];
+    original.extend_from_slice(&[0; 26]);
+    let bodies = split_bodies(outbound(Flow::Clientbound, 30).encode(&original).unwrap());
+    assert_eq!(bodies[0], [5, 1, 0xff, 0xff, 0xff, 0xff]);
+    assert_eq!(bodies[1], [5, 0, 7, 0, 0, 0]);
+    assert_eq!(bodies[7], [4, 2, 0, 0, 0]);
+    assert_eq!(
+        bodies.iter().map(|b| b.len() - 2).sum::<usize>(),
+        original.len()
+    );
+    roundtrip_bodies(&bodies, &original);
+}
