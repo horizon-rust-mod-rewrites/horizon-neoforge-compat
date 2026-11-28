@@ -154,6 +154,14 @@ impl Reassembler {
         {
             return Err(Error::Limit("split packet"));
         }
+        // Reserve through the fallible path before extending: a bounded peer
+        // packet must not turn allocation pressure into an infallible growth
+        // attempt. Exact additional space also avoids geometric over-reservation
+        // near the aggregate cap. Any reservation error poisons this epoch in
+        // receive(), dropping all privately accumulated bytes.
+        self.buffer
+            .try_reserve_exact(part.content.len())
+            .map_err(|_| Error::Limit("split allocation"))?;
         self.buffer.extend_from_slice(part.content);
         if part.marker == Marker::Last {
             self.parts = 0;

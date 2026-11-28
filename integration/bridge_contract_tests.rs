@@ -322,3 +322,137 @@ mod actual_engine_transport {
         }
     }
 }
+
+// Real TCP/framing tests for the prepared outbound wire boundary. They deliberately
+// bypass Loader split routing: that production route is still unavailable.
+#[allow(unexpected_cfgs)]
+mod actual_engine_outbound_transport {
+    #[cfg(not(compat_isolated))]
+    mod tests {
+        use horizon_neoforge_compat::{
+            modded::{ConnectionProtocol, Flow},
+            split::{OutboundPacket, OutboundSplitter, Reassembler},
+        };
+        use horizon_protocol::{
+            PROTOCOL_VERSION,
+            connection::Connection,
+            packets::{Empty, configuration as cfg, handshake, login},
+        };
+        use std::{net::{TcpListener, TcpStream}, time::Duration};
+
+        fn configured_tcp() -> (Connection, Connection) {
+            let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+            let stream = TcpStream::connect(listener.local_addr().unwrap()).unwrap();
+            let (peer, _) = listener.accept().unwrap();
+            let mut client = Connection::from_stream(stream).unwrap();
+            let mut server = Connection::from_stream(peer).unwrap();
+            client.reader.set_read_timeout(Some(Duration::from_secs(3))).unwrap();
+            server.reader.set_read_timeout(Some(Duration::from_secs(3))).unwrap();
+            client.adapt(horizon_protocol::adapter::ServerVersion::V1_21_1);
+            client.send(&handshake::Serverbound::Intention(handshake::Intention {
+                protocol: PROTOCOL_VERSION,
+                host: "localhost".into(),
+                port: 25565,
+                intent: handshake::LOGIN,
+            }).encode()).unwrap();
+            server.recv().unwrap();
+            server.send(&[2]).unwrap();
+            client.recv().unwrap();
+            client.send(&login::Serverbound::LoginAcknowledged(Empty).encode()).unwrap();
+            server.recv().unwrap();
+            (client, server)
+        }
+
+        #[test]
+        fn outbound_actual_preparation_split_tcp_compression_encryption_and_reassembly() {
+            for compressed in [false, true] {
+                for encrypted in [false, true] {
+                    let (mut client, mut server) = configured_tcp();
+                    if compressed {
+                        client.set_compression(64);
+                        server.set_compression(64);
+                    }
+                    if encrypted {
+                        client.enable_encryption(&[19; 16]);
+                        server.enable_encryption(&[19; 16]);
+                    }
+                    let packet = cfg::Serverbound::CustomPayload(cfg::CustomPayload {
+                        channel: "fixture:opaque".into(),
+                        data: (0..2_000).map(|i| (i % 251) as u8).collect(),
+                    });
+                    let pinned = packet.try_encode().unwrap();
+                    let wire = client.writer.prepare_serverbound_configuration(&pinned).unwrap();
+                    assert_eq!(wire, pinned); // actual protocol-767 custom payload id is 2
+                    let splitter = OutboundSplitter::new(
+                        Flow::Serverbound, ConnectionProtocol::Configuration, 128).unwrap();
+                    let OutboundPacket::Split(bodies) = splitter.encode(&wire).unwrap() else {
+                        panic!("fixture must exercise actual fragmentation");
+                    };
+                    let count = bodies.len();
+                    assert!(count > 2);
+                    for body in bodies {
+                        // The registered split envelope uses the actual directional codec.
+                        // At the exact pin custom_payload is wire id 2, unchanged from pinned.
+                        // Frame prepared wire bytes DIRECTLY, never through send()/Session again.
+                        let envelope = cfg::Serverbound::CustomPayload(cfg::CustomPayload {
+                            channel: "neoforge:split".into(), data: body,
+                        }).try_encode().unwrap();
+                        assert_eq!(envelope[0], 2);
+                        let contents = client.writer.contents(&envelope).unwrap();
+                        client.writer.send_contents(&contents).unwrap();
+                    }
+                    let mut receiver = Reassembler::new();
+                    let mut original = None;
+                    for index in 0..count {
+                        let (id, body) = server.recv().unwrap();
+                        let cfg::Serverbound::CustomPayload(payload) =
+                            cfg::Serverbound::decode(id, &body).unwrap() else {
+                                panic!("expected the actual split envelope");
+                            };
+                        assert_eq!(payload.channel, "neoforge:split");
+                        let result = receiver.receive(&payload.data, index as u64).unwrap();
+                        if index + 1 == count { original = result; }
+                        else { assert!(result.is_none()); }
+                    }
+                    let original = original.unwrap();
+                    assert_eq!(original, wire);
+                    assert_eq!(cfg::Serverbound::decode(2, &original[1..]).unwrap(), packet);
+                    // A subsequent ordinary original still crosses the adapter exactly once.
+                    let keepalive = cfg::Serverbound::KeepAlive(cfg::KeepAlive { id: 41 });
+                    client.send(&keepalive.try_encode().unwrap()).unwrap();
+                    let (id, body) = server.recv().unwrap();
+                    assert_eq!(cfg::Serverbound::decode(id, &body).unwrap(), keepalive);
+                }
+            }
+        }
+
+        #[test]
+        fn outbound_actual_loader_reply_unsplit_tcp_and_finish_still_refuses() {
+            let (mut client, mut server) = configured_tcp();
+            let profile = super::super::profile();
+            let mut endpoint = profile.begin().unwrap();
+            let replies = endpoint.receive("neoforge:register", &[0]).unwrap();
+            assert_eq!(replies.len(), 1);
+            assert_eq!(replies[0].body, [0]); // no invented split or flag authority
+            let splitter = OutboundSplitter::new(
+                Flow::Serverbound, ConnectionProtocol::Configuration, 128).unwrap();
+            for reply in replies {
+                let packet = cfg::Serverbound::CustomPayload(cfg::CustomPayload {
+                    channel: reply.channel, data: reply.body,
+                });
+                let pinned = packet.try_encode().unwrap();
+                let wire = client.writer.prepare_serverbound_configuration(&pinned).unwrap();
+                let OutboundPacket::Unsplit(original) = splitter.encode(&wire).unwrap() else {
+                    panic!("small actual loader reply must not acquire a split marker");
+                };
+                assert_eq!(original.as_ptr(), wire.as_ptr());
+                let contents = client.writer.contents(original).unwrap();
+                client.writer.send_contents(&contents).unwrap();
+                let (id, body) = server.recv().unwrap();
+                assert_eq!(cfg::Serverbound::decode(id, &body).unwrap(), packet);
+            }
+            assert!(endpoint.finish().is_err());
+            assert!(endpoint.receive("neoforge:network", &[0]).is_err());
+        }
+    }
+}

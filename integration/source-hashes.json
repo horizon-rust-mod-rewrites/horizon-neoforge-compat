@@ -11,5 +11,7 @@
   "crates/horizon-protocol/src/packets/configuration.rs": "c5679fb31b59c9d5919b184f5ee02591d6d2e0fc54ed481b9a743a8a2f06f3f9",
   "crates/horizon-protocol/src/packets/handshake.rs": "fe7154119d0fbdafa9c7a3dab98c6b92c1e627d7113980100597fc1f86bf4f1f",
   "crates/horizon-client/src/net/known_packs.rs": "a94d898f50438751d1807215e683398e7cbe16f3095320f0952792a5e6d83c0b",
-  "crates/horizon-client/src/net/queued_writer.rs": "d0cad2382a80d0fb1600b937facc45b813d80089dba83634f2e37ea4b778410e"
+  "crates/horizon-client/src/net/queued_writer.rs": "d0cad2382a80d0fb1600b937facc45b813d80089dba83634f2e37ea4b778410e",
+  "crates/horizon-protocol/src/buf.rs": "a96f3e0b59b0d7e1a468fd0f7e8be0d37d842e35767336cb58527d71212c2179",
+  "crates/horizon-protocol/src/packets/mod.rs": "8e2aeb0e7602b432267dbc2f126f82241692f0845c783919774769d89ccd39dc"
 }

@@ -7,6 +7,23 @@ digests: `provenance/split.json`. Neither primitive enables a channel, supplies
 negotiation authority, acknowledges tasks, or permits configuration completion.
 **Both finish refusals remain. The client still cannot join.**
 
+## Outbound preparation and inbound resource follow-up
+
+The actual Horizon patch now supplies a narrow, effect-free configuration writer
+preparation method. Two authored full-engine tests connect it to this splitter
+and real TCP/framing/compression/encryption paths. No production split caller is
+enabled. See [the outbound seam contract](horizon-split-outbound-seam.md).
+
+Inbound growth now reserves fallibly before extending, avoiding an infallible
+allocation attempt under memory pressure and geometric over-reservation near the
+aggregate cap. Reservation failure follows the existing terminal cleanup path.
+Five additional core regressions cover irregular exact-8-MiB completion/ownership,
+per-assembly deadlines without resetting the epoch clock, invalid LARGE IDs,
+fragmented nonminimal IDs, and adjacent directional-cap saturation thresholds.
+There are now **36 authored split tests / 171 expected total core tests**, not
+new observed passes. Allocation-failure injection itself remains untested.
+New follow-up Rust execution, fmt and Clippy remain pending hosted CI.
+
 ## Exact wire evidence
 
 Source artifact hash is pinned in that manifest and the existing NeoForge manifest.

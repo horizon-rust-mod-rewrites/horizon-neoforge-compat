@@ -1,3 +1,62 @@
+# Newest substantive checkpoint: actual outbound preparation and real TCP test wiring
+
+Continue SAME open draft PR #1 / feat/neoforge-21.1.248-early-handshake. Verify
+actual remote HEAD before editing and publishing; preserve newer work. Every
+commit footer: AI-Assisted-By: QX AI assistant. Never merge/force push/change
+visibility. No new schedules/cadence changes without consent. Exact baseline and
+Horizon pin remain unchanged. Both finish refusals remain. STILL CANNOT JOIN.
+
+The six-file patch now adds actual ConnWriter preparation for allowlisted
+protocol-767 configuration originals. Uses existing shared exact-version mapping
+and actual directional codec; excludes finish/content/recursive/reserved packets;
+checks real adapter/both phases/network direction. Pure preparation, no socket,
+cipher/counters/Session changes or queue draining. Default split/flags stay
+DISABLED. No invented feature inventory, no production route. See
+ docs/horizon-split-outbound-seam.md for exact once-only ownership requirements.
+
+Eight new dependency-local tests + two full-engine companion tests are authored.
+The latter connect real preparation -> core outbound splitter -> TCP envelope
+writes -> actual codec -> reassembly, with compression/encryption matrix, plus
+an actual Loader unsplit reply and unchanged finish refusal. Minimum full-driver
+floors now 16 companion / 14 protocol / 9 early / 81 network-filter. These are
+requirements, NOT executed new results. Inbound reassembly growth now reserves
+fallibly and poisons/releases on reservation error; five new edge regressions.
+36 authored split tests; 171 expected core tests. Allocation-failure injection
+itself is not tested. No new Rust has compiled/executed locally.
+
+Executed locally: 35 Python tests, six fixtures, narrow exact-source hash checks,
+six-file patch clean apply/edited-byte comparison/duplicate refusal/reverse/
+original restoration/reproducible regeneration, whitespace and checksum checks.
+Two additional audited source hashes recorded (29 full verification hashes now).
+No full source/toolchain/dependency downloads on the 1GiB local disk.
+
+First priority: inspect THIS commit's actual hosted run/jobs/logs. Fix genuine
+failures and retain text. Fast prerequisite now checks core rustfmt BEFORE the
+expensive full job, following an actual earlier fmt failure. Hosted transcript/
+integration Markdown-only changes no longer trigger a whole engine rebuild;
+source, tests, patches, drivers and the workflow still do. No schedule changed.
+
+Confirmed prior exact results: 46084373021 SUCCESS at SHA
+7d053a65902af967c053ab65c32c6d59c058d444, 14 companion / 9 early / 6 protocol /
+81 network-filter passed, 3 ignored; core153 each debug/release, Clippy/fmt/docs.
+Retained own-SHA transcripts/digest in earlier checkpoint below. Original outbound
+77e9cb5 run46085995030 FAILED on two formatting differences only. Isolated
+format fix35649b888233a0a4713d9b6ffb434ddc3b6e2d8c has run46087222005:
+preflight/core/provenance succeeded, full engine currently IN PROGRESS; inspect
+actual retained logs for counts, do not infer full success. It may be cancelled
+as redundant after this substantive SHA is queued, preserving its core evidence.
+
+Next after current CI: genuine ordered connection ownership and negotiated split
+pair authority, timer on idle input, atomic bounded batch queue admission and
+awaited real handling/writes with close/reset. Existing QueuedWriter already has
+16MiB ordinary budget; do NOT claim split-batch atomicity/await from it. Remaining
+required tasks, genuine host-owned capability/profile lifetime, atomic BOTH-WAY
+SEMANTIC registry/content application remain incomplete. No numeric-only claims,
+fake acks, placeholders, production-first tests or individual mod rewrites. Only
+after prerequisites: isolated exact NeoForge21.1.248, then minimal fixture mod.
+
+--- Earlier checkpoints (historical where contradicted) ---
+
 # Newest checkpoint: real CI failure fixed, exact terminal-ingress success retained
 
 Continue the SAME open draft PR #1 and branch; verify remote HEAD before editing

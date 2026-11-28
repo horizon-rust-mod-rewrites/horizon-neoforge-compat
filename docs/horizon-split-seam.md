@@ -1,3 +1,20 @@
+# Latest reader validation and complementary outbound work
+
+Run 46084373021 completed SUCCESS at exact compatibility SHA
+7d053a65902af967c053ab65c32c6d59c058d444: 14 actual companion, 9 early
+configuration, 6 protocol framing, 81 network-filter passed / 3 ignored; core
+153 EACH debug/release, strict Clippy/fmt/docs. Own-SHA transcripts are retained
+in integration/hosted-46084373021-*.txt. This validates the terminal reader fix
+below, not newer outbound changes. Selected suites only; no live join.
+
+The patch now also contains the separately documented outbound preparation
+method and authored tests: see horizon-split-outbound-seam.md and NEXT_AGENT.md
+for execution status. Default split/flags remain disabled, both finish gates
+remain, and the client STILL CANNOT JOIN. Historical unexecuted statements below
+refer to when those individual checkpoints were authored.
+
+---
+
 # Concrete split decoder integration milestone
 
 Baseline remains MC 1.21.1 / protocol 767 / NeoForge 21.1.248 and Horizon

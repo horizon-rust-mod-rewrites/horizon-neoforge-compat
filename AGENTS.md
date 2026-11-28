@@ -1,3 +1,16 @@
+# Current continuation checkpoint — NEXT_AGENT.md is authoritative
+
+Concrete actual-dependency outbound preparation and actual TCP regression wiring
+have been added; new Rust execution is PENDING hosted CI. Current authored floors:
+16 actual companion / 14 protocol / 9 early / 81 network-filter; expected core171.
+These are not executed results. See docs/horizon-split-outbound-seam.md. Default
+split/flags stay disabled, both finish gates remain, client STILL CANNOT JOIN.
+Run46084373021's older exact SHA passed 14/6/9/81 and core153; it does NOT validate
+the newer outbound work. Original outbound run46085995030 failed formatting;
+fix35649b8 has its own run. Read newest NEXT_AGENT status before using old counts.
+
+--- Historical checkpoints below ---
+
 # Latest continuation truth — read NEXT_AGENT.md first
 
 Run 46084373021 PASSED at exact SHA 7d053a65902af967c053ab65c32c6d59c058d444:

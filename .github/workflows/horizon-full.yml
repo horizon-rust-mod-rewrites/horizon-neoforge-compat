@@ -6,6 +6,10 @@ on:
     paths:
       - '.github/workflows/horizon-full.yml'
       - 'integration/**'
+      # Retained transcripts/docs do not change compiled code or the driver.
+      # Avoid rebuilding the full engine merely to publish exact-SHA evidence.
+      - '!integration/hosted-*.txt'
+      - '!integration/*.md'
       - 'src/**'
       - 'tests/**'
       - 'Cargo.toml'
@@ -23,7 +27,7 @@ concurrency:
 
 jobs:
   companion-preflight:
-    # Catch actual companion contract failures before downloading/building Horizon.
+    # Catch core formatting and actual companion failures before the full job.
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     env:
@@ -38,12 +42,13 @@ jobs:
           persist-credentials: false
       - name: Install exact minimal compiler
         run: |
-          rustup toolchain install 1.97.0 --profile minimal
+          rustup toolchain install 1.97.0 --profile minimal --component rustfmt
           rustup default 1.97.0
-      - name: Validate driver and actual isolated companion contracts
+      - name: Validate formatting, driver and actual isolated companion contracts
         shell: bash
         run: |
           set -euo pipefail
+          cargo fmt --check
           python3 -m unittest discover -s integration -p 'test_*.py' -v
           python3 fixtures/generate.py --check
           python3 integration/check_bridge.py --target x86_64-unknown-linux-gnu

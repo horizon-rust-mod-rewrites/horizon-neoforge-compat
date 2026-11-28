@@ -471,3 +471,112 @@ fn outbound_keeps_full_five_byte_id_and_payload_bytes_without_padding() {
     );
     roundtrip_bodies(&bodies, &original);
 }
+
+#[test]
+fn inbound_irregular_growth_reaches_exact_aggregate_without_padding_or_leaks() {
+    let mut receiver = Reassembler::new();
+    let first = vec![0x11; MAX_PART_BYTES - 17];
+    assert_eq!(receiver.receive(&frame(1, &first), 0).unwrap(), None);
+    for byte in 2..=8 {
+        assert_eq!(
+            receiver
+                .receive(&frame(0, &vec![byte; MAX_PART_BYTES]), u64::from(byte))
+                .unwrap(),
+            None
+        );
+    }
+    let packet = receiver.receive(&frame(2, &[0x99; 17]), 9).unwrap().unwrap();
+    assert_eq!(packet.len(), MAX_PACKET_BYTES);
+    assert_eq!(&packet[..first.len()], first.as_slice());
+    for byte in 2..=8 {
+        let start = first.len() + usize::from(byte - 2) * MAX_PART_BYTES;
+        assert!(packet[start..start + MAX_PART_BYTES]
+            .iter()
+            .all(|value| *value == byte));
+    }
+    assert_eq!(&packet[MAX_PACKET_BYTES - 17..], &[0x99; 17]);
+    assert!(!receiver.pending());
+    assert!(!receiver.failed());
+    receiver.receive(&frame(1, &[7]), 10).unwrap();
+    assert_eq!(receiver.receive(&frame(2, &[8]), 11).unwrap(), Some(vec![7, 8]));
+    // Ownership of the first result is independent of subsequent assemblies.
+    assert_eq!(packet.len(), MAX_PACKET_BYTES);
+    assert_eq!(packet[0], 0x11);
+}
+
+#[test]
+fn inbound_new_assembly_gets_own_deadline_but_never_resets_epoch_clock() {
+    let mut receiver = Reassembler::new();
+    receiver.receive(&frame(1, &[1]), 0).unwrap();
+    receiver.receive(&frame(2, &[2]), MAX_ASSEMBLY_MILLIS - 1).unwrap();
+    let second_start = 2 * MAX_ASSEMBLY_MILLIS;
+    receiver.check_deadline(second_start).unwrap();
+    receiver.receive(&frame(1, &[3]), second_start).unwrap();
+    receiver
+        .check_deadline(second_start + MAX_ASSEMBLY_MILLIS - 1)
+        .unwrap();
+    assert!(receiver
+        .receive(&frame(2, &[4]), second_start + MAX_ASSEMBLY_MILLIS)
+        .is_err());
+    assert!(receiver.failed());
+    assert!(!receiver.pending());
+    assert!(receiver.receive(&frame(1, &[5]), 0).is_err());
+
+    let mut receiver = Reassembler::new();
+    receiver.receive(&frame(1, &[1]), 10).unwrap();
+    receiver.receive(&frame(2, &[2]), 11).unwrap();
+    // Completion frees bytes/deadline, not the monotonic epoch clock.
+    assert!(receiver.receive(&frame(1, &[3]), 10).is_err());
+    assert!(receiver.failed());
+    assert!(!receiver.pending());
+}
+
+#[test]
+fn outbound_invalid_ids_cannot_bypass_validation_by_requiring_fragmentation() {
+    let encoder = outbound(Flow::Serverbound, 30);
+    for prefix in [
+        [0xff, 0xff, 0xff, 0xff, 0x0f],
+        [0x80, 0x80, 0x80, 0x80, 0x08],
+        [0x80, 0x80, 0x80, 0x80, 0x10],
+        [0x80, 0x80, 0x80, 0x80, 0x80],
+    ] {
+        let mut original = vec![0x55; 400];
+        original[..5].copy_from_slice(&prefix);
+        assert_eq!(encoder.encode(&original).unwrap_err(), Error::VarInt);
+    }
+    // Rejected originals expose no batch and cannot poison this stateless encoder.
+    let valid = vec![0x55; 400];
+    roundtrip_bodies(&split_bodies(encoder.encode(&valid).unwrap()), &valid);
+}
+
+#[test]
+fn outbound_fragmented_nonminimal_id_preserves_exact_original_encoding() {
+    let mut original = vec![0x55; 31];
+    original[..2].copy_from_slice(&[0x80, 0]);
+    let bodies = split_bodies(outbound(Flow::Serverbound, 30).encode(&original).unwrap());
+    assert_eq!(bodies[0], [5, 1, 0x80, 0, 0x55, 0x55]);
+    assert_eq!(bodies[7], [4, 2, 0x55, 0x55, 0x55]);
+    roundtrip_bodies(&bodies, &original);
+}
+
+#[test]
+fn outbound_adjacent_thresholds_at_directional_content_saturation() {
+    for (flow, cap, maximum_content) in [
+        (Flow::Serverbound, 32_767, 32_763),
+        (Flow::Clientbound, 1_048_576, 1_048_572),
+    ] {
+        let saturation = maximum_content + 26;
+        for threshold in saturation - 1..=saturation + 1 {
+            let width = (threshold - 26).min(maximum_content);
+            let original = vec![0x55; threshold + 1];
+            let bodies = split_bodies(outbound(flow, threshold).encode(&original).unwrap());
+            assert_eq!(bodies.len(), 2);
+            assert_eq!(bodies[0].len(), width + 4); // three-byte length + marker
+            assert!(bodies.iter().all(|body| body.len() <= cap));
+            assert!(bodies.iter().all(|body| body.len() + 20 <= threshold));
+            assert_eq!(&bodies[0][4..], &original[..width]);
+            assert_eq!(&bodies[1][2..], &original[width..]);
+            roundtrip_bodies(&bodies, &original);
+        }
+    }
+}
